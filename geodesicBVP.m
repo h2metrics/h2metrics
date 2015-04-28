@@ -16,7 +16,7 @@ function [E_geo, dPath, opt_output, opt_grad] = geodesicBVP(d0,d1,splineData,qua
 options = optimoptions('fminunc');
 options = optimoptions(options, 'MaxFunEvals',300000);
 
-d_linear = linearPath(d0,d1,splineData.Nt);
+d_linear = linearPath(d0,d1,splineData);
 d_init = d_linear( splineData.N+1:end-splineData.N,:);
 
 %Some code for handling optional inputs
@@ -51,7 +51,7 @@ while ii <= length(varargin)-1
 end
 
 [d_optimal,E_geo,exitflag,output,grad] = ...
-fminunc(@(d_opt)energyH2([d0;d_opt;d1],splineData,quadData,quadDataTensor),...
+fminunc(@(d_opt)energyH2([d0;d_opt;d1],splineData,quadDataTensor),...
     d_init,options);
 
 dPath = [d0;d_optimal;d1];
