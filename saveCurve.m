@@ -17,10 +17,13 @@
 % Optional parameters
 %   'workdir'
 %       Appends an optional working directory in front of filename
+%   'manualName' = {true, false}
+%       Don't append anything to given filename
 
 function saveCurve( name, d0, splineData, varargin )
 
 workdir = '';
+manualName = false;
 
 % Some code for handling optional inputs
 ii = 1;
@@ -32,7 +35,15 @@ while ii <= length(varargin)
                  if isa(varargin{ii}, 'char')
                      workdir = varargin{ii};
                  else
-                     error('Invalid value for option ''workDir''');
+                     error('Invalid value for option ''workDir''.');
+                 end
+             case 'manualname'
+                 ii = ii + 1;
+                 if isa(varargin{ii}, 'integer') || ...
+                     isa(varargin{ii}, 'logical')
+                     manualName = logical(varargin{ii});
+                 else
+                     error('Invalid value for option ''manualName''.');
                  end
              otherwise
                  error('Invalid option: ''%s''.',varargin{ii});
@@ -48,6 +59,12 @@ end
 N = splineData.N;
 nS = splineData.nS;
 
-filename = [workdir, name,'_','n',num2str(nS),'_','N',num2str(N),'.mat'];
+if manualName
+    filename = [workdir, name];
+else
+    filename = [workdir, name,'_n',num2str(nS),'_N',num2str(N),'.mat'];
+end
 
 save(filename, 'd0', 'splineData');
+
+end

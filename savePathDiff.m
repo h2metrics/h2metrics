@@ -19,10 +19,13 @@
 % Optional parameters
 %   'workdir'
 %       Appends an optional working directory in front of filename
+%   'manualName' = {true, false}
+%       Don't append anything to given filename
 
 function savePathDiff( name, dPath, phiPath, splineData, varargin )
 
 workdir = '';
+manualName = false;
 
 % Some code for handling optional inputs
 ii = 1;
@@ -35,6 +38,14 @@ while ii <= length(varargin)
                      workdir = varargin{ii};
                  else
                      error('Invalid value for option ''workDir''');
+                 end
+             case 'manualname'
+                 ii = ii + 1;
+                 if isa(varargin{ii}, 'integer') || ...
+                     isa(varargin{ii}, 'logical')
+                     manualName = logical(varargin{ii});
+                 else
+                     error('Invalid value for option ''manualName''.');
                  end
              otherwise
                  error('Invalid option: ''%s''.',varargin{ii});
@@ -52,7 +63,13 @@ Nt = splineData.Nt;
 nS = splineData.nS;
 nT = splineData.nT;
 
-filename = [workdir, name,'_n',num2str(nS),'_N',num2str(N),...
-            '_nT',num2str(nT),'_Nt',num2str(Nt),'_diff.mat'];
+if manualName
+    filename = [workdir, name];
+else
+    filename = [workdir, name,'_n',num2str(nS),'_N',num2str(N),...
+                '_nT',num2str(nT),'_Nt',num2str(Nt),'_diff.mat'];
+end
 
 save(filename, 'dPath', 'phiPath', 'splineData');
+
+end
