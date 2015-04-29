@@ -51,8 +51,7 @@ while ii <= length(varargin)
         switch (lower(varargin{ii}))
             case 'periodic'
                 ii = ii + 1;
-                if isa(varargin{ii}, 'integer') || ...
-                        isa(varargin{ii}, 'logical')
+                if isnumeric(varargin{ii}) || islogical(varargin{ii})
                     periodic = logical(varargin{ii});
                 else
                     error('Invalid value for option ''periodic''.');
