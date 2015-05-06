@@ -1,4 +1,4 @@
-function [E_geo, dPath] = geodesicBVP_ampl(d0,d1,splineData,quadData,quadDataTensor);
+function [E_geo, dPath] = geodesicBVP_ampl(d0,d1,splineData,quadData,quadDataTensor,datfile2exists);
 % Compute the minimal geodesic connecting the splines given by d0 and d1 using AMPL to solve the minimization problem.%
 %
 % Input: 
@@ -7,6 +7,9 @@ function [E_geo, dPath] = geodesicBVP_ampl(d0,d1,splineData,quadData,quadDataTen
 %       splineData,
 %       quadData,
 %       quadDataTensor
+%       writedatfile2 .......... variable, that controlls wether datfile2
+%       is written. 
+%       
 %
 %       
 % Output:
@@ -15,7 +18,8 @@ function [E_geo, dPath] = geodesicBVP_ampl(d0,d1,splineData,quadData,quadDataTen
 %
 runfile='H2.run';
 modfile='H2.mod';
-datfile='H2.dat';
+datfile1='H2.dat';
+datfile2='H2_tensor.dat';
 tabfile='H2.tab'; % no special characters allowed in this file name
 tabledef={...
       'd[t,p,1]', 'dx';
@@ -25,18 +29,31 @@ amploptions={...
       'option ipopt_options "max_iter=1000"'
                 };
 
-%% Write .dat file
-disp(['main.m, calling writedatfile.m, datfile = ' datfile]);
+%% Write datfile1
+disp(['main.m, calling writedatfile1.m, datfile = ' datfile1]);
 tic
-writedatfile(d0,d1,splineData,quadData,quadDataTensor,datfile);
+writedatfile1(d0,d1,splineData,quadData,datfile1);
 toc
+
+
+%% Write datfile2
+if datfile2exists == 1
+    disp(['datfile2 exists']);
+else 
+    disp(['main.m, calling writedatfile2.m, datfile = ' datfile2]);
+    tic
+    writedatfile2(splineData,quadData,quadDataTensor,datfile2);
+    toc
+end
+
+
 
 
 %% Write .run file
 
 disp(['geodesicBVP_ampl.m, calling writerunfile.m, runfile = ' runfile]);
 tic
-writerunfile(runfile, modfile, datfile, tabfile, tabledef, amploptions);
+writerunfile(runfile, modfile, datfile1,datfile2, tabfile, tabledef, amploptions);
 toc
 
 disp('geodesicBVP_ampl.m, calling AMPL');
