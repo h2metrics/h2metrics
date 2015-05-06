@@ -1,145 +1,68 @@
-# The metric is:
-# G_c(h,k) = \int_{S^1} (...) ds, where
-# (...) = pH0 * <h,h>
-#       + pKappa * kappa^2 * <h,k>
-#       + pH2 * < D^2_s h, D^2_s k >
+# H2 Metric
+# Letting $c_t = h$, the horizontal energy is: 
+# $\int_0^1 \int_{S^1} \langle h,h\rangle+\langle D^2_sh, D^2_sh \rangle ds dt$
 
-# MODEL COEFFICIENTS
-param pHor >=0 <=1;   # pHor=1 means only horizontal energy, pHor=0 means total energy
-param pH0  >=0;       # the weight in front of the H^0 term of the metric
-param pKappa >= 0;    # the weight in front of the kappa term of the metric
-param pH2  >=0;       # the weight in front of the H^2 term of the metric
-param nKU integer;    # number of u-knots
-param nKT integer;    # number of t-knots 
-param nQU integer;    # number of u-quadrature points
-param nQT integer;    # number of t-quadrature points
+# PARAMETERS 
+param Pi default 3.141592653589793;
+param nKP integer; # number of p-knots
+param nKT integer; # number of t-knots
+param nQP integer; # number of p-quadrature points
+param nQT integer; # number of t-quadrature points
 
 # KNOTS AND QUADRATURE POINTS
+set KP := 1..nKP circular; # knots in the p-dimension
 set KT := 1..nKT;          # knots in the t-dimension
-set KU := 1..nKU circular; # knots in the u-dimension
+set QP := 1..nQP circular; # quadrature points in the p-dimension
 set QT := 1..nQT;          # quadrature points in the t-dimension
-set QU := 1..nQU circular; # quadrature points in the u-dimension
 
 # COLLOCATION MATRICES
-set iB        within   {QT,QU,KT,KU}; # the indices of non-zero entries of B 
-set iBt       within   {QT,QU,KT,KU}; # the indices of non-zero entries of Bt
-set iBtu      within   {QT,QU,KT,KU}; # the indices of non-zero entries of But 
-set iBtuu     within   {QT,QU,KT,KU}; # the indices of non-zero entries of Buut 
-set iBu       within   {QT,QU,KT,KU}; # the indices of non-zero entries of Bu 
-set iBuu      within   {QT,QU,KT,KU}; # the indices of non-zero entries of Buu 
-set iBuuu     within   {QT,QU,KT,KU}; # the indices of non-zero entries of Buuu 
-set iBU       within   {QU,KU};       # the indices of non-zero entries of BU
-set iBUu      within   {QU,KU};       # the indices of non-zero entries of BUu
-set iBUuu     within   {QU,KU};       # the indices of non-zero entries of BUuu
-set iBUuuu    within   {QU,KU};       # the indices of non-zero entries of BUuuu
-param B       {iB}     default 0;     # basis of tensor product splines in the t and u dimension
-param Bt      {iBt}    default 0;     # basis of tensor product splines in the t and u dimension
-param Btu     {iBtu}   default 0;     # basis of tensor product splines in the t and u dimension
-param Btuu    {iBtuu}  default 0;     # basis of tensor product splines in the t and u dimension
-param Bu      {iBu}    default 0;     # basis of tensor product splines in the t and u dimension
-param Buu     {iBuu}   default 0;     # basis of tensor product splines in the t and u dimension
-param Buuu    {iBuuu}  default 0;     # basis of tensor product splines in the t and u dimension
-param BU      {QU,KU}  default 0;     # basis of splines in the u-dimension used for h and m
-param BUu     {QU,KU}  default 0;     # basis of splines in the u-dimension used for h and m
-param BUuu    {QU,KU}  default 0;     # basis of splines in the u-dimension used for h and m
-param BUuuu   {QU,KU}  default 0;     # basis of splines in the u-dimension used for h and m
-param W       {QT,QU}  default 0;     # weight matrix for quadrature
+set iB        within  {QT,QP,KT,KP}; # the indices of non-zero entries of B 
+set iBp       within  {QT,QP,KT,KP}; # the indices of non-zero entries of Bp 
+set iBt       within  {QT,QP,KT,KP}; # the indices of non-zero entries of Bt
+set iBpt      within  {QT,QP,KT,KP}; # the indices of non-zero entries of Bpt 
+set iBpp      within  {QT,QP,KT,KP}; # the indices of non-zero entries of Bpp 
+set iBppt     within  {QT,QP,KT,KP}; # the indices of non-zero entries of Bppt 
+param B       {iB}    default 0;
+param Bp      {iBp}   default 0;
+param Bt      {iBt}   default 0;
+param Bpt     {iBpt}  default 0;
+param Bpp     {iBpp}  default 0;
+param Bppt    {iBppt} default 0;
+param W       {QT,QP} default 0;
 
-# CONTROLS OF CURVE
-param d0 {KU,1..2};
-param d1 {KU,1..2};
-var dmiddle {t in KT diff {1,nKT}, u in KU, i in 1..2} := 
-  ((nKT-t)*d0[u,i]+(t-1)*d1[u,i])/(nKT-1);
-var d {t in KT, u in KU, i in 1..2} = 
-  (if t=1 then d0[u,i] else if t=nKT then d1[u,i] else dmiddle[t,u,i]);
+# CONTROLS
+param d0 {KP,1..2};
+param d1 {KP,1..2};
+var dmiddle {t in KT diff {1,nKT}, p in KP, i in 1..2} := 
+  ((nKT-t)*d0[p,i]+(t-1)*d1[p,i])/(nKT-1);
+var d {t in KT, p in KP, i in 1..2} = 
+  (if t=1 then d0[p,i] else if t=nKT then d1[p,i] else dmiddle[t,p,i]);
 
 # CURVE AND DERIVATIVES
-var c {t in QT, u in QU, i in 1..2} =
-  sum {(t,u,tt,uu) in iB} B[t,u,tt,uu]*d[tt,uu,i];
-var ct {t in QT, u in QU, i in 1..2} =
-  sum {(t,u,tt,uu) in iBt} Bt[t,u,tt,uu]*d[tt,uu,i];
-var ctu {t in QT, u in QU, i in 1..2} =
-  sum {(t,u,tt,uu) in iBtu} Btu[t,u,tt,uu]*d[tt,uu,i];
-var ctuu {t in QT, u in QU, i in 1..2} =
-  sum {(t,u,tt,uu) in iBtuu} Btuu[t,u,tt,uu]*d[tt,uu,i];
-var cu {t in QT, u in QU, i in 1..2} =
-  sum {(t,u,tt,uu) in iBu} Bu[t,u,tt,uu]*d[tt,uu,i];
-var cuu {t in QT, u in QU, i in 1..2} =
-  sum {(t,u,tt,uu) in iBuu} Buu[t,u,tt,uu]*d[tt,uu,i];
-var cuuu {t in QT, u in QU, i in 1..2} =
-  sum {(t,u,tt,uu) in iBuuu} Buuu[t,u,tt,uu]*d[tt,uu,i];
-var norm_cu {t in QT, u in QU} = sqrt(sum {i in 1..2} cu[t,u,i]^2);
-
-# CONTROLS OF HORIZONTAL PROJECTION 
-var k {t in QT, u in KU, i in 1..2}; 
-
-# HORIZONTAL PROJECTION
-var h {t in QT, u in QU, i in 1..2} = 
-  sum {(u,uu) in iBU} BU[u,uu]*k[t,uu,i];
-var hu {t in QT, u in QU, i in 1..2} = 
-  sum {(u,uu) in iBUu} BUu[u,uu]*k[t,uu,i];
-var huu {t in QT, u in QU, i in 1..2} = 
-  sum {(u,uu) in iBUuu} BUuu[u,uu]*k[t,uu,i];
-
-# VERTICAL TEST FUNCTIONS
-set iM := iBU union iBUu union iBUuu;
-var m {t in QT,u in QU,i in 1..2,uu in KU} = 
-  cu[t,u,i]*BU[u,uu];
-var mu {t in QT,u in QU,i in 1..2,uu in KU} = 
-  cuu[t,u,i]*BU[u,uu] + cu[t,u,i]*BUu[u,uu];
-var muu {t in QT,u in QU,i in 1..2,uu in KU} = 
-  cuuu[t,u,i]*BU[u,uu] + 2*cuu[t,u,i]*BUu[u,uu] + cu[t,u,i]*BUuu[u,uu];
+var c {t in QT, p in QP, i in 1..2} =
+  sum {(t,p,tt,pp) in iB} B[t,p,tt,pp]*d[tt,pp,i];
+var cp {t in QT, p in QP, i in 1..2} =
+  sum {(t,p,tt,pp) in iBp} Bp[t,p,tt,pp]*d[tt,pp,i];
+var ct {t in QT, p in QP, i in 1..2} =
+  sum {(t,p,tt,pp) in iBt} Bt[t,p,tt,pp]*d[tt,pp,i];
+var cpt {t in QT, p in QP, i in 1..2} =
+  sum {(t,p,tt,pp) in iBpt} Bpt[t,p,tt,pp]*d[tt,pp,i];
+var cpp {t in QT, p in QP, i in 1..2} =
+  sum {(t,p,tt,pp) in iBpp} Bpp[t,p,tt,pp]*d[tt,pp,i];
+var cppt {t in QT, p in QP, i in 1..2} =
+  sum {(t,p,tt,pp) in iBppt} Bppt[t,p,tt,pp]*d[tt,pp,i];
+var norm_cp {t in QT, p in QP} = sqrt(sum {i in 1..2} cp[t,p,i]^2);
 
 # MINIMIZATION
-minimize energy: 
-  sum {t in QT, u in QU} W[t,u] *
+
+minimize energy: sum {t in QT, p in QP}
+  W[t,p] *
   (
-    pH0 * sum {i in 1..2} h[t,u,i]^2
-    +
-    pKappa * (sum {i in 1..2} h[t,u,i]^2) 
-      * (cu[t,u,1]*cuu[t,u,2]-cu[t,u,2]*cuu[t,u,1])^2/norm_cu[t,u]^6
-    +
-    pH2 * sum {i in 1..2} (
-      huu[t,u,i]/norm_cu[t,u]^2 
-      - 
-      (sum {j in 1..2} cu[t,u,j]*cuu[t,u,j])*hu[t,u,i]/norm_cu[t,u]^4
-    )^2
-  ) * norm_cu[t,u]
-;
-
-# CONSTRAINTS
-
-# h equals pHor times the horizontal projection of ct plus (1-pHor) times ct
-
-# force h-(1-pHor)*ct to be horizontal by requiring G_c(h-(1-pHor)*ct,m)=0, 
-# for all vertical test functions m, at each t-quadrature point
-subject to horizontal {t in QT, uu in KU}: 
-  sum {(u,uu) in iM} W[t,u] *
-  (
-    pH0 * sum {i in 1..2} h[t,u,i]*m[t,u,i,uu]
-    +
-    pKappa * (sum {i in 1..2} h[t,u,i]*m[t,u,i,uu])
-      * (cu[t,u,1]*cuu[t,u,2]-cu[t,u,2]*cuu[t,u,1])^2/norm_cu[t,u]^6 
+    sum {i in 1..2} ct[t,p,i]^2 
     + 
-    pH2 * sum {i in 1..2} 
-    (
-      huu[t,u,i]/norm_cu[t,u]^2 
+    sum {i in 1..2} (
+      cppt[t,p,i]/norm_cp[t,p]^2 
       - 
-      (sum {j in 1..2} cu[t,u,j]*cuu[t,u,j])*hu[t,u,i]/norm_cu[t,u]^4
-    )
-    *
-    (
-      muu[t,u,i,uu]/norm_cu[t,u]^2 
-      - 
-      (sum {j in 1..2} cu[t,u,j]*cuu[t,u,j])*mu[t,u,i,uu]/norm_cu[t,u]^4
-    )
-  ) * norm_cu[t,u] = 0;
-
-# force ct minus h to be vertical by requiring \int <ct-h,rot(m)> ds = 0,
-# for all test functions m, at each t-quadrature point
-subject to vertical {t in QT, uu in KU}:
-  sum {(u,uu) in iBU} W[t,u]*
-  (
-    (ct[t,u,1]-h[t,u,1])*m[t,u,2,uu]-(ct[t,u,2]-h[t,u,1])*m[t,u,1,uu]
-  ) * norm_cu[t,u] = 0;
-
+      (sum {j in 1..2} cp[t,p,j]*cpp[t,p,j])*cpt[t,p,i]/norm_cp[t,p]^4
+    )^2
+  ) * norm_cp[t,p];
