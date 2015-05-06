@@ -5,10 +5,10 @@ function [ d ] = pathVelocity(dPath,evalT, splineData )
 
 %d = zeros( size(dPath,1),size(dPath,2), length(t));
 
-controlPointWeights = spcol( splineData.knotsT, splineData.nT+1, evalT);
+controlPointWeights = spcol( splineData.knotsT, splineData.nT+1, brk2knt(evalT,2))';
 
-d_x = reshape( dPath(:,1), splineData.N,splineData.Nt)*controlPointWeights';
-d_y = reshape( dPath(:,2), splineData.N,splineData.Nt)*controlPointWeights';
+d_x = reshape( dPath(:,1), splineData.N,splineData.Nt)*controlPointWeights(:,2);
+d_y = reshape( dPath(:,2), splineData.N,splineData.Nt)*controlPointWeights(:,2);
 
 d(:,:,1) = d_x;
 d(:,:,2) = d_y;
