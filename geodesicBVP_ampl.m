@@ -1,4 +1,4 @@
-function [E_geo, dPath] = geodesicBVP_ampl(d0,d1,splineData,quadData,quadDataTensor,datfile2exists);
+function [E_geo, dPath] = geodesicBVP_ampl(d0,d1,splineData,quadData,quadDataTensor,varargin);
 % Compute the minimal geodesic connecting the splines given by d0 and d1 using AMPL to solve the minimization problem.%
 %
 % Input: 
@@ -7,8 +7,8 @@ function [E_geo, dPath] = geodesicBVP_ampl(d0,d1,splineData,quadData,quadDataTen
 %       splineData,
 %       quadData,
 %       quadDataTensor
-%       writedatfile2 .......... variable, that controlls wether datfile2
-%       is written. 
+%       varargin .......... Boole variable, that controlls wether datfile2
+%       is written (value = 1 --> datfile exists). 
 %       
 %
 %       
@@ -37,7 +37,7 @@ toc
 
 
 %% Write datfile2
-if datfile2exists == 1
+if varargin{1} == 1
     disp(['datfile2 exists']);
 else 
     disp(['main.m, calling writedatfile2.m, datfile = ' datfile2]);

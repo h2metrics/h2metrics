@@ -34,8 +34,6 @@ fprintf(fileid,'param d1: 1 2 := \n');
 fprintf(fileid,';\n\n');
 
 
-
-
 %% Write the weight matrix
 
 fprintf(fileid,'\nparam W :=\n');
