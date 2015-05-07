@@ -1,10 +1,10 @@
-function q = geodesicForward(q0,q1,Nsteps,splineData,quadData,varargin);
+function q = geodesicForward(q0,q1,Nsteps,splineData,quadData,varargin)
 %Compute a forward shooting of a geodesic defined by the two first points
 %q0 and q1 on a discrete path.
 %
 % Input:
 %       q0,q1, first two inital points
-%       Nsteps, number of steps to take
+%       Nsteps, number of steps to take, must have Nsteps > 2.
 %
 %
 % Output:
@@ -16,6 +16,7 @@ function q = geodesicForward(q0,q1,Nsteps,splineData,quadData,varargin);
 %Some code for handling optional inputs
 ii = 1;
 rule = 'left';
+endpoint = 0;
 while ii <= length(varargin)
     if (isa(varargin{ii},'char'))
          switch (lower(varargin{ii}))
@@ -25,8 +26,10 @@ while ii <= length(varargin)
                  rule = 'mid';
              case 'right'
                  rule = 'right';
-             case 'TolFun'
+             case 'tolfun'
                  varargin{ii+1}
+             case 'endpoint'
+                 endpoint = 1;
              otherwise
                  error('Invalid option: ''%s''.',varargin{ii});
          end     
@@ -40,9 +43,10 @@ exitFlags = zeros(1, Nsteps);
 geodesicPoints(:,:,1) = q0;
 geodesicPoints(:,:,2) = q1;
 
-options_fsolve = optimoptions('fsolve');
-options_fsolve = optimoptions(options_fsolve,'TolFun', 1e-6);
-options_fsolve = optimoptions(options_fsolve,'Display','off');
+options_fsolve = optimset('TolFun',1e-6,'Display','off');
+%options_fsolve = optimoptions('fsolve');
+%options_fsolve = optimoptions(options_fsolve,'TolFun', 1e-6);
+%options_fsolve = optimoptions(options_fsolve,'Display','off');
 %options_fsolve = optimoptions(options_fsolve,'MaxIter',400);
 %options_fsolve = optimoptions(options_fsolve,'MaxFunEvals',10000);
 
@@ -67,6 +71,9 @@ for ii = 3:Nsteps
 end
 
 q = geodesicPoints;
+if endpoint
+    q = geodesicPoints(:,:,end);
+end
 
 function [ Eder ] = LagragianLeftDer( d2,d1,d0,quadData )
 %Compute the derivative of the left-discrete energy of the 3 point path 
