@@ -31,8 +31,8 @@ while ii <= length(varargin)
             otherwise
                 error('Invalid option: ''%s''.',varargin{ii});
         end
-    ii = ii + 1; 
     end
+    ii = ii + 1; 
 end
 
 
