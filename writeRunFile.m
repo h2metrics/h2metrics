@@ -1,4 +1,4 @@
-function writerunfile(runfile, modfile, datfile1,datfile2, tabfile, tabledef, options)
+function writeRunFile(runfile, modfile, datfile1,datfile2, tabfile, tabledef, options)
 %writerunfile writes the .run file needed by AMPL
 %   writedatfile(runfile, modfile, datfile, tabfile, tabledef, options) 
 %   runfile etc are the names of the .run, .mod, .dat, and .tab files.

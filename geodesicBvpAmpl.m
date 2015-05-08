@@ -1,4 +1,4 @@
-function [E_geo, dPath] = geodesicBVP_ampl(d0,d1,splineData,quadData,quadDataTensor,varargin);
+function [E_geo, dPath] = geodesicBvpAmpl(d0,d1,splineData,quadData,quadDataTensor,varargin)
 % Compute the minimal geodesic connecting the splines given by d0 and d1 using AMPL to solve the minimization problem.%
 %
 % Input: 
@@ -16,6 +16,26 @@ function [E_geo, dPath] = geodesicBVP_ampl(d0,d1,splineData,quadData,quadDataTen
 %       E_geo, optimal energy
 %       dPath, optimal path
 %
+datfileexists = 0;
+ii = 1;
+while ii <= length(varargin)
+    if (isa(varargin{ii},'char'))
+        switch (lower(varargin{ii}))
+            case 'datfileexists'
+                ii = ii + 1;
+                if isnumeric(varargin{ii}) || islogical(varargin{ii})
+                    datfileexists = logical(varargin{ii});
+                else
+                    error('Invalid value for option ''datfileexists''.');
+                end
+            otherwise
+                error('Invalid option: ''%s''.',varargin{ii});
+        end
+    ii = ii + 1; 
+    end
+end
+
+
 runfile='H2.run';
 modfile='H2.mod';
 datfile1='H2.dat';
@@ -30,33 +50,29 @@ amploptions={...
                 };
 
 %% Write datfile1
-disp(['main.m, calling writedatfile1.m, datfile = ' datfile1]);
+disp(['geodesicBvpAmpl.m, calling writeDatFile1.m, datfile = ' datfile1]);
 tic
-writedatfile1(d0,d1,splineData,quadData,datfile1);
+writeDatFile1(d0,d1,splineData,quadData,datfile1);
 toc
 
 
 %% Write datfile2
-if varargin{1} == 1
+if datfileexists == 1;
     disp(['datfile2 exists']);
 else 
-    disp(['main.m, calling writedatfile2.m, datfile = ' datfile2]);
+    disp(['geodesicBvpAmpl.m, calling writeDatFile2.m, datfile = ' datfile2]);
     tic
-    writedatfile2(splineData,quadData,quadDataTensor,datfile2);
+    writeDatFile2(splineData,quadData,quadDataTensor,datfile2);
     toc
 end
-
-
-
-
 %% Write .run file
 
-disp(['geodesicBVP_ampl.m, calling writerunfile.m, runfile = ' runfile]);
+disp(['geodesicBvpAmpl.m, calling writeRunFile.m, runfile = ' runfile]);
 tic
-writerunfile(runfile, modfile, datfile1,datfile2, tabfile, tabledef, amploptions);
+writeRunFile(runfile, modfile, datfile1,datfile2, tabfile, tabledef, amploptions);
 toc
 
-disp('geodesicBVP_ampl.m, calling AMPL');
+disp('geodesicBvpAmpl.m, calling AMPL');
 setenv('LD_LIBRARY_PATH','/users/bauerm/work/15_metrics_horeqnor/numerics/Ipopt/build/lib')
 setenv('LD_RUN_PATH', '/users/bauerm/work/15_metrics_horeqnor/numerics/Ipopt/build/lib')
 setenv('PATH', [getenv('PATH') ':/users/herman/COCONUT/bin:/users/bauerm/work/15_metrics_horeqnor/numerics/Ipopt/build/bin'])
@@ -72,13 +88,11 @@ end
 
 %% Read .tab file, extract spline data
 
-disp(['geodesicBVP_ampl.m, calling writetabfile.m, tabfile = ' tabfile]);
+disp(['geodesicBvpAmpl.m, calling readTabFile.m, tabfile = ' tabfile]);
 tic
-[data, variables] = readtabfile(tabfile);
+[data, variables] = readTabFile(tabfile);
 toc
 dPath=[squeeze(data(1,:))' squeeze(data(2,:))']; 
 E_geo = energyH2(dPath,splineData,quadDataTensor)
-
-
 end
 

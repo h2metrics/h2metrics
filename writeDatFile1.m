@@ -1,4 +1,4 @@
-function writedatfile1(d0,d1,splineData,quadData,datfile)
+function writeDatFile1(d0,d1,splineData,quadData,datfile)
 %writedatfile writes the .dat file containing the  quadData and the controll points of the boundary curves, but not the tensorproducts. 
 %   writedatfile(d0, d1,splineData, quadData, datfile) creates a .dat file 
 %   with the name filename. d0 and d1 are the initial and final controls, 

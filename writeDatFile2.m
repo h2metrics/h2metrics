@@ -1,4 +1,4 @@
-function writedatfile2(splineData,quadData,quadDataTensor,datfile)
+function writeDatFile2(splineData,quadData,quadDataTensor,datfile)
 %writedatfile writes the .dat file containing the collocation matrices.
 %   writedatfile(splineData,quadData,quadDataTensor, datfile) creates a .dat file 
 %   with the name filename.

@@ -1,4 +1,4 @@
-function writedatfile(d0,d1,splineData,quadData,quadDataTensor,datfile)
+function writeDatFile(d0,d1,splineData,quadData,quadDataTensor,datfile)
 %writedatfile writes the .dat file needed by AMPL
 %   writedatfile(d0, d1, quadData, datfile) creates a .dat file 
 %   with the name filename. d0 and d1 are the initial and final controls, 

@@ -1,4 +1,4 @@
-function [data, variables] = readtabfile(filename)
+function [data, variables] = readTabFile(filename)
 %readtabfile Read .tab file from AMPL
 %   [data, variables] = readtabfile(filename) reads the specified .tab file
 %   into the Matlab array 'data' with size(data) = [len(variables), N_V, N_S+1]. 
