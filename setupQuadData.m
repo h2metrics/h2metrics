@@ -11,7 +11,8 @@ quadData = struct('quadPointsS',[],'quadPointsT',[],...
     'quadWeightsS',[],'quadWeightsT',[],...
     'B_S',[],'Bu_S',[],'Buu_S',[],'Buuu_S',[],...
     'B_T',[],'Bt_T',[],...
-    'B_phi',[],'Bu_phi',[],'Buu_phi',[],'Buuu_phi',[]);
+    'B_phi',[],'Bu_phi',[],'Buu_phi',[],'Buuu_phi',[],...
+    'B_interpolS',[], 'B_interpolPhi',[]);
 
 nS = splineData.nS;
 nT = splineData.nT;
@@ -24,6 +25,7 @@ quadDegree = splineData.quadDegree;
 %TODO: replace with spData
 knotsS = splineData.knotsS;
 knotsT = splineData.knotsT;
+knotsPhi = splineData.knotsPhi;
 innerKnotsS = splineData.innerKnotsS;
 innerKnotsT = splineData.innerKnotsT;
 
@@ -44,7 +46,7 @@ noSder = 3;
 noPhider = 3;
 noTder = 1;
 B_S_quad = spcol( knotsS, nS+1, brk2knt( quadPointsS, noSder+1 ),'sparse');
-B_Phi_quad = spcol( knotsS, nPhi+1, brk2knt( quadPointsS, noPhider+1 ),'sparse');
+B_Phi_quad = spcol( knotsPhi, nPhi+1, brk2knt( quadPointsS, noPhider+1 ),'sparse');
 B_T_quad = spcol( knotsT, nT+1, brk2knt( quadPointsT, noTder+1 ),'sparse');
 %Periodic B-splines
 B_S_quad_per = [B_S_quad(:,1:nS) + B_S_quad(:,end-nS+1:end), B_S_quad(:,nS+1:end-nS)];
@@ -62,6 +64,17 @@ quadData.B_phi = B_Phi_quad_per(1:4:end,:);
 quadData.Bu_phi = B_Phi_quad_per(2:4:end,:);
 quadData.Buu_phi = B_Phi_quad_per(3:4:end,:);
 quadData.Buuu_phi = B_Phi_quad_per(4:4:end,:);
+
+interpolS = splineData.interpolS;
+B_interpolS = spcol( knotsS, nS+1, brk2knt(interpolS, 1), 'sparse');
+B_interpolS = [ B_interpolS(:,1:nS) + B_interpolS(:,end-nS+1:end), ...
+                 B_interpolS(:,nS+1:end-nS) ];
+quadData.B_interpolS = B_interpolS;
+
+B_interpolPhi = spcol( knotsPhi, nPhi+1, brk2knt(interpolS, 1), 'sparse');
+B_interpolPhi = [ B_interpolPhi(:,1:nPhi) + B_interpolPhi(:,end-nPhi+1:end), ...
+                  B_interpolPhi(:,nPhi+1:end-nPhi) ];
+quadData.B_interpolPhi = B_interpolPhi;
 
 %quadData = quadraturePointsAndWeights(annulusRefined, 'degree', [10,6]);
 % plotData = struct('points',[],'B',[],'Bu',[],'Bt',[],'Buu',[],...

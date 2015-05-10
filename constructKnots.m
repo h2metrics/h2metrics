@@ -10,5 +10,8 @@ splineData.innerKnotsS = splineData.knotsS(splineData.nS+1:end-splineData.nS);
 splineData.innerKnotsT = splineData.knotsT(splineData.nT+1:end-splineData.nT);
 splineData.innerKnotsPhi = splineData.knotsPhi(splineData.nPhi+1:end-splineData.nPhi);
 
+splineData.interpolS = linspace( 0, 2*pi, splineData.noInterpolS+1)';
+splineData.interpolS = splineData.interpolS(1:end-1); % Last point correponds to first point
+
 end
 

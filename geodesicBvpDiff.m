@@ -1,15 +1,11 @@
 %% geodesicBvpDiff
 %
-% Calculates the minimal geodesic betweeen the curve d0 o ph10 and the
+% Calculates the minimal geodesic betweeen the curve d0 and the
 % orbit d1 o Diff(S^1).
-%
-% At the moment we optimize only over phi1, while keeping phi0 constant.
 % 
 % Input
 %   d0, d1
 %       Initial and final curves. Matrix of dimensions [N, dSpace].
-%   phi0, phi1
-%       Initial guesses for the reparametrizations of phi0, phi1
 %   splineData
 %       General information about the splines used.
 %   quadData, quadDataTensor
@@ -17,11 +13,11 @@
 %
 % Output
 %   dPath
-%       Optimal path between d0 and d1
-%   phiPath
-%       Linear path between optimal reparametrizations
+%       Optimal path between d0 and d1 o psi
+%   psi
+%       Optimal reparametrization of d1
 %
-function [dPath, phiPath] = geodesicBvpDiff(d0, d1, phi0, phi1, ...
+function [dPath, psi] = geodesicBvpDiff(d0, d1, ...
     splineData, quadData, quadDataTensor, varargin)
 
 options = optimoptions('fmincon');
@@ -76,7 +72,6 @@ nT = splineData.Nt;
 nPhi = splineData.nPhi;
 dSpace = splineData.dSpace;
 
-
 %% Generate constraints
 % As phi = Id + f, the constraints encode that the control points of Id+f
 % have to be increasing by at least phiEps
@@ -106,23 +101,26 @@ dLinear = linearPath(d0, d1, splineData);
 coeffInit = zeros([ N*(Nt-2)*dSpace + Nphi, 1]);
 coeffInit(1:N*(Nt-2)*dSpace) = reshape( dLinear(N+1:end-N, :), ...
                                         [N*(Nt-2)*dSpace, 1] );
-coeffInit(end-Nphi+1:end) = phi1;
+coeffInit(end-Nphi+1:end) = zeros([ Nphi, 1]); % Identity diffeomorphism
 
 Fopt = @(coeff) energyH2Diff( ...
     [d0; reshape(coeff(1:end-Nphi), [N*(Nt-2), dSpace]); d1], ...
-    phi0, coeff(end-Nphi+1:end), ...
+    coeff(end-Nphi+1:end), ...
     splineData, quadData, quadDataTensor );
+
 
 problem = struct( 'objective', Fopt, 'x0', coeffInit, ...
                   'Aineq', A_diff, 'bineq', b_diff, ...
                   'options', options, 'solver', 'fmincon' );
 
 tic
-[coeffOptimal, EOptimal, exitflag, output] = fmincon( problem );
+coeffOptimal = fmincon( problem );
+% [coeffOptimal, EOptimal, exitflag, output] = fmincon( problem );
 toc
 
-dPath = [d0; reshape(coeffOptimal(1:end-Nphi), [N*(Nt-2), dSpace]); d1];
-phiPath = linearPath(phi0, coeffOptimal(end-Nphi+1:end), splineData);
+psi = coeffOptimal(end-Nphi+1:end);
+dPath = [d0; reshape(coeffOptimal(1:end-Nphi), [N*(Nt-2), dSpace])];
+dPath = [ dPath; composeCurveDiff(d1, psi, splineData, quadData) ];
 
 end
 
