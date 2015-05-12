@@ -1,7 +1,7 @@
 function [C,vel,grad_norm]=karcherMeanAmpl(d,splineData,quadData,quadDataTensor)
 % Compute the Karcher mean of the curves d1,...dn
 % Call function as
-% Karcher_ampl(d1,...,dn,splineData,quadData,quadDataTensor)
+% Karcher_ampl(d,splineData,quadData,quadDataTensor)
 % Input:
 %       d, cell array of curves
 %       ( d{i}, [NxdSpace], first set of control points)
@@ -41,7 +41,7 @@ while (stop == 0 && iter < max_iter);
     iter = iter + 1;
     %% Calculate the geodesics from C to all curves
     for i=1:n;
-        [~, dPath] = geodesicBvpAmpl(C,d{i},splineData,quadData,quadDataTensor,1);
+        [~, dPath] = geodesicBvpAmpl(C,d{i},splineData,quadData,quadDataTensor,'datfileexists',true);
         vel_i = pathVelocity(dPath,0,splineData );
         vel_mean = vel_mean + 1/n*vel_i;
     end

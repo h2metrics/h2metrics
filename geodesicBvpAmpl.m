@@ -16,7 +16,21 @@ function [E_geo, dPath] = geodesicBvpAmpl(d0,d1,splineData,quadData,quadDataTens
 %       E_geo, optimal energy
 %       dPath, optimal path
 %
+runfile='H2.run';
+datfile1='H2.dat';
+datfile2='H2_tensor.dat';
+tabfile='H2.tab'; % no special characters allowed in this file name
+tabledef={...
+      'd[t,p,1]', 'dx';
+      'd[t,p,2]', 'dy';
+              };
+amploptions={...
+      'option ipopt_options "max_iter=11"'
+                };
 datfileexists = 0;
+mintrans = 0;
+minscale = 0;
+minrot = 0;
 ii = 1;
 while ii <= length(varargin)
     if (isa(varargin{ii},'char'))
@@ -28,33 +42,52 @@ while ii <= length(varargin)
                 else
                     error('Invalid value for option ''datfileexists''.');
                 end
+            case 'mintrans'
+                ii = ii +1;
+                if isnumeric(varargin{ii}) || islogical(varargin{ii})
+                    mintrans = logical(varargin{ii});
+                else
+                    error('Invalid value for option ''mintrans''.');
+                end
+            case 'minscale'
+                ii = ii +1;
+                if isnumeric(varargin{ii}) || islogical(varargin{ii})
+                    minscale = logical(varargin{ii});
+                else
+                    error('Invalid value for option ''minscale''.');
+                end
+            case 'minrot'
+                ii = ii +1;
+                if isnumeric(varargin{ii}) || islogical(varargin{ii})
+                    minrot = logical(varargin{ii});
+                else
+                    error('Invalid value for option ''minrot''.');
+                end
             otherwise
-                error('Invalid option: ''%s''.',varargin{ii});
+                error('Invalid option: ''%s''.',varargin{ii});    
         end
     end
     ii = ii + 1; 
 end
 
 
-runfile='H2.run';
-modfile='H2.mod';
-datfile1='H2.dat';
-datfile2='H2_tensor.dat';
-tabfile='H2.tab'; % no special characters allowed in this file name
-tabledef={...
-      'd[t,p,1]', 'dx';
-      'd[t,p,2]', 'dy';
-              };
-amploptions={...
-      'option ipopt_options "max_iter=1000"'
-                };
 
+
+if minscale == 1;
+    modfile = 'H2Scale.mod';
+    disp(['modfile H2scale.mod']);
+elseif minrot == 1;
+    modfile = 'H2_rot.mod';
+else 
+    modfile = 'H2.mod';
+end    
+            
+            
 %% Write datfile1
 disp(['geodesicBvpAmpl.m, calling writeDatFile1.m, datfile = ' datfile1]);
 tic
-writeDatFile1(d0,d1,splineData,quadData,datfile1);
+writeDatFile1(d0,d1,splineData,quadData,mintrans,datfile1);
 toc
-
 
 %% Write datfile2
 if datfileexists == 1;
@@ -66,7 +99,6 @@ else
     toc
 end
 %% Write .run file
-
 disp(['geodesicBvpAmpl.m, calling writeRunFile.m, runfile = ' runfile]);
 tic
 writeRunFile(runfile, modfile, datfile1,datfile2, tabfile, tabledef, amploptions);
