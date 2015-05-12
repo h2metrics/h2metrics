@@ -121,12 +121,17 @@ end
 % quadData.noControlPoints = [N,Nt];
 %plotData.points = {linspace(0,1,100), linspace(0,1,50) };
 
+%% Compute outer products for tensor spline
+if nargout < 2
+    return
+end
 
-if nargout > 1 %Compute outer products for tensor spline
-    quadDataTensor = struct('B',[],'Bu',[],'Buu',[],'Bt',[],'But',[],...
-        'Buut',[],'quadWeights',[],...
-        'B_phi',[],'Bu_phi',[],'Bt_phi',[],'Buu_phi',[],'But_phi',[],...
-        'Buut_phi',[],'Buuu_phi',[]) ;
+quadDataTensor = struct('B',[],'Bu',[],'Buu',[],'Bt',[],'But',[],...
+    'Buut',[],'quadWeights',[],...
+    'B_phi',[],'Bu_phi',[],'Bt_phi',[],'Buu_phi',[],'But_phi',[],...
+    'Buut_phi',[],'Buuu_phi',[]) ;
+
+if doS && doT
     quadDataTensor.quadWeights = reshape(quadWeightsS'*quadWeightsT,[],1);
     for ii = N:-1:1
         for jj = Nt:-1:1;
@@ -147,8 +152,10 @@ if nargout > 1 %Compute outer products for tensor spline
                 noQuadPointsS*noQuadPointsT ,1)' ;
         end
     end
-    
-    %phiPath
+end
+
+%phiPath
+if doPhi && doT
     for ii = Nphi:-1:1
         for jj = Nt:-1:1;
             
@@ -168,8 +175,7 @@ if nargout > 1 %Compute outer products for tensor spline
                 noQuadPointsS*noQuadPointsT ,1)' ;
         end
     end
-    
 end
-
+    
 end
 
