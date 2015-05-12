@@ -9,6 +9,7 @@ splineData.nT = 2; %time degree
 splineData.nPhi = 3; %diffemorphism degree
 splineData.quadDegree = [8,4]; %Quadrature precission
 splineData.dSpace = 2;
+splineData.a = [1 0 1];
 
 %% constructKnots
 splineData = constructKnots(splineData);
@@ -18,17 +19,24 @@ tic
 [quadData, quadDataTensor] = setupQuadData(splineData);
 toc
 %% constructSplineApproximation
-f0 = @(t) [cos(t),sin(t)];
+f0 = @(t) [2*cos(t),sin(t)];
 %f1 = @(t) 1/100*[150*cos(-t - 3*pi/4), 150*sin(-t - 3*pi/4)] ;
-f1 = @(t) [cos(t)+5,sin(t)+5];
+f1 = @(t) [cos(t),2*sin(t)+3];
 f2 = @(t) [cos(t)+3,sin(t)-2];
 
 d0 = constructSplineApproximation(f0,splineData);
 d1 = constructSplineApproximation(f1,splineData);
 d2 = constructSplineApproximation(f2,splineData);
+x= pi/4;
+A = [cos(x) sin(x);-sin(x) cos(x)];
+d3 = d0;
+for i=1:20
+     d3(i,:) = (A*d0(i,:)')';
+end
+
 
 %% geodesicBVP
-[E_geo, dPath_optimal] = geodesicBvpAmpl(d0,d1,splineData,quadData,quadDataTensor,'datfileexists',false);
+%[E_geo, dPath_optimal] = geodesicBvpAmpl(d0,d3,splineData,quadData,quadDataTensor,'datfileexists',true,'minrot',true);
 
 %% Plot Path
 %plotPath(dPath_optimal,splineData,8);
@@ -43,6 +51,21 @@ d2 = constructSplineApproximation(f2,splineData);
 %q = geodesicForward(d0,d0,Nsteps,splineData,quadData);
 
 
-%% Karcher
-%d_array = {d0,d1,d2};
-%[d_karcher,vel,grad_norm] = karcherMeanAmpl(d_array,splineData,quadData,quadDataTensor);
+%% Plotcurve
+%d_array = {d0,d1};
+% %[d_karcher,vel,grad_norm] = karcherMeanAmpl(d_array,splineData,quadData,quadDataTensor);
+% plotCurve(d0,splineData);
+% x = pi/2;
+% A = [cos(x) -sin(x);sin(x) cos(x)];
+% d3=d0;,
+% for i=1:20
+%     d3(i,:) = (A*d0(i,:)')'  
+% end
+% plotCurve(d3,splineData);
+
+
+d_array = {d0,d1};
+Dist = computeDistanceMatrix(d_array,splineData,quadData,quadDataTensor)
+
+
+
