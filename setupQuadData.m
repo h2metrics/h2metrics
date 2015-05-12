@@ -1,4 +1,4 @@
-function [quadData, quadDataTensor] = setupQuadData( splineData)
+function [quadData, quadDataTensor] = setupQuadData( splineData )
 %TODO: Summary
 %For optimization
 % Input: spData
@@ -14,67 +14,97 @@ quadData = struct('quadPointsS',[],'quadPointsT',[],...
     'B_phi',[],'Bu_phi',[],'Buu_phi',[],'Buuu_phi',[],...
     'B_interpolS',[], 'B_interpolPhi',[]);
 
-nS = splineData.nS;
-nT = splineData.nT;
-nPhi = splineData.nPhi;
-N = splineData.N;
-Nt = splineData.Nt;
-Nphi = splineData.Nphi;
 quadDegree = splineData.quadDegree;
 
-%TODO: replace with spData
-knotsS = splineData.knotsS;
-knotsT = splineData.knotsT;
-knotsPhi = splineData.knotsPhi;
-innerKnotsS = splineData.innerKnotsS;
-innerKnotsT = splineData.innerKnotsT;
+doS = ~isempty(splineData.nS) && ~isempty(splineData.N);
+doT = ~isempty(splineData.nT) && ~isempty(splineData.Nt);
+doPhi = ~isempty(splineData.nPhi) && ~isempty(splineData.Nphi);
+doInterpolS = doS && ~isempty(splineData.interpolS);
+doInterpolPhi = doPhi && ~isempty(splineData.interpolS);
 
-[quadPointsS, quadWeightsS] = gaussianQuadratureData( unique(innerKnotsS), 'degree', quadDegree(1));
-[quadPointsT, quadWeightsT] = gaussianQuadratureData( unique(innerKnotsT), 'degree', quadDegree(2));
-noQuadPointsS = length(quadPointsS);
-noQuadPointsT = length(quadPointsT);
+if doS
+    N = splineData.N;
+    nS = splineData.nS;
+    knotsS = splineData.knotsS;
+    innerKnotsS = splineData.innerKnotsS;
+    
+    [quadPointsS, quadWeightsS] = gaussianQuadratureData( ...
+        unique(innerKnotsS), 'degree', quadDegree(1) );
+    noQuadPointsS = length(quadPointsS);
+    
+    quadData.quadPointsS = quadPointsS';
+    quadData.noQuadPointsS = noQuadPointsS;
+    quadData.quadWeightsS = quadWeightsS';
+    
+    noSder = 3;
+    
+    B_S_quad = spcol( knotsS, nS+1, ...
+                      brk2knt( quadPointsS, noSder+1 ),'sparse');
+    B_S_quad_per = [ B_S_quad(:,1:nS) + B_S_quad(:,end-nS+1:end), ...
+                     B_S_quad(:,nS+1:end-nS) ];
+    
+    quadData.B_S = B_S_quad_per(1:4:end,:);
+    quadData.Bu_S = B_S_quad_per(2:4:end,:);
+    quadData.Buu_S = B_S_quad_per(3:4:end,:);
+    quadData.Buuu_S = B_S_quad_per(4:4:end,:);
+end
 
-quadData.quadPointsS = quadPointsS';
-quadData.quadPointsT = quadPointsT';
-quadData.noQuadPointsS = noQuadPointsS;
-quadData.noQuadPointsT = noQuadPointsT;
-quadData.quadWeightsS = quadWeightsS';
-quadData.quadWeightsT = quadWeightsT';
+if doT
+    nT = splineData.nT;
+    Nt = splineData.Nt;
+    knotsT = splineData.knotsT;
+    innerKnotsT = splineData.innerKnotsT;
 
-%0,1,2 second order derivatives in space, 0-1 in time
-noSder = 3;
-noPhider = 3;
-noTder = 1;
-B_S_quad = spcol( knotsS, nS+1, brk2knt( quadPointsS, noSder+1 ),'sparse');
-B_Phi_quad = spcol( knotsPhi, nPhi+1, brk2knt( quadPointsS, noPhider+1 ),'sparse');
-B_T_quad = spcol( knotsT, nT+1, brk2knt( quadPointsT, noTder+1 ),'sparse');
-%Periodic B-splines
-B_S_quad_per = [B_S_quad(:,1:nS) + B_S_quad(:,end-nS+1:end), B_S_quad(:,nS+1:end-nS)];
-B_Phi_quad_per = [B_Phi_quad(:,1:nPhi) + B_Phi_quad(:,end-nPhi+1:end), B_Phi_quad(:,nPhi+1:end-nPhi)];
+    [quadPointsT, quadWeightsT] = gaussianQuadratureData( ...
+        unique(innerKnotsT), 'degree', quadDegree(2) );
 
-quadData.B_S = B_S_quad_per(1:4:end,:);
-quadData.Bu_S = B_S_quad_per(2:4:end,:);
-quadData.Buu_S = B_S_quad_per(3:4:end,:);
-quadData.Buuu_S = B_S_quad_per(4:4:end,:);
+    noQuadPointsT = length(quadPointsT);
+    quadData.quadPointsT = quadPointsT';
+    quadData.noQuadPointsT = noQuadPointsT;
+    quadData.quadWeightsT = quadWeightsT';
 
-quadData.B_T = B_T_quad(1:2:end,:);
-quadData.Bt_T = B_T_quad(2:2:end,:);
+    noTder = 1;
+    B_T_quad = spcol( knotsT, nT+1, ...
+                      brk2knt( quadPointsT, noTder+1 ), 'sparse');              
+    quadData.B_T = B_T_quad(1:2:end,:);
+    quadData.Bt_T = B_T_quad(2:2:end,:);
+end
 
-quadData.B_phi = B_Phi_quad_per(1:4:end,:);
-quadData.Bu_phi = B_Phi_quad_per(2:4:end,:);
-quadData.Buu_phi = B_Phi_quad_per(3:4:end,:);
-quadData.Buuu_phi = B_Phi_quad_per(4:4:end,:);
+if doPhi
+    nPhi = splineData.nPhi;
+    Nphi = splineData.Nphi;
+    knotsPhi = splineData.knotsPhi;
 
-interpolS = splineData.interpolS;
-B_interpolS = spcol( knotsS, nS+1, brk2knt(interpolS, 1), 'sparse');
-B_interpolS = [ B_interpolS(:,1:nS) + B_interpolS(:,end-nS+1:end), ...
-                 B_interpolS(:,nS+1:end-nS) ];
-quadData.B_interpolS = B_interpolS;
+    noPhider = 3;
+    B_Phi_quad = spcol( knotsPhi, nPhi+1, ...
+                        brk2knt( quadPointsS, noPhider+1 ), 'sparse');
+    B_Phi_quad_per = [ B_Phi_quad(:,1:nPhi) ...
+                        + B_Phi_quad(:,end-nPhi+1:end), ...
+                       B_Phi_quad(:,nPhi+1:end-nPhi) ];
 
-B_interpolPhi = spcol( knotsPhi, nPhi+1, brk2knt(interpolS, 1), 'sparse');
-B_interpolPhi = [ B_interpolPhi(:,1:nPhi) + B_interpolPhi(:,end-nPhi+1:end), ...
-                  B_interpolPhi(:,nPhi+1:end-nPhi) ];
-quadData.B_interpolPhi = B_interpolPhi;
+    quadData.B_phi = B_Phi_quad_per(1:4:end,:);
+    quadData.Bu_phi = B_Phi_quad_per(2:4:end,:);
+    quadData.Buu_phi = B_Phi_quad_per(3:4:end,:);
+    quadData.Buuu_phi = B_Phi_quad_per(4:4:end,:);
+end
+
+if doInterpolS
+
+    interpolS = splineData.interpolS;
+    B_interpolS = spcol( knotsS, nS+1, brk2knt(interpolS, 1), 'sparse');
+    B_interpolS = [ B_interpolS(:,1:nS) + B_interpolS(:,end-nS+1:end), ...
+                    B_interpolS(:,nS+1:end-nS) ];
+    quadData.B_interpolS = B_interpolS;
+end
+
+if doInterpolPhi
+    B_interpolPhi = spcol( knotsPhi, nPhi+1, ...
+                           brk2knt(interpolS, 1), 'sparse');
+    B_interpolPhi = [ B_interpolPhi(:,1:nPhi) ...
+                        + B_interpolPhi(:,end-nPhi+1:end), ...
+                      B_interpolPhi(:,nPhi+1:end-nPhi) ];
+    quadData.B_interpolPhi = B_interpolPhi;
+end
 
 %quadData = quadraturePointsAndWeights(annulusRefined, 'degree', [10,6]);
 % plotData = struct('points',[],'B',[],'Bu',[],'Bt',[],'Buu',[],...
