@@ -19,6 +19,7 @@ function [C,vel,grad_norm]=karcherMeanAmpl(d,splineData,quadData,quadDataTensor)
 Nsteps=50;
 n = length(d);
 sz = size( d{1} );
+noCurves = length(d);
 vel_mean = zeros(sz);
 stop=0;
 
@@ -33,7 +34,7 @@ writeDatFile2(splineData,quadData,quadDataTensor,datfile2);
 toc
 j=3;
 
-grad_stop = 1e-2;
+grad_stop = 1e-1;
 
 iter = 0;
 max_iter = 20;
@@ -41,12 +42,13 @@ while (stop == 0 && iter < max_iter);
     iter = iter + 1;
     %% Calculate the geodesics from C to all curves
     for i=1:n;
+        disp(['Iter: ',num2str(iter),' Curve: ',num2str(i)]);
         [~, dPath] = geodesicBvpAmpl(C,d{i},splineData,quadData,quadDataTensor,'datfileexists',true);
         vel_i = pathVelocity(dPath,0,splineData );
         vel_mean = vel_mean + 1/n*vel_i;
     end
     norm_vel = norm(vel_mean,2);
-    disp(['Iter: ',num2str(iter)]);
+    disp(['Iter: ',num2str(iter),' Calling geodesicForward']);
     disp(['||grad f|| is ',num2str(norm_vel)]);
     
     if norm_vel < grad_stop;
