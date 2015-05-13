@@ -2,6 +2,7 @@ function dAligned = rigidAlignment(dList, splineData, quadData, varargin)
 
 useComp = false;
 maxIter = [];
+display = 'iter';
 
 ii = 1;
 while ii <= length(varargin)
@@ -21,6 +22,9 @@ while ii <= length(varargin)
                 else
                     error('Invalid value for option ''maxIter''.');
                 end
+            case 'display'
+                ii = ii + 1;
+                display = varargin{ii};
             otherwise
                 error('Invalid option: ''%s''.',varargin{ii});
         end
@@ -40,7 +44,7 @@ end
 
 %% Optimization settings
 options = optimoptions('fminunc');
-options = optimoptions(options,'Display', 'iter');
+options = optimoptions(options,'Display', display);
 options = optimoptions(options,'DerivativeCheck', 'off');
 % options = optimoptions(options,'PlotFcns', @optimplotfval);
 options = optimoptions(options,'GradObj', 'off');
