@@ -30,8 +30,12 @@ toc
 for i=1:(n-1);
     for j=(i+1):n;
      disp(['Curve: ',num2str(i),' to Curve: ',num2str(j)]);
-     [~, dPath] = geodesicBvpAmpl(d{i},d{j},splineData,quadData,quadDataTensor,'datfileexists',true);
-     Dist(i,j) = pathRiemH2Length(dPath,splineData,quadData,quadDataTensor);
+     [~, dPath,status] = geodesicBvpAmpl(d{i},d{j},splineData,quadData,quadDataTensor,'datfileexists',true);
+     if status==0
+        Dist(i,j) = pathRiemH2Length(dPath,splineData,quadData,quadDataTensor);
+     else
+        Dist(i,j)=NaN;
+     end
      Dist(j,i) = Dist(i,j);
     end
 end 

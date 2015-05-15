@@ -1,4 +1,4 @@
-function [E_geo,dPath] = geodesicBvpAmpl(d0,d1,splineData,quadData,quadDataTensor,varargin)
+function [E_geo,dPath,varargout] = geodesicBvpAmpl(d0,d1,splineData,quadData,quadDataTensor,varargin)
 % Compute the minimal geodesic connecting the splines given by d0 and d1 using AMPL to solve the minimization problem.%
 %
 % Input: 
@@ -15,7 +15,8 @@ function [E_geo,dPath] = geodesicBvpAmpl(d0,d1,splineData,quadData,quadDataTenso
 % Output:
 %       E_geo, optimal energy
 %       dPath, optimal path
-%
+%       varargout, exit code from AMPL
+
 runfile='H2.run';
 datfile1='H2.dat';
 datfile2='H2_tensor.dat';
@@ -112,9 +113,20 @@ tic
 [status, cmdout] = system(['ampl ' runfile],'-echo');
 toc
 
-if status ~= 0 
-  error('error executing AMPL');
-  return;
+if status ~= 0
+    warning('geodesicBvpAmpl: Error executing AMPL');
+else
+    if ~isempty(strfind(cmdout,'Maximum Number of Iterations Exceeded'))
+        warning('geodesicBvpAmpl: Maximum Number of Iterations Exceeded');
+        status = 1;
+    else if isempty(strfind(cmdout,'Optimal Solution Found'))
+        status = 1;
+        warning('geodesicBvpAmpl: Unknown exit code from AMPL');
+    end
+end
+
+if nargout>2 
+    varargout{1} = status;
 end
 
 %% Read .tab file, extract spline data
