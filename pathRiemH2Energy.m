@@ -85,5 +85,5 @@ H2 = sum(Ct_H2 .* quadDataTensor.quadWeights);
 G = a(1) * L2 + a(2) * H1 + a(3) * H2;
 
 if nargout > 1
-    comp = [L2, H1, H2];
+    comp = [a(1)*L2, a(2)*H1, a(3)*H2];
 end

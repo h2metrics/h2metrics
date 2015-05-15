@@ -5,8 +5,8 @@
 % Input
 %   dPath
 %       Path of curves; matrix of dimension [N*Nt, dSpace]
-%   phi0, phi1
-%       Reparametrizations of the initial and final curve
+%   phi
+%       Reparametrization of the final curve
 %   splineData
 %       General information about the splines used.
 %   quadData, quadDataTensor
@@ -16,38 +16,67 @@
 %   E
 %       Energy of the path.
 %
-function E = energyH2Diff( dPath, phi1, ...
+function E = energyH2Diff( dPath, phi, v, beta, ...
     splineData, quadData, quadDataTensor, varargin)
 
-% %% Optional parameters
-% ii = 1;
-% while ii <= length(varargin)
-%     if (isa(varargin{ii},'char'))
-%         switch (lower(varargin{ii}))
-%             case 'usedeboor'
-%                 ii = ii + 1;
-%                 if isnumeric(varargin{ii}) || islogical(varargin{ii})
-%                     useDeBoor = logical(varargin{ii});
-%                 else
-%                     error('Invalid value for option ''useDeBoor''.');
-%                 end
-%             otherwise
-%                 error('Invalid option: ''%s''.',varargin{ii});
-%         end
-%     ii = ii + 1; 
-%     end
-% end
+optDiff = true;
+optTra = true;
+optRot = true;
+
+%% Optional parameters
+ii = 1;
+while ii <= length(varargin)
+    if (isa(varargin{ii},'char'))
+        switch (lower(varargin{ii}))
+            case 'optdiff'
+                ii = ii + 1;
+                if isnumeric(varargin{ii}) || islogical(varargin{ii})
+                    optDiff = logical(varargin{ii});
+                else
+                    error('Invalid value for option ''optDiff''.');
+                end
+            case 'opttra'
+                ii = ii + 1;
+                if isnumeric(varargin{ii}) || islogical(varargin{ii})
+                    optTra = logical(varargin{ii});
+                else
+                    error('Invalid value for option ''optTra''.');
+                end
+            case 'optrot'
+                ii = ii + 1;
+                if isnumeric(varargin{ii}) || islogical(varargin{ii})
+                    optRot = logical(varargin{ii});
+                else
+                    error('Invalid value for option ''optRot''.');
+                end
+            otherwise
+                error('Invalid option: ''%s''.',varargin{ii});
+        end
+    ii = ii + 1; 
+    end
+end
 
 %% Extract parameters
 dSpace = splineData.dSpace;
 N = splineData.N;
 
-%% Apply diffeomorphis
-% d0 = dPath(1:N,:);
+%% Apply diffeomorphism, translation and rotation
 d1 = dPath(end-N+1:end,:);
 
+if optDiff
+    d1 = composeCurveDiff(d1, phi, splineData, quadData);
+end
+if optTra
+    d1 = d1 + ones([N, 1]) * v';
+end
+if optRot
+    rotation = [ cos(beta), -sin(beta); ...
+                 sin(beta),  cos(beta) ];
+    d1 = d1 * rotation;
+end
+
 dPath2 = dPath;
-dPath2(end-N+1:end,:) = composeCurveDiff(d1, phi1, splineData, quadData);
+dPath2(end-N+1:end,:) = d1;
 
 %% Evaluate path at quadrature sites
 Cu = quadDataTensor.Bu * dPath2;

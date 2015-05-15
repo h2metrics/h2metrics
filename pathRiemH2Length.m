@@ -100,5 +100,5 @@ dist_H2 = sum(Ct_H2_T' .* quadData.quadWeightsT);
 G = sum(dist_T' .* quadData.quadWeightsT);
 
 if nargout > 1
-    comp = [dist_L2, dist_H1, dist_H2];
+    comp = [sqrt(a(1))*dist_L2, sqrt(a(2))*dist_H1, sqrt(a(3))*dist_H2];
 end
