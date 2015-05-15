@@ -16,10 +16,13 @@ quadData = struct('quadPointsS',[],'quadPointsT',[],...
 
 quadDegree = splineData.quadDegree;
 
-doS = ~isempty(splineData.nS) && ~isempty(splineData.N);
-doT = ~isempty(splineData.nT) && ~isempty(splineData.Nt);
+doS = ~isempty(splineData.nS) && ~isempty(splineData.N) && ...
+    ~isempty(splineData.quadDegree);
+doT = ~isempty(splineData.nT) && ~isempty(splineData.Nt) && ...
+    ~isempty(splineData.quadDegree);
 doPhi = ~isempty(splineData.nPhi) && ~isempty(splineData.Nphi);
-doInterpolS = doS && ~isempty(splineData.interpolS);
+doInterpolS = ~isempty(splineData.nS) && ~isempty(splineData.N) && ...
+    ~isempty(splineData.interpolS);
 doInterpolPhi = doPhi && ~isempty(splineData.interpolS);
 
 if doS
@@ -89,7 +92,10 @@ if doPhi
 end
 
 if doInterpolS
-
+    N = splineData.N;
+    nS = splineData.nS;
+    knotsS = splineData.knotsS;
+    
     interpolS = splineData.interpolS;
     B_interpolS = spcol( knotsS, nS+1, brk2knt(interpolS, 1), 'sparse');
     B_interpolS = [ B_interpolS(:,1:nS) + B_interpolS(:,end-nS+1:end), ...
