@@ -1,6 +1,6 @@
 % Load curves
 load('xavier_splines_v1_N30','dPatients');
-splineData = constructEmptySplinedata;
+splineData = constructEmptySplineData;
 splineData.N = 30; %no. control points, must be bigger than n+1
 splineData.Nt = 10 + 2; %Number of time control points
 splineData.Nphi = 6; %No. control points for diffeomorphisms
