@@ -1,4 +1,4 @@
-function [E_geo, dPath] = geodesicBvpAmpl(d0,d1,splineData,quadData,quadDataTensor,varargin)
+function [E_geo,dPath] = geodesicBvpAmpl(d0,d1,splineData,quadData,quadDataTensor,varargin)
 % Compute the minimal geodesic connecting the splines given by d0 and d1 using AMPL to solve the minimization problem.%
 %
 % Input: 
@@ -25,7 +25,7 @@ tabledef={...
       'd[t,p,2]', 'dy';
               };
 amploptions={...
-      'option ipopt_options "print_level=2 max_iter=100"'};  
+      'option ipopt_options "print_level=2 max_iter=200"'};  
 datfileexists = 0;
 mintrans = 0;
 minscale = 0;
@@ -104,9 +104,9 @@ writeRunFile(runfile, modfile, datfile1,datfile2, tabfile, tabledef, amploptions
 toc
 
 disp('geodesicBvpAmpl.m, calling AMPL');
-setenv('LD_LIBRARY_PATH','/users/bauerm/work/15_metrics_horeqnor/numerics/Ipopt/build/lib')
-setenv('LD_RUN_PATH', '/users/bauerm/work/15_metrics_horeqnor/numerics/Ipopt/build/lib')
-setenv('PATH', [getenv('PATH') ':/users/herman/COCONUT/bin:/users/bauerm/work/15_metrics_horeqnor/numerics/Ipopt/build/bin'])
+%setenv('LD_LIBRARY_PATH','/users/bauerm/work/15_metrics_horeqnor/numerics/Ipopt/build/lib')
+%setenv('LD_RUN_PATH', '/users/bauerm/work/15_metrics_horeqnor/numerics/Ipopt/build/lib')
+%setenv('PATH', [getenv('PATH') ':/users/herman/COCONUT/bin:/users/bauerm/work/15_metrics_horeqnor/numerics/Ipopt/build/bin'])
 
 tic  
 [status, cmdout] = system(['ampl ' runfile],'-echo');
@@ -124,6 +124,7 @@ tic
 [data, variables] = readTabFile(tabfile);
 toc
 dPath=[squeeze(data(1,:))' squeeze(data(2,:))']; 
-E_geo = energyH2(dPath,splineData,quadDataTensor)
+E_geo = pathRiemH2Energy( dPath, splineData,quadData, quadDataTensor);
+%L_geo = pathRiemH2Length( dPath, splineData,quadData, quadDataTensor)
 end
 

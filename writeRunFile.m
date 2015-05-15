@@ -20,7 +20,10 @@ for i=2:length(tabledef)
   fprintf(fileid,'  %s ~ %s',tabledef{i,1},tabledef{i,2});
 end
 fprintf(fileid,'\n;\nsolve;\nwrite table %s;\n\n',tabfilename); 
-fprintf(fileid,'display(energy);\n\n');
-
+%fprintf(fileid,'display(energy);\n\n');
+%fprintf(fileid,'display(Trans[1]);\n\n');
+%fprintf(fileid,'display(Trans[2]);\n\n');
+%fprintf(fileid,'display(Scale);\n\n');
+%fprintf(fileid,'display(RotAng);\n\n');
 fclose(fileid);
 end 

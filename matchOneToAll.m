@@ -1,8 +1,9 @@
-function Dist=computeDistanceMatrix(d,splineData,quadData,quadDataTensor,varargin)
-% Compute the Karcher mean of the curves d1,...dn
+function Dist = matchOneToAll(d0,d,splineData,quadData,quadDataTensor)
+% Matches one curve to all curves d1,...dn
 % Call function as
 % Karcher_ampl(d,splineData,quadData,quadDataTensor)
 % Input:
+%       d0, curve
 %       d, cell array of curves
 %       ( d{i}, [NxdSpace], first set of control points)
 %       splineData,
@@ -11,13 +12,12 @@ function Dist=computeDistanceMatrix(d,splineData,quadData,quadDataTensor,varargi
 %
 %       
 % Output:
-%       MAtrix of pairwise distances
-%
+%       distanceVector
 
 %Read out number of curves splineData and quadData
 n = length(d);
-Dist = zeros(n);
-
+Dist = zeros(n,1);
+%Initial guess for Karcher mean
 
 %% Write datfile2 that is valid for the whole minimization
 datfile2='H2_tensor.dat';
@@ -26,14 +26,10 @@ tic
 writeDatFile2(splineData,quadData,quadDataTensor,datfile2);
 toc
 
-
-for i=1:(n-1);
-    for j=(i+1):n;
-     disp(['Curve: ',num2str(i),' to Curve: ',num2str(j)]);
-     [~, dPath] = geodesicBvpAmpl(d{i},d{j},splineData,quadData,quadDataTensor,'datfileexists',true);
-     Dist(i,j) = pathRiemH2Length(dPath,splineData,quadData,quadDataTensor);
-     Dist(j,i) = Dist(i,j);
-    end
-end 
+for i=1:n;
+        disp([' Curve: ',num2str(i)]);
+        [Egeo, ~] = geodesicBvpAmpl(d0,d{i},splineData,quadData,quadDataTensor,'datfileexists',true);
+        Dist(i,1) = Egeo;
+end  
 end
 
