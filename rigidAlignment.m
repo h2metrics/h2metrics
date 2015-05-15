@@ -93,7 +93,7 @@ if useComp
 
     for jj = 2:noCurves
         phi = ones([splineData2.Nphi, 1]) * alpha(jj);
-        dAligned{jj} = composeCurveDiff( dAligned{jj}, phi, ...
+        dAligned{jj} = curveComposeDiff( dAligned{jj}, phi, ...
                                          splineData2, quadData2);
     end
 else

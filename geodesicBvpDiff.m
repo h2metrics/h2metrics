@@ -176,7 +176,7 @@ optGa = struct( 'phi', [], 'beta', [], 'v', [] );
 dEnd = d1;
 if optDiff
     optGa.phi = coeffOptimal(end-Nphi-dSpace-1+1:end-dSpace-1);
-    dEnd = composeCurveDiff(dEnd, optGa.phi, splineData, quadData);
+    dEnd = curveComposeDiff(dEnd, optGa.phi, splineData, quadData);
 end
 if optTra
     optGa.v = coeffOptimal(end-dSpace-1+1:end-1);

@@ -64,7 +64,7 @@ N = splineData.N;
 d1 = dPath(end-N+1:end,:);
 
 if optDiff
-    d1 = composeCurveDiff(d1, phi, splineData, quadData);
+    d1 = curveComposeDiff(d1, phi, splineData, quadData);
 end
 if optTra
     d1 = d1 + ones([N, 1]) * v';

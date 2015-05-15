@@ -23,7 +23,7 @@ end
 
 c = d;
 if applyDiff && ~isempty(gamma.phi)
-    c = composeCurveDiff(c, gamma.phi, splineData, quadData);
+    c = curveComposeDiff(c, gamma.phi, splineData, quadData);
 end
 if ~isempty(gamma.v)
     c = c + ones([splineData.N, 1]) * gamma.v';
