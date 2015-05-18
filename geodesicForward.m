@@ -12,6 +12,9 @@ function q = geodesicForward(q0,q1,Nsteps,splineData,quadData,varargin)
 %
 
 %TODO: Avoid using "full" command on B.
+a0 = splineData.a(1); %L2
+a1 = splineData.a(2); %H1
+a2 = splineData.a(3); %H2
 
 %Some code for handling optional inputs
 ii = 1;
@@ -51,12 +54,13 @@ options_fsolve = optimset('TolFun',1e-6,'Display','off');
 %options_fsolve = optimoptions(options_fsolve,'MaxFunEvals',10000);
 
 for ii = 3:Nsteps
-        
+
             if ~mod(ii/Nsteps*100,10)
                 disp(['i=',num2str(ii)]);
             end
         
         q_init = 2*geodesicPoints(:,:,ii-1) - geodesicPoints(:,:,ii-2);
+        
         if strcmp(rule,'left')
             F = @(q) LagragianLeftDer(q,geodesicPoints(:,:,ii-1),...
                 geodesicPoints(:,:,ii-2),quadData);
@@ -67,6 +71,18 @@ for ii = 3:Nsteps
             F = @(q) LagragianLeftDer(q,geodesicPoints(:,:,ii-1),...
                 geodesicPoints(:,:,ii-2),quadData);
         end
+        
+%         Fqinit = F(q_init);        
+%         disE = @(q)discreteH2Energy( {geodesicPoints(:,:,ii-2),q,q_init},splineData,quadData );        
+%         %clear dE_fd dE_nrm;
+%         %dE_fd = zeros(14,1);
+%         dE_nrm = zeros(14,1);
+%         for ll = 1:14
+% %             dE_fd(:,:,ll) = centralDiffJac( disE,geodesicPoints(:,:,ii-1),2*10^(-ll));
+%             dE_nrm(ll) = norm( Fqinit - centralDiffJac( disE,geodesicPoints(:,:,ii-1),2*10^(-ll)));
+%         end
+%         semilogy( dE_nrm )
+%         
         [geodesicPoints(:,:,ii),fval,exitFlags(ii)] = fsolve( F, q_init, options_fsolve);
 end
 
@@ -100,11 +116,20 @@ Buu = full(quadData.Buu_S);
 C0u = Bu*d0;
 C0uu = Buu*d0;
 C0speed = sum( C0u.^2 , 2).^(1/2);
+C0speedInv = 1./C0speed;
+C0speedInv2 = 1./C0speed.^2;
+C0speedInv4 = C0speedInv.^4;
+%C0speedInv6 = C0speedInv.^6;
 C0uC0uu = sum(C0u.*C0uu,2);
 
 C1u = Bu*d1;
 C1uu = Buu*d1;
 C1speed = sum( C1u.^2 , 2).^(1/2);
+C1speedInv = 1./C1speed;
+C1speedInv2 = 1./C1speed.^2;
+C1speedInv3 = 1./C1speed.^3;
+C1speedInv4 = 1./C1speed.^4;
+C1speedInv6 = C1speedInv.^6;
 C1uC1uu = sum(C1u.*C1uu,2);
 
 V1 = B*d_v1;
@@ -118,12 +143,18 @@ V2uu = Buu*d_v2;
 %L2 Energy terms
 L2V2 = sum( V2.^2,2);
 
+%H1 terms, D_S V = 1/|c'|*V'
+H1V2 = C1speedInv.^2.*sum(V2u.^2,2);
+
+V2_C1Ds_X = C1speedInv.*V2u(:,1);
+V2_C1Ds_Y = C1speedInv.*V2u(:,2);
+
 %H2 Energy terms
 %D_S^2 V = DS2_1*V' + DS2_2*V'', for each curve
-C0Ds2_1 = -( sum(C0u.*C0uu,2) )./C0speed.^4;
-C0Ds2_2 = 1./C0speed.^2;
-C1Ds2_1 = -( sum(C1u.*C1uu,2) )./C1speed.^4;
-C1Ds2_2 = 1./C1speed.^2;
+C0Ds2_1 = -( C0uC0uu ).*C0speedInv4;
+C0Ds2_2 = C0speedInv2;
+C1Ds2_1 = -( C1uC1uu ).*C1speedInv4;
+C1Ds2_2 = C1speedInv2;
 
 V1_C0Ds2_X = C0Ds2_1.*V1u(:,1) + C0Ds2_2.*V1uu(:,1);
 V1_C0Ds2_Y = C0Ds2_1.*V1u(:,2) + C0Ds2_2.*V1uu(:,2);
@@ -138,6 +169,9 @@ for jj = N:-1:1
     L2_V1h(:,jj,1) = V1(:,1).*B(:,jj);
     L2_V1h(:,jj,2) = V1(:,2).*B(:,jj);
     
+    H1_V1h(:,jj,1) = C0speedInv2.*V1u(:,1).*Bu(:,jj);
+    H1_V1h(:,jj,2) = C0speedInv2.*V1u(:,2).*Bu(:,jj);
+    
     h_C0DS2 = C0Ds2_1.*Bu(:,jj) + C0Ds2_2.*Buu(:,jj);
     H2_V1h(:,jj,1) = V1_C0Ds2_X.*h_C0DS2;
     H2_V1h(:,jj,2) = V1_C0Ds2_Y.*h_C0DS2;
@@ -146,39 +180,52 @@ for jj = N:-1:1
     L2_V2h(:,jj,1) = V2(:,1).*B(:,jj);
     L2_V2h(:,jj,2) = V2(:,2).*B(:,jj);
     
-    h_C1DS2 = C1Ds2_1.*Bu(:,jj) + C1Ds2_2.*Buu(:,jj);
-    H2_V2h(:,jj,1) = V2_C1Ds2_X.*h_C1DS2;
-    H2_V2h(:,jj,2) = V2_C1Ds2_Y.*h_C1DS2; 
+    H1_V2h(:,jj,1) = V2_C1Ds_X.*Bu(:,jj).*C1speedInv;
+    H1_V2h(:,jj,2) = V2_C1Ds_Y.*Bu(:,jj).*C1speedInv;
+    
+    h_C1Ds2 = C1Ds2_1.*Bu(:,jj) + C1Ds2_2.*Buu(:,jj);
+    H2_V2h(:,jj,1) = V2_C1Ds2_X.*h_C1Ds2;
+    H2_V2h(:,jj,2) = V2_C1Ds2_Y.*h_C1Ds2; 
     
     %%% D_(q1,h)G(v2,v2)
-    C1speed_Var(:,jj,1) = 1./C1speed.*C1u(:,1).*Bu(:,jj);
-    C1speed_Var(:,jj,2) = 1./C1speed.*C1u(:,2).*Bu(:,jj);
+    C1u1Bu = C1u(:,1).*Bu(:,jj);
+    C1u2Bu = C1u(:,2).*Bu(:,jj);
+
+    C1speed_Var(:,jj,1) = C1speedInv.*C1u1Bu;
+    C1speed_Var(:,jj,2) = C1speedInv.*C1u2Bu;
     
-    V2_C1Ds2_Var_X(:,jj,1) = 4./C1speed.^6.*C1u(:,1).*Bu(:,jj).*C1uC1uu.*V2u(:,1) - ...
-        1./C1speed.^4.*( (C1uu(:,1).*Bu(:,jj) + C1u(:,1).*Buu(:,jj)).*V2u(:,1) ...
-        + 2*C1u(:,1).*Bu(:,jj).*V2uu(:,1) );
-    V2_C1Ds2_Var_Y(:,jj,1) = 4./C1speed.^6.*C1u(:,1).*Bu(:,jj).*C1uC1uu.*V2u(:,2) - ...
-        1./C1speed.^4.*( (C1uu(:,1).*Bu(:,jj) + C1u(:,1).*Buu(:,jj)).*V2u(:,2) ...
-        + 2*C1u(:,1).*Bu(:,jj).*V2uu(:,2) );
+    V2_C1Ds_Var_X(:,jj,1) = - C1speedInv3.*C1u1Bu.*V2u(:,1);
+    V2_C1Ds_Var_Y(:,jj,1) = - C1speedInv3.*C1u1Bu.*V2u(:,2);
+    V2_C1Ds_Var_X(:,jj,2) = - C1speedInv3.*C1u2Bu.*V2u(:,1);
+    V2_C1Ds_Var_Y(:,jj,2) = - C1speedInv3.*C1u2Bu.*V2u(:,2);
     
-    V2_C1Ds2_Var_X(:,jj,2) = 4./C1speed.^6.*C1u(:,2).*Bu(:,jj).*C1uC1uu.*V2u(:,1) - ...
-        1./C1speed.^4.*( (C1uu(:,2).*Bu(:,jj) + C1u(:,2).*Buu(:,jj)).*V2u(:,1) ...
-        + 2*C1u(:,2).*Bu(:,jj).*V2uu(:,1) );
-    V2_C1Ds2_Var_Y(:,jj,2) = 4./C1speed.^6.*C1u(:,2).*Bu(:,jj).*C1uC1uu.*V2u(:,2) - ...
-        1./C1speed.^4.*( (C1uu(:,2).*Bu(:,jj) + C1u(:,2).*Buu(:,jj)).*V2u(:,2) ...
-        + 2*C1u(:,2).*Bu(:,jj).*V2uu(:,2) );
+    V2_C1Ds2_Var_X(:,jj,1) = 4.*C1speedInv6.*C1u1Bu.*C1uC1uu.*V2u(:,1) - ...
+        C1speedInv4.*( (C1uu(:,1).*Bu(:,jj) + C1u(:,1).*Buu(:,jj)).*V2u(:,1) ...
+        + 2*C1u1Bu.*V2uu(:,1) );
+    V2_C1Ds2_Var_Y(:,jj,1) = 4.*C1speedInv6.*C1u1Bu.*C1uC1uu.*V2u(:,2) - ...
+        C1speedInv4.*( (C1uu(:,1).*Bu(:,jj) + C1u(:,1).*Buu(:,jj)).*V2u(:,2) ...
+        + 2*C1u1Bu.*V2uu(:,2) );
+    
+    V2_C1Ds2_Var_X(:,jj,2) = 4.*C1speedInv6.*C1u2Bu.*C1uC1uu.*V2u(:,1) - ...
+        C1speedInv4.*( (C1uu(:,2).*Bu(:,jj) + C1u(:,2).*Buu(:,jj)).*V2u(:,1) ...
+        + 2*C1u2Bu.*V2uu(:,1) );
+    V2_C1Ds2_Var_Y(:,jj,2) = 4.*C1speedInv6.*C1u2Bu.*C1uC1uu.*V2u(:,2) - ...
+        C1speedInv4.*( (C1uu(:,2).*Bu(:,jj) + C1u(:,2).*Buu(:,jj)).*V2u(:,2) ...
+        + 2*C1u2Bu.*V2uu(:,2) );
     
     %%% Compute F(q2)
-    Eder(jj,1) = 2*sum( ( 2*C0speed.*(L2_V1h(:,jj,1) + H2_V1h(:,jj,1)) ...
-    - 2*C1speed.*(L2_V2h(:,jj,1) + H2_V2h(:,jj,1)) ...
-    + C1speed_Var(:,jj,1).*(L2V2 + H2V2) ...
-    + 2*C1speed.*( V2_C1Ds2_X.*V2_C1Ds2_Var_X(:,jj,1) + V2_C1Ds2_Y.*V2_C1Ds2_Var_Y(:,jj,1) ) ...
+    Eder(jj,1) = 2*sum( ( 2*C0speed.*(a0*L2_V1h(:,jj,1) + a1*H1_V1h(:,jj,1)+ a2*H2_V1h(:,jj,1)) ...
+    - 2*C1speed.*(a0*L2_V2h(:,jj,1) + a1*H1_V2h(:,jj,1) + a2*H2_V2h(:,jj,1)) ...
+    + C1speed_Var(:,jj,1).*(a0*L2V2 +a1*H1V2 + a2*H2V2) ...
+    + 2*C1speed.*( a1*(V2_C1Ds_X.*V2_C1Ds_Var_X(:,jj,1) + V2_C1Ds_Y.*V2_C1Ds_Var_Y(:,jj,1))+ ...
+    a2*(V2_C1Ds2_X.*V2_C1Ds2_Var_X(:,jj,1) + V2_C1Ds2_Y.*V2_C1Ds2_Var_Y(:,jj,1)) ) ...
     ).*quadData.quadWeightsS) ;
     
-    Eder(jj,2) = 2*sum( ( 2*C0speed.*(L2_V1h(:,jj,2) + H2_V1h(:,jj,2)) ...
-    - 2*C1speed.*(L2_V2h(:,jj,2) + H2_V2h(:,jj,2)) ...
-    + C1speed_Var(:,jj,2).*(L2V2 + H2V2) ...
-    + 2*C1speed.*( V2_C1Ds2_X.*V2_C1Ds2_Var_X(:,jj,2) + V2_C1Ds2_Y.*V2_C1Ds2_Var_Y(:,jj,2) ) ...
+    Eder(jj,2) = 2*sum( ( 2*C0speed.*(a0*L2_V1h(:,jj,2)+a1*H1_V1h(:,jj,2) + a2*H2_V1h(:,jj,2)) ...
+    - 2*C1speed.*(a0*L2_V2h(:,jj,2) + a1*H1_V2h(:,jj,2) + a2*H2_V2h(:,jj,2)) ...
+    + C1speed_Var(:,jj,2).*(a0*L2V2 + a1*H1V2 + a2*H2V2) ...
+    + 2*C1speed.*( a1*(V2_C1Ds_X.*V2_C1Ds_Var_X(:,jj,2) + V2_C1Ds_Y.*V2_C1Ds_Var_Y(:,jj,2))+...
+    a2*(V2_C1Ds2_X.*V2_C1Ds2_Var_X(:,jj,2) + V2_C1Ds2_Y.*V2_C1Ds2_Var_Y(:,jj,2)) ) ...
     ).*quadData.quadWeightsS) ;
 end
 
