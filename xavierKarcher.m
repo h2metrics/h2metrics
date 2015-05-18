@@ -16,7 +16,7 @@ dHealthy = {dPatients_noloops{1:9}};
 splineData.a = [1 1 1];
 [A B C] = determineConstants(dPatients_noloops,splineData,quadData,quadDataTensor);
 splineData.a = [A B C];
-[C,vel,grad_norm] = karcherMeanAmpl(d,splineData,quadData,quadDataTensor);
-
+[C,vel,grad_norm] = karcherMeanAmpl(dSick,splineData,quadData,quadDataTensor);
+plotKarcherWithCurves(C,dHealthy,splineData)
 
 
