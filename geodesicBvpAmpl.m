@@ -26,7 +26,7 @@ tabledef={...
       'd[t,p,2]', 'dy';
               };
 amploptions={...
-      'option ipopt_options "print_level=2 max_iter=200"'};  
+      'option ipopt_options "print_level=5 max_iter=100"'};  
 datfileexists = 0;
 mintrans = 0;
 minscale = 0;
