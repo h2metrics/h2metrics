@@ -55,9 +55,9 @@ options_fsolve = optimset('TolFun',1e-6,'Display','off');
 
 for ii = 3:Nsteps
 
-            if ~mod(ii/Nsteps*100,10)
-                disp(['i=',num2str(ii)]);
-            end
+%             if ~mod(ii/Nsteps*100,10)
+%                 disp(['i=',num2str(ii)]);
+%             end
         
         q_init = 2*geodesicPoints(:,:,ii-1) - geodesicPoints(:,:,ii-2);
         
