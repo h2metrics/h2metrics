@@ -3,11 +3,19 @@ function dAligned = rigidAlignment(dList, splineData, quadData, varargin)
 useComp = false;
 maxIter = [];
 display = 'iter';
+alignShift = false;
 
 ii = 1;
 while ii <= length(varargin)
     if (isa(varargin{ii},'char'))
         switch (lower(varargin{ii}))
+            case 'alignshift'
+                ii = ii + 1;
+                if isnumeric(varargin{ii}) || islogical(varargin{ii})
+                    alignShift = logical(varargin{ii});
+                else
+                    error('Invalid value for option ''alignShift''.');
+                end
             case 'usecomp'
                 ii = ii + 1;
                 if isnumeric(varargin{ii}) || islogical(varargin{ii})
@@ -62,7 +70,7 @@ end
 F = @(coefs) rigidAlignmentDist( coefs(1:noCurves-1), ...
     coefs(noCurves:2*(noCurves-1)), ...
     reshape(coefs(2*(noCurves-1)+1:end), [noCurves-1, dSpace]), ...
-    dAligned(1:noCurves), splineData, quadData);
+    dAligned(1:noCurves), splineData, quadData, alignShift);
 
 init_coefs = zeros([(2+dSpace)*(noCurves-1), 1]);
 
@@ -110,7 +118,7 @@ end
 
 
 function D = rigidAlignmentDist( alpha, beta, lambda, ...
-                                     dList, splineData, quadData )
+                                 dList, splineData, quadData, alignShift )
 % Only for dSpace=2 and periodic curves
 
 dSpace = size(dList{1}, 2);
@@ -140,9 +148,13 @@ end
 %% Evaluate shifted (alpha) curves at quadrature sites
 cList = {};
 for jj = noCurves:-1:1
-    cList{jj} = deBoor( knotsS, nS, dTransformed{jj}, ...
-                        mod(quadPointsS + alpha(jj), 2*pi), 1, ...
-                        'periodic', true );
+    if alignShift
+        cList{jj} = deBoor( knotsS, nS, dTransformed{jj}, ...
+                            mod(quadPointsS + alpha(jj), 2*pi), 1, ...
+                            'periodic', true );
+    else
+        cList{jj} = quadData.B_S * dTransformed{jj};
+    end
 end
 
 %% Compute distance
