@@ -28,7 +28,7 @@ handle.Visible = 'off';
 clf;
 hold on;
 axis equal
-axis off
+%axis off
 set(gcf,'color','w');
 plot(c0(:, 1), c0(:, 2), 'k-', 'LineWidth', 1);
 plot(c1(:, 1), c1(:, 2), 'k-', 'LineWidth', 1);
