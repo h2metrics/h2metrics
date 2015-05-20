@@ -21,7 +21,7 @@ Dist = zeros(n);
 
 %% Write datfile2 that is valid for the whole minimization
 datfile2='H2_tensor.dat';
-disp(['main.m, calling writeDatFile2.m, datfile = ' datfile2]);
+disp(['determineConstants.m, calling writeDatFile2.m, datfile = ' datfile2]);
 tic
 writeDatFile2(splineData,quadData,quadDataTensor,datfile2);
 toc

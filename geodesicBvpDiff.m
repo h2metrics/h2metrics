@@ -24,53 +24,16 @@ optDiff = true;
 optTra = true;
 optRot = true;
 
-maxIter = [];
-display = 'iter-detailed';
-tolFun = [];
-tolX = [];
+options = [];
 
 % Some code for handling optional inputs
 ii = 1;
 while ii <= length(varargin)
     if (isa(varargin{ii},'char'))
         switch (lower(varargin{ii}))
-            case 'optdiff'
+            case 'options'
                 ii = ii + 1;
-                if isnumeric(varargin{ii}) || islogical(varargin{ii})
-                    optDiff = logical(varargin{ii});
-                else
-                    error('Invalid value for option ''optDiff''.');
-                end
-            case 'opttra'
-                ii = ii + 1;
-                if isnumeric(varargin{ii}) || islogical(varargin{ii})
-                    optTra = logical(varargin{ii});
-                else
-                    error('Invalid value for option ''optTra''.');
-                end
-            case 'optrot'
-                ii = ii + 1;
-                if isnumeric(varargin{ii}) || islogical(varargin{ii})
-                    optRot = logical(varargin{ii});
-                else
-                    error('Invalid value for option ''optRot''.');
-                end
-            case 'maxiter'
-                ii = ii + 1;
-                if isnumeric(varargin{ii})
-                    maxIter = varargin{ii};
-                else
-                    error('Invalid value for option ''maxIter''.');
-                end
-            case 'display'
-                ii = ii + 1;
-                display = varargin{ii};
-            case 'tolfun'
-                ii = ii + 1;
-                tolFun = varargin{ii};
-            case 'tolx'
-                ii = ii + 1;
-                tolX = varargin{ii};
+                options = varargin{ii};
             otherwise
                 error('Invalid option: ''%s''.',varargin{ii});
         end
@@ -78,28 +41,40 @@ while ii <= length(varargin)
     end
 end
 
+% Set options
+if isfield(options, 'optDiff')
+    optDiff = options.optDiff;
+end
+if isfield(options, 'optTra')
+    optTra = options.optTra;
+end
+if isfield(options, 'optRot')
+    optRot = options.optRot;
+end
+   
 if optDiff
-    options = optimoptions('fmincon');
-    options = optimoptions(options,'Algorithm', 'interior-point');
+    minOptions = optimoptions('fmincon');
+    minOptions = optimoptions(minOptions,'Algorithm', 'interior-point');
 else
-    options = optimoptions('fminunc');
-    options = optimoptions(options,'Algorithm', 'quasi-newton');
+    minOptions = optimoptions('fminunc');
+    minOptions = optimoptions(minOptions,'Algorithm', 'quasi-newton');
 end
-options = optimoptions(options,'Display', display);
-options = optimoptions(options,'DerivativeCheck', 'off');
-% options = optimoptions(options,'PlotFcns', @optimplotfval);
-options = optimoptions(options,'GradObj', 'off');
-options = optimoptions(options,'Hessian', 'off');
-
-options = optimoptions(options,'MaxFunEvals', 1000000);
-if ~isempty(tolFun)
-    options = optimoptions(options,'TolFun', tolFun);
+minOptions = optimoptions(minOptions,'DerivativeCheck', 'off');
+% minOptions = optimoptions(minOptions,'PlotFcns', @optimplotfval);
+minOptions = optimoptions(minOptions,'GradObj', 'off');
+minOptions = optimoptions(minOptions,'Hessian', 'off');
+minOptions = optimoptions(minOptions,'MaxFunEvals', 1000000);
+if isfield(options, 'display')
+    minOptions = optimoptions(minOptions, 'Display', options.display);
 end
-if ~isempty(tolX)
-    options = optimoptions(options,'TolX', tolX);
+if isfield(options, 'tolFun')
+    minOptions = optimoptions(minOptions,'TolFun', options.tolFun);
 end
-if ~isempty(maxIter) 
-    options = optimoptions(options, 'maxIter', maxIter);
+if isfield(options, 'tolX')
+    minOptions = optimoptions(minOptions,'TolX', options.tolX);
+end
+if isfield(options, 'maxIter')
+    minOptions = optimoptions(minOptions, 'maxIter', options.maxIter);
 end
 
 %% Extract parameters
@@ -112,32 +87,35 @@ nPhi = splineData.nPhi;
 dSpace = splineData.dSpace;
 
 %% Generate constraints
-% As phi = Id + f, the constraints encode that the control points of Id+f
-% have to be increasing by at least phiEps
-d_greville = aveknt(splineData.knotsPhi, nPhi+1)'; % Control points of Id
+if optDiff
+    % As phi = Id + f, the constraints encode that the control points of Id+f
+    % have to be increasing by at least phiEps
+    d_greville = aveknt(splineData.knotsPhi, nPhi+1)'; % Control points of Id
 
-A_diff = zeros([Nphi+nPhi-1, N*dSpace*(Nt-2)+Nphi+dSpace+1]);
-for kk = 1:Nphi-1
-    A_diff(kk, N*dSpace*(Nt-2) + kk) = 1;
-    A_diff(kk, N*dSpace*(Nt-2) + kk + 1) = -1;
-end
-A(Nphi, N*dSpace*(Nt-2) + Nphi) = 1;
-A(Nphi, N*dSpace*(Nt-2) + 1) = -1;
-for kk = 1:nPhi-1 % Because of periodicity, the first control points are
-                  % repeated at the end
-    A_diff(Nphi + kk, N*dSpace*(Nt-2) + kk) = 1;
-    A_diff(Nphi + kk, N*dSpace*(Nt-2) + kk + 1) = -1;
-end
-A_diff = sparse(A_diff);
-b_diff = diff(d_greville) + splineData.phiEps;
+    A_diff = zeros([Nphi+nPhi-1, N*dSpace*(Nt-2)+Nphi+dSpace+1]);
+    for kk = 1:Nphi-1
+        A_diff(kk, N*dSpace*(Nt-2) + kk) = 1;
+        A_diff(kk, N*dSpace*(Nt-2) + kk + 1) = -1;
+    end
+    A(Nphi, N*dSpace*(Nt-2) + Nphi) = 1;
+    A(Nphi, N*dSpace*(Nt-2) + 1) = -1;
+    for kk = 1:nPhi-1 % Because of periodicity, the first control points are
+                      % repeated at the end
+        A_diff(Nphi + kk, N*dSpace*(Nt-2) + kk) = 1;
+        A_diff(Nphi + kk, N*dSpace*(Nt-2) + kk + 1) = -1;
+    end
+    A_diff = sparse(A_diff);
+    b_diff = diff(d_greville) + splineData.phiEps;
 
-% phi1_nonper = [ zeros([N*dSpace*(Nt-2), 1]); phi1 ];
-% disp(A_diff * phi1_nonper < b_diff);
-
-if ~optDiff
-    A_diff = sparse(zeros([1, N*dSpace*(Nt-2)+Nphi+dSpace+1]));
-    b_diff = 0;
+    % phi1_nonper = [ zeros([N*dSpace*(Nt-2), 1]); phi1 ];
+    % disp(A_diff * phi1_nonper < b_diff);
+else
+    Nphi = 1; % Simpler than setting it 0.
 end
+% if ~optDiff
+%     A_diff = sparse(zeros([1, N*dSpace*(Nt-2)+Nphi+dSpace+1]));
+%     b_diff = 0;
+% end
 
 %% Setup optimization
 
@@ -159,16 +137,16 @@ Fopt = @(coeff) energyH2Diff( ...
 if optDiff
     problem = struct( 'objective', Fopt, 'x0', coeffInit, ...
                       'Aineq', A_diff, 'bineq', b_diff, ...
-                      'options', options, 'solver', 'fmincon' );
-    tic
+                      'options', minOptions, 'solver', 'fmincon' );
+    % tic
     [coeffOptimal, optE, exitflag, output] = fmincon( problem );
-    toc
+    % toc
 else
     problem = struct( 'objective', Fopt, 'x0', coeffInit, ...
-                      'options', options, 'solver', 'fminunc' );
-    tic
+                      'options', minOptions, 'solver', 'fminunc' );
+    % tic
     [coeffOptimal, optE, exitflag, output] = fminunc( problem );
-    toc
+    % toc
 end
 
 % Create transformation struct
@@ -176,7 +154,7 @@ optGa = struct( 'phi', [], 'beta', [], 'v', [] );
 dEnd = d1;
 if optDiff
     optGa.phi = coeffOptimal(end-Nphi-dSpace-1+1:end-dSpace-1);
-    dEnd = composeCurveDiff(dEnd, optGa.phi, splineData, quadData);
+    dEnd = curveComposeDiff(dEnd, optGa.phi, splineData, quadData);
 end
 if optTra
     optGa.v = coeffOptimal(end-dSpace-1+1:end-1);

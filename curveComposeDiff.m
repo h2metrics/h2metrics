@@ -1,4 +1,4 @@
-%% composeCurveDiff
+%% curveComposeDiff
 %
 % Function computes the composition of a periodic curve and a
 % diffeomorphism. It uses the fastBSpline library to speed up spline
@@ -18,7 +18,7 @@
 % Output
 %   c
 %       Spline curve approximating d o phi.
-function c = composeCurveDiff(d, phi, splineData, quadData)
+function c = curveComposeDiff(d, phi, splineData, quadData)
 
 dSpace = splineData.dSpace;
 nS = splineData.nS;

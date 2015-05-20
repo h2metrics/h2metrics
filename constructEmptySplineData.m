@@ -1,4 +1,4 @@
-function [ splineData ] = constructEmptySplinedata
+function [ splineData ] = constructEmptySplineData
 % Create an empty splineData struct
 
 splineData = struct('nS',[],...

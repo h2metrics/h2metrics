@@ -1,6 +1,6 @@
 % Script for test testing all functionality
 %% constructEmptySplineData, and setup parameters
-splineData = constructEmptySplinedata;
+splineData = constructEmptySplineData;
 splineData.N = 20; %no. control points, must be bigger than n+1
 splineData.Nt = 10 + 2; %Number of time control points
 splineData.Nphi = 6; %No. control points for diffeomorphisms
