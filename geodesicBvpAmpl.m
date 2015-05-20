@@ -26,7 +26,7 @@ tabledef={...
       'd[t,p,2]', 'dy';
               };
 amploptions={...
-      'option ipopt_options "print_level=5 max_iter=100"'};  
+      'option ipopt_options "print_level=2 max_iter=100"'};  
 datfileexists = 0;
 mintrans = 0;
 minscale = 0;
@@ -82,7 +82,15 @@ else
     modfile = 'H2.mod';
 end    
             
-            
+persistent lasttimestamp;
+if lasttimestamp == quadData.timestamp
+    datfileexists = 1;
+else
+    lasttimestamp = quadData.timestamp;
+    datfileexists = 0;
+end
+    
+
 %% Write datfile1
 disp(['geodesicBvpAmpl.m, calling writeDatFile1.m, datfile = ' datfile1]);
 tic
