@@ -112,17 +112,33 @@ save('DistA1B1C1Means','DistA1B1C1Means');
 % save('DistA20B30C50Means','DistA20B30C50Means');
 % 
 
+%% PCA Analysis of initial velocites to mean
+load('InitialVelPatientsA1B1C1.mat');
+load('CPatientsMeanA1B1C1.mat');
+V = zeros(splineData.N*splineData.dSpace,length(InitialVelPatientsA1B1C1));
+for ii = 1:length(InitialVelPatientsA1B1C1);
+    V(:,ii) = InitialVelPatientsA1B1C1{ii}(:);
+end
+G = metricMatrix( CPatients ,splineData,quadData);
+Gsqrt = sqrtm(G);
+Vsqrt = Gsqrt*V;
+%Vpca = pca(Vsqrt');
+[Vpca2,Vpca2Score,latent]  = princomp(Vsqrt');
+Vprin = Vpca2'*Vsqrt;
+Vproj = Vprin(1:2,:);
 
-
-
-
-
-
-
-
-
-
-
+%Plot
+plot(Vproj(1,1:9),Vproj(2,1:9),'o',Vproj(1,10:end),Vproj(2,10:end),'rx')
+axis equal
+n1 = 9;
+n2 = 10;
+Y = Vproj';
+for kk = 1:n1
+    text(Y(kk,1), Y(kk,2), [' ',num2str(kk)],'Color','blue','verticalAlignment', 'middle');
+end
+for kk = n1+1:n1+n2
+    text(Y(kk,1), Y(kk,2), [' ',num2str(kk)],'Color','red','verticalAlignment', 'middle');
+end
 
 
 
