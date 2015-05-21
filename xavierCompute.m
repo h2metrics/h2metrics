@@ -19,61 +19,87 @@ splineData.a = [A B C];
 
 
 %% Calculate Karcher Means
-%A1B1C1
+%%A1B1C1
 splineData.a = [A B C];
 [CSick,vel,grad_norm] = karcherMeanAmpl(dSick,splineData,quadData,quadDataTensor);
 save('CSickA1B1C1','CSick');
 [CHealthy,vel,grad_norm] = karcherMeanAmpl(dHealthy,splineData,quadData,quadDataTensor);
 save('CHealthyA1B1C1','CHealthy');
-
-%A80B10C10
-splineData.a = [80*A 10*B 10*C];
-[CSick,vel,grad_norm] = karcherMeanAmpl(dSick,splineData,quadData,quadDataTensor);
-save('CSickA80B10C10','CSick');
-[CHealthy,vel,grad_norm] = karcherMeanAmpl(dHealthy,splineData,quadData,quadDataTensor);
-save('CHealthyA80B10C10','CHealthy');
-
-
-%% Calculate Geodesic between Karchermeans
-%A1B1C1
-splineData.a = [A B C];
-load('CHealthyA1B1C1');
-load('CSickA1B1C1');
-[~,dPath] = geodesicBvpAmpl(CSick,CHealthy,splineData,quadData,quadDataTensor);
-save('dPathA1B1C1MeanToMean','dPath');
-
-%A80B10C10
-splineData.a = [80*A 10*B 10*C];
-load('CHealthyA80B10C10');
-load('CSickA80B10C10');
-[~,dPath] = geodesicBvpAmpl(CSick,CHealthy,splineData,quadData,quadDataTensor);
-save('dPathA80B10C10MeanToMean','dPath');
-
-
-%% Compute distance Matrix with Karcher means
-%A1B1C1
+% %A50B30C20
+% splineData.a = [50*A 30*B 20*C];
+% [CSick,vel,grad_norm] = karcherMeanAmpl(dSick,splineData,quadData,quadDataTensor);
+% save('CSickA50B30C20','CSick');
+% [CHealthy,vel,grad_norm] = karcherMeanAmpl(dHealthy,splineData,quadData,quadDataTensor);
+% save('CHealthyA50B30C20','CHealthy');
+% %A10B10C80
+% splineData.a = [10*A 10*B 80*C];
+% [CSick,vel,grad_norm] = karcherMeanAmpl(dSick,splineData,quadData,quadDataTensor);
+% save('CSickA10B10C80','CSick');
+% [CHealthy,vel,grad_norm] = karcherMeanAmpl(dHealthy,splineData,quadData,quadDataTensor);
+% save('CHealthyA10B10C80','CHealthy');
+% %A20B30C50
+% splineData.a = [20*A 30*B 50*C];
+% [CSick,vel,grad_norm] = karcherMeanAmpl(dSick,splineData,quadData,quadDataTensor);
+% save('CSickA20B30C50','CSick');
+% [CHealthy,vel,grad_norm] = karcherMeanAmpl(dHealthy,splineData,quadData,quadDataTensor);
+% save('CHealthyA20B30C50','CHealthy');
+% 
+% 
+% %% Calculate Geodesic between Karchermeans
+% %A1B1C1
+% splineData.a = [A B C];
+% load('CHealthyA1B1C1');
+% load('CSickA1B1C1');
+% [~,dPath] = geodesicBvpAmpl(CSick,CHealthy,splineData,quadData,quadDataTensor);
+% save('dPathA1B1C1MeanToMean','dPath');
+% 
+% 
+% 
+% %% Compute distance Matrix with Karcher means
+% %A1B1C1
 splineData.a = [A B C];
 load('CHealthyA1B1C1');
 load('CSickA1B1C1');
 dPatientsMeans = {CHealthy,dPatients_noloops{1:19},CSick};
 DistA1B1C1Means = computeDistanceMatrix(dPatientsMeans,splineData,quadData,quadDataTensor);
-save('DistA1B1C1Means','DistA1B1C1');
+save('DistA1B1C1Means','DistA1B1C1Means');
+% %A50B30C20
+% splineData.a = [50*A 30*B 20*C];
+% load('CHealthyA50B30C20');
+% load('CSickA50B30C20');
+% dPatientsMeans = {CHealthy,dPatients_noloops{1:19},CSick};
+% DistA50B30C20Means = computeDistanceMatrix(dPatientsMeans,splineData,quadData,quadDataTensor);
+% save('DistA50B30C20Means','DistA50B30C20Means');
+% %A10B10C80
+% splineData.a = [10*A 10*B 80*C];
+% load('CHealthyA10B10C80');
+% load('CSickA10B10C80');
+% dPatientsMeans = {CHealthy,dPatients_noloops{1:19},CSick};
+% DistA10B10C80Means = computeDistanceMatrix(dPatientsMeans,splineData,quadData,quadDataTensor);
+% save('DistA10B10C80Means','DistA10B10C80Means');
+% %A20B30C50
+% splineData.a = [20*A 30*B 50*C];
+% load('CHealthyA20B30C50');
+% load('CSickA20B30C50');
+% dPatientsMeans = {CHealthy,dPatients_noloops{1:19},CSick};
+% DistA20B30C50Means = computeDistanceMatrix(dPatientsMeans,splineData,quadData,quadDataTensor);
+% save('DistA20B30C50Means','DistA20B30C50Means');
+% 
 
-%A80B10C10
-splineData.a = [80*A 10*B 10*C];
-load('CHealthyA80B10C10');
-load('CSickA80B10C10');
-dPatientsMeans = {CHealthy,dPatients_noloops{1:19},CSick};
-DistA1B1C1Means = computeDistanceMatrix(dPatientsMeans,splineData,quadData,quadDataTensor);
-save('DistA1B1C1Means','DistA1B1C1');
+
+%% Compute distance to Karcker means:
+load('CHealthyA1B1C1')
+[DistToMeanHealthyA1B1C1,InitialVelHealthyA1B1C1] = matchOneToAll(CHealthy,dHealthy,splineData,quadData,quadDataTensor);
+save('DistToMeanHealthyA1B1C1','DistToMeanHealthyA1B1C1');
+save('InitialVelHealthyA1B1C1','InitialVelHealthyA1B1C1');
 
 
 
+load('CSickA1B1C1')
+DistToMeanSickA1B1C1 = matchOneToAll(CSick,dSick,splineData,quadData,quadDataTensor);
+save('DistToMeanSickA1B1C1','DistToMeanSickA1B1C1');
 
-
-
-
-
+Dist = matchOneToAll(CSick,{CHealthy},splineData,quadData,quadDataTensor);
 
 
 

@@ -1,4 +1,4 @@
-function Dist = matchOneToAll(d0,d,splineData,quadData,quadDataTensor)
+function [Dist,InitialVel] = matchOneToAll(d0,d,splineData,quadData,quadDataTensor)
 % Matches one curve to all curves d1,...dn
 % Call function as
 % Karcher_ampl(d,splineData,quadData,quadDataTensor)
@@ -17,6 +17,7 @@ function Dist = matchOneToAll(d0,d,splineData,quadData,quadDataTensor)
 %Read out number of curves splineData and quadData
 n = length(d);
 Dist = zeros(n,1);
+
 %Initial guess for Karcher mean
 
 %% Write datfile2 that is valid for the whole minimization
@@ -28,8 +29,9 @@ toc
 
 for i=1:n;
         disp([' Curve: ',num2str(i)]);
-        [Egeo, ~] = geodesicBvpAmpl(d0,d{i},splineData,quadData,quadDataTensor,'datfileexists',true);
-        Dist(i,1) = Egeo;
+        [~,dPath] = geodesicBvpAmpl(d0,d{i},splineData,quadData,quadDataTensor,'datfileexists',true);
+        InitialVel{i} = pathVelocity(dPath,0,splineData);
+        Dist(i,1) = pathRiemH2Length(dPath,splineData,quadData,quadDataTensor);
 end  
 end
 
