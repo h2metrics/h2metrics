@@ -29,6 +29,7 @@ B_interpolPhi = quadData.B_interpolPhi;
      
 phiPts = B_interpolPhi * phi;
 phiPts = phiPts + splineData.interpolS;
+phiPts = mod(phiPts, 2*pi);
 
 dNonper = [ d; d(1:nS,:) ];
 
