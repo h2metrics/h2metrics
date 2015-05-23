@@ -51,8 +51,27 @@ end
 
 
 %Compute final energy
-
-
-
 end
+
+% Alternative implementation of metrixMatrix, slower but easier to debug,
+% relies on curveRiemH2InnerProd.
+
+% N = splineData.N;
+% dSpace = splineData.dSpace;
+% 
+% G = [];
+% for jj = N*dSpace:-1:1
+%     for kk = N*dSpace:-1:jj
+%         U = zeros([N*dSpace, 1]);
+%         V = zeros([N*dSpace, 1]);
+%         U(jj) = 1;
+%         V(kk) = 1;
+%         
+%         u = reshape(U, [N, dSpace]);
+%         v = reshape(V, [N, dSpace]);
+%         
+%         G(jj, kk) = curveRiemH2InnerProd(d, u, v, splineData, quadData);
+%         G(kk, jj) = G(jj, kk);
+%     end
+% end
 
