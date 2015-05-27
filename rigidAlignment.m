@@ -1,43 +1,48 @@
-function dAligned = rigidAlignment(dList, splineData, quadData, varargin) 
+function [dAligned, gaOpt] = rigidAlignment( dList, splineData, ...
+                                             quadData, varargin) 
 
+optTra = true;
+optRot = true;
+optShift = false; % Constant shifts of the parametrization
 useComp = false;
 maxIter = [];
-display = 'iter';
-alignShift = false;
+display = 'off';
 
+options = [];
+
+% Some code for handling optional inputs
 ii = 1;
 while ii <= length(varargin)
     if (isa(varargin{ii},'char'))
         switch (lower(varargin{ii}))
-            case 'alignshift'
+            case 'options'
                 ii = ii + 1;
-                if isnumeric(varargin{ii}) || islogical(varargin{ii})
-                    alignShift = logical(varargin{ii});
-                else
-                    error('Invalid value for option ''alignShift''.');
-                end
-            case 'usecomp'
-                ii = ii + 1;
-                if isnumeric(varargin{ii}) || islogical(varargin{ii})
-                    useComp = logical(varargin{ii});
-                else
-                    error('Invalid value for option ''useComp''.');
-                end
-            case 'maxiter'
-                ii = ii + 1;
-                if isnumeric(varargin{ii})
-                    maxIter = varargin{ii};
-                else
-                    error('Invalid value for option ''maxIter''.');
-                end
-            case 'display'
-                ii = ii + 1;
-                display = varargin{ii};
+                options = varargin{ii};
             otherwise
                 error('Invalid option: ''%s''.',varargin{ii});
         end
-    ii = ii + 1; 
+    ii = ii + 1;  
     end
+end
+
+% Set options
+if isfield(options, 'optTra')
+    optTra = options.optTra;
+end
+if isfield(options, 'optRot')
+    optRot = options.optRot;
+end
+if isfield(options, 'optShift')
+    optShift= options.optShift;
+end
+if isfield(options, 'rigidUseComp')
+    useComp = options.rigidUseComp;
+end
+if isfield(options, 'rigidMaxIter')
+    maxIter = options.rigidMaxIter;
+end
+if isfield(options, 'rigidDisplay')
+    display = options.rigidDisplay;
 end
 
 dSpace = splineData.dSpace;
@@ -45,6 +50,7 @@ N = splineData.N;
 
 noCurves = length(dList);
 dAligned = dList;
+gaOpt = cell([noCurves, 1]);
 
 if noCurves < 2
     return
@@ -70,7 +76,8 @@ end
 F = @(coefs) rigidAlignmentDist( coefs(1:noCurves-1), ...
     coefs(noCurves:2*(noCurves-1)), ...
     reshape(coefs(2*(noCurves-1)+1:end), [noCurves-1, dSpace]), ...
-    dAligned(1:noCurves), splineData, quadData, alignShift);
+    dAligned(1:noCurves), splineData, quadData, ...
+    optTra, optRot, optShift );
 
 init_coefs = zeros([(2+dSpace)*(noCurves-1), 1]);
 
@@ -83,42 +90,39 @@ lambda = [0,0; reshape(optimal_coefs(2*(noCurves-1)+1:end), ...
                [noCurves-1, dSpace])];
 
 for jj = 1:noCurves
-    dAligned{jj} = dList{jj} + ...
-        ones([N, 1]) * lambda(jj,:);
-    rotation = [ cos(beta(jj)), -sin(beta(jj)); ...
-                 sin(beta(jj)),  cos(beta(jj)) ];
-    dAligned{jj} = dAligned{jj} * rotation;
-end
-
-if useComp
-    % Shift by alpha via diffeomorphism
-    splineData2 = splineData;
-    splineData2.Nphi = 5;
-    splineData2.nPhi = 3;
-    splineData2.noInterpolS = 5 * max(splineData2.N, splineData2.Nphi);
-    splineData2 = constructKnots(splineData2);
-    quadData2 = setupQuadData(splineData2);
-
-    for jj = 2:noCurves
-        phi = ones([splineData2.Nphi, 1]) * alpha(jj);
-        dAligned{jj} = curveComposeDiff( dAligned{jj}, phi, ...
-                                         splineData2, quadData2);
+    gaOpt{jj} = struct( 'phi', [], 'beta', [], 'v', [], 'alpha', []);
+    if optTra
+        dAligned{jj} = dList{jj} + ...
+            ones([N, 1]) * lambda(jj,:);
+        gaOpt{jj}.v = lambda(jj,:)';
     end
-else
-    % We assume uniform knots and simply shift the control point sequence
-    shift = round(alpha * N / (2*pi));
-    for jj = 1:noCurves
-        dAligned{jj} = circshift(dAligned{jj}, ...
-            [-shift(jj), 0]);
+    if optRot
+        rotation = [ cos(beta(jj)), sin(beta(jj)); ...
+                    -sin(beta(jj)), cos(beta(jj)) ];
+        dAligned{jj} = dAligned{jj} * rotation;
+        gaOpt{jj}.beta = beta(jj);
+    end
+    
+    if optShift
+        gaOpt{jj}.alpha = alpha(jj);
+        if useComp
+            dAligned{jj} = curveApplyShift( dAligned{jj}, alpha(jj), ...
+                                            splineData, quadData );
+        else
+            % We assume uniform knots and simply shift the control 
+            % point sequence
+            shift = round(-alpha(jj) * N / (2*pi));
+            dAligned{jj} = circshift(dAligned{jj}, [-shift, 0]);
+        end
     end
 end
 
 end
-
 
 
 function D = rigidAlignmentDist( alpha, beta, lambda, ...
-                                 dList, splineData, quadData, alignShift )
+                                 dList, splineData, quadData, ...
+                                 optTra, optRot, optShift )
 % Only for dSpace=2 and periodic curves
 
 dSpace = size(dList{1}, 2);
@@ -139,18 +143,22 @@ lambda = [ zeros([1, dSpace]); lambda];
                                  
 %% Apply translations (lambda) and rotations (beta)
 for jj = noCurves:-1:1
-    dTransformed{jj} = dList{jj} + ones([N, 1]) * lambda(jj,:);
-    rotation = [ cos(beta(jj)), -sin(beta(jj)); ...
-                 sin(beta(jj)),  cos(beta(jj)) ];
-    dTransformed{jj} = dTransformed{jj} * rotation;
+    if optTra
+        dTransformed{jj} = dList{jj} + ones([N, 1]) * lambda(jj,:);
+    end
+    if optRot
+        rotation = [ cos(beta(jj)), sin(beta(jj)); ...
+                     -sin(beta(jj)), cos(beta(jj)) ];
+        dTransformed{jj} = dTransformed{jj} * rotation;
+    end
 end
 
 %% Evaluate shifted (alpha) curves at quadrature sites
 cList = {};
 for jj = noCurves:-1:1
-    if alignShift
+    if optShift
         cList{jj} = deBoor( knotsS, nS, dTransformed{jj}, ...
-                            mod(quadPointsS + alpha(jj), 2*pi), 1, ...
+                            mod(quadPointsS - alpha(jj), 2*pi), 1, ...
                             'periodic', true );
     else
         cList{jj} = quadData.B_S * dTransformed{jj};
