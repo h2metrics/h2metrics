@@ -76,8 +76,6 @@ end
 if minscale == 1;
     modfile = 'H2Scale.mod';
     disp(['modfile H2scale.mod']);
-elseif minrot == 1;
-    modfile = 'H2_rot.mod';
 else 
     modfile = 'H2.mod';
 end    
@@ -94,7 +92,7 @@ end
 %% Write datfile1
 disp(['geodesicBvpAmpl.m, calling writeDatFile1.m, datfile = ' datfile1]);
 tic
-writeDatFile1(d0,d1,splineData,quadData,mintrans,datfile1);
+writeDatFile1(d0,d1,splineData,quadData,mintrans,minrot,datfile1);
 toc
 
 %% Write datfile2
