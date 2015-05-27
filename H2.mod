@@ -12,6 +12,7 @@ param L2coef; # L2-coefficient of the metric
 param H1coef; # H1-coefficient of the metric
 param H2coef; # H2-coefficient of the metric
 param minTrans;
+param minRot;
 param Scale default 1;
 
 # KNOTS AND QUADRATURE POINTS
@@ -38,14 +39,15 @@ param W       {QT,QP} default 0;
 
 
 #Rotations and Translations
-var Trans {i in 1..2} := 0;
-var RotAng :=0;
-
+var Trans {1..2} := 0;
+var  RotAng :=0;
+var RotAngT {t in KT} = t*RotAng/nKT;
 # CONTROLS
 param d0 {KP,1..2};
 param d1 {KP,1..2};
-var dend  {p in KP,i in 1..2} = (if i=1 then d1[p,i]+minTrans*Trans[1] else d1[p,i]+minTrans*Trans[2]);
-#var dend  {p in KP,i in 1..2} = (if i=1 then cos(RotAng)*d1[p,1]-sin(RotAng)*d1[p,2]+Trans[1] else sin(RotAng)*d1[p,1]+cos(RotAng)*d1[p,2]+Trans[2]);
+var dend1 {p in KP} = minRot*(cos(RotAng)*d1[p,1]-sin(RotAng)*d1[p,2])+(1-minRot)*d1[p,1]+minTrans*Trans[1];
+var dend2 {p in KP} = minRot*(cos(RotAng)*d1[p,2]+sin(RotAng)*d1[p,1])+(1-minRot)*d1[p,2]+minTrans*Trans[2];
+var dend {p in KP,i in 1..2} = (if i=1 then dend1[p] else dend2[p]);
 var dmiddle {t in KT diff {1,nKT}, p in KP, i in 1..2} := 
   ((nKT-t)*d0[p,i]+(t-1)*d1[p,i])/(nKT-1);
 var d {t in KT, p in KP, i in 1..2} =  
