@@ -1,4 +1,4 @@
-function writeDatFile1(d0,d1,splineData,quadData,mintrans,datfile)
+function writeDatFile1(d0,d1,splineData,quadData,mintrans,minrot,datfile)
 %writedatfile writes the .dat file containing the  quadData and the controll points of the boundary curves, but not the tensorproducts. 
 %   writedatfile(d0, d1,splineData, quadData, datfile) creates a .dat file 
 %   with the name filename. d0 and d1 are the initial and final controls, 
@@ -27,6 +27,7 @@ fprintf(fileid,'param L2coef := %d; # L2 coefficient of the metric\n',L2coef);
 fprintf(fileid,'param H1coef := %d; # H1 coefficient of the metric\n',H1coef);
 fprintf(fileid,'param H2coef := %d; # H2 coefficient of the metric\n',H2coef);
 fprintf(fileid,'param minTrans:= %d; # Minimize over Trnaslations\n',mintrans);
+fprintf(fileid,'param minRot:= %d; # Minimize over Trnaslations\n',minrot);
 fprintf(fileid,'\n');
 
 %% Write the initial and final controls d0, d1
