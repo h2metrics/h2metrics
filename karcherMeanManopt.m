@@ -2,6 +2,7 @@ function [dMean, info] = karcherMeanManopt(dList, ...
     splineData, quadData, quadDataTensor, varargin)
 
 options = [];
+dInit = [];
 
 % Some code for handling optional inputs
 ii = 1;
@@ -11,6 +12,9 @@ while ii <= length(varargin)
             case 'options'
                 ii = ii + 1;
                 options = varargin{ii};
+            case 'dinit'
+                ii = ii + 1;
+                dInit = varargin{ii};
             otherwise
                 error('Invalid option: ''%s''.',varargin{ii});
         end
@@ -26,15 +30,46 @@ splineData.stepsT = 50; % HAS TO BE AN OPTION
 
 curveManifold = constructCurveManifold(splineData, quadData);
 
+dLast = [];
+dLastPathList = [];
+gaLastList = [];
+
+function stats = statsfun(problem, dIter, stats, store)
+    if ~isfield(store, 'ready')
+        [~, store] = cost(dIter, store);
+    end
+    
+    dLast = dIter;
+    dLastPathList = store.dPathList;
+    gaLastList = store.gaList;
+    
+    stats.dIter = dIter;
+    stats.dPathList = dPathList;
+    stats.gaList = gaList;
+    stats.enList = enList;
+end
+
 function [sumE, store] = cost(dIter, store)
     if ~isfield(store, 'ready')
         dPathList = {};
         gaList = {};
         enList = [];
         for jj = noCurves:-1:1
-            [optE, dPath, optGa] = geodesicBvpDiff(dIter, dList{jj}, ...
-                splineData, quadData, quadDataTensor, ...
-                'options', options);
+            disp(jj);
+            if ~isempty(dLast)
+                dInitPath = dLastPathList{jj} + ...
+                    linearPath( dIter - dLast, zeros([N, dSpace]), ...
+                                splineData );
+                
+                [optE, dPath, optGa] = geodesicBvpDiff(dIter, dList{jj},...
+                    splineData, quadData, quadDataTensor, ...
+                    'options', options, 'initPath', dInitPath, ...
+                    'gaInit', gaLastList{jj});
+            else
+                [optE, dPath, optGa] = ...
+                    geodesicBvpDiff(dIter, dList{jj}, splineData, ...
+                        quadData, quadDataTensor, 'options', options);
+            end
             dPathList{jj} = dPath;
             gaList{jj} = optGa;
             enList(jj) = optE;
@@ -57,7 +92,7 @@ function [g, store] = grad(dIter, store)
     for jj = noCurves:-1:1
         g = g + pathVelocity(store.dPathList{jj}, 0, splineData);
     end
-    g = -g / noCurves;
+    g = -2 * g / noCurves;
 end
 
 % Setup the problem structure
@@ -66,7 +101,9 @@ problem.cost = @cost;
 problem.grad = @grad;
 
 % Initial guess
-dInit = dList{1};
+if isempty(dInit)
+    dInit = dList{1};
+end
 
 % Solver options
 karcherOptions = [];
@@ -77,6 +114,7 @@ if isfield(options, 'karcherMaxIter')
     karcherOptions.maxiter = options.karcherMaxIter;
 end
 
+karcherOptions.statsfun = @statsfun;
 karcherOptions.verbosity = 3;
 
 [dMean, ~, info] = conjugategradient(problem, dInit, karcherOptions);
