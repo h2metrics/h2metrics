@@ -23,8 +23,12 @@ function [optE, dPath, optGa, exitFlag, noIter] = geodesicBvpDiff(d0, d1, ...
 optDiff = true;
 optTra = true;
 optRot = true;
+optShift = false; % Constant shifts of the parametrization
 
 options = [];
+
+dInitPath = [];
+gaInit = [];
 
 % Some code for handling optional inputs
 ii = 1;
@@ -34,6 +38,12 @@ while ii <= length(varargin)
             case 'options'
                 ii = ii + 1;
                 options = varargin{ii};
+            case 'initpath'
+                ii = ii + 1;
+                dInitPath = varargin{ii};
+            case 'gainit'
+                ii = ii + 1;
+                gaInit = varargin{ii};
             otherwise
                 error('Invalid option: ''%s''.',varargin{ii});
         end
@@ -50,6 +60,9 @@ if isfield(options, 'optTra')
 end
 if isfield(options, 'optRot')
     optRot = options.optRot;
+end
+if isfield(options, 'optShift')
+    optShift= options.optShift;
 end
    
 if optDiff
@@ -82,9 +95,11 @@ N = splineData.N;
 Nt = splineData.Nt;
 nS = splineData.nS;
 nT = splineData.Nt;
-Nphi = splineData.Nphi;
-nPhi = splineData.nPhi;
 dSpace = splineData.dSpace;
+if optDiff
+    Nphi = splineData.Nphi;
+    nPhi = splineData.nPhi;
+end
 
 %% Generate constraints
 if optDiff
@@ -110,29 +125,51 @@ if optDiff
     % phi1_nonper = [ zeros([N*dSpace*(Nt-2), 1]); phi1 ];
     % disp(A_diff * phi1_nonper < b_diff);
 else
-    Nphi = 1; % Simpler than setting it 0.
+    Nphi = 1; % Simpler than setting to 0
 end
+
 % if ~optDiff
 %     A_diff = sparse(zeros([1, N*dSpace*(Nt-2)+Nphi+dSpace+1]));
 %     b_diff = 0;
 % end
 
-%% Setup optimization
+%% Create initial guess for path if not provided one
+if isempty(gaInit)
+    [~, gaTmp] = rigidAlignment( {d0, d1}, splineData, quadData, ...
+                                 'options', options );
+    gaInit = gaTmp{2};
+end
 
-dLinear = linearPath(d0, d1, splineData);
-coeffInit = zeros([ N*(Nt-2)*dSpace + Nphi + dSpace + 1, 1]);
-coeffInit(1:N*(Nt-2)*dSpace) = reshape( dLinear(N+1:end-N, :), ...
+if isempty(dInitPath)
+    d1Ga = curveApplyGamma(d1, gaInit, splineData, quadData);
+    dInitPath = linearPath(d0, d1Ga, splineData);
+end
+
+%% Setup optimization
+coeffInit = zeros([ N*(Nt-2)*dSpace + Nphi + dSpace + 2, 1]);
+coeffInit(1:N*(Nt-2)*dSpace) = reshape( dInitPath(N+1:end-N, :), ...
                                         [N*(Nt-2)*dSpace, 1] );
-coeffInit(end-Nphi-dSpace-1+1:end-dSpace-1) = zeros([ Nphi, 1]); % phi
-coeffInit(end-dSpace-1+1:end-1) = zeros([ dSpace, 1]); % Translation
-coeffInit(end) = 0; % Rotation
+coeffInit(end-Nphi-dSpace-2+1:end-dSpace-2) = zeros([ Nphi, 1]); % phi
+coeffInit(end-dSpace-2+1:end-2) = zeros([ dSpace, 1]); % Translation
+coeffInit(end-1) = 0; % Rotation
+coeffInit(end) = 0; % Shift
+if optTra
+    coeffInit(end-dSpace-2+1:end-2) = gaInit.v;
+end
+if optRot
+    coeffInit(end-1) = gaInit.beta;
+end
+if optShift
+    coeffInit(end) = gaInit.alpha;
+end
 
 Fopt = @(coeff) energyH2Diff( ...
     [d0; reshape(coeff(1:N*(Nt-2)*dSpace), [N*(Nt-2), dSpace]); d1], ...
-    coeff(end-Nphi-dSpace-1+1:end-dSpace-1), ...
-    coeff(end-dSpace-1+1:end-1), coeff(end), ...
+    coeff(end-Nphi-dSpace-2+1:end-dSpace-2), ...
+    coeff(end-dSpace-2+1:end-2), coeff(end-1), coeff(end), ...
     splineData, quadData, quadDataTensor, ...
-    'optDiff', optDiff, 'optTra', optTra, 'optRot', optRot );
+    'optDiff', optDiff, 'optTra', optTra, 'optRot', optRot, ...
+    'optShift', optShift );
 
 if optDiff
     problem = struct( 'objective', Fopt, 'x0', coeffInit, ...
@@ -150,20 +187,26 @@ else
 end
 
 % Create transformation struct
-optGa = struct( 'phi', [], 'beta', [], 'v', [] );
+optGa = struct( 'phi', [], 'beta', [], 'v', [], 'alpha', []);
 dEnd = d1;
-if optDiff
-    optGa.phi = coeffOptimal(end-Nphi-dSpace-1+1:end-dSpace-1);
-    dEnd = curveComposeDiff(dEnd, optGa.phi, splineData, quadData);
+if optDiff && optShift
+    optGa.phi = coeffOptimal(end-Nphi-dSpace-2+1:end-dSpace-2);
+    optGa.alpha = coeffOptimal(end);
+    % First diffeo, then shift.
+    dEnd = curveComposeDiff( dEnd, optGa.phi - optGa.alpha, ...
+                             splineData, quadData ); 
+elseif optShift
+    optGa.alpha = coeffOptimal(end);
+    dEnd = curveApplyShift(dEnd, optGa.alpha, splineData, quadData);
 end
 if optTra
-    optGa.v = coeffOptimal(end-dSpace-1+1:end-1);
+    optGa.v = coeffOptimal(end-dSpace-2+1:end-2);
     dEnd = dEnd + ones([N, 1]) * optGa.v';
 end
 if optRot
-    optGa.beta = coeffOptimal(end);
-    rotation = [ cos(optGa.beta), -sin(optGa.beta); ...
-                 sin(optGa.beta),  cos(optGa.beta) ];
+    optGa.beta = coeffOptimal(end-1);
+    rotation = [ cos(optGa.beta), sin(optGa.beta); ...
+                 -sin(optGa.beta), cos(optGa.beta) ];
     dEnd = dEnd * rotation;
 end
 
