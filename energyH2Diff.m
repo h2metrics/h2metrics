@@ -16,12 +16,13 @@
 %   E
 %       Energy of the path.
 %
-function E = energyH2Diff( dPath, phi, v, beta, ...
+function E = energyH2Diff( dPath, phi, v, beta, alpha, ...
     splineData, quadData, quadDataTensor, varargin)
 
 optDiff = true;
 optTra = true;
 optRot = true;
+optShift = false;
 
 %% Optional parameters
 ii = 1;
@@ -49,6 +50,13 @@ while ii <= length(varargin)
                 else
                     error('Invalid value for option ''optRot''.');
                 end
+            case 'optshift'
+                ii = ii + 1;
+                if isnumeric(varargin{ii}) || islogical(varargin{ii})
+                    optShift = logical(varargin{ii});
+                else
+                    error('Invalid value for option ''optShift''.');
+                end
             otherwise
                 error('Invalid option: ''%s''.',varargin{ii});
         end
@@ -60,18 +68,20 @@ end
 dSpace = splineData.dSpace;
 N = splineData.N;
 
-%% Apply diffeomorphism, translation and rotation
+%% Apply diffeomorphism, translation, rotation and shift
 d1 = dPath(end-N+1:end,:);
 
-if optDiff
-    d1 = curveComposeDiff(d1, phi, splineData, quadData);
+if optDiff && optShift
+    d1 = curveComposeDiff(d1, phi-alpha, splineData, quadData);
+elseif optShift
+    d1 = curveApplyShift(d1, alpha, splineData, quadData);
 end
 if optTra
     d1 = d1 + ones([N, 1]) * v';
 end
 if optRot
-    rotation = [ cos(beta), -sin(beta); ...
-                 sin(beta),  cos(beta) ];
+    rotation = [ cos(beta), sin(beta); ...
+                 -sin(beta), cos(beta) ];
     d1 = d1 * rotation;
 end
 
