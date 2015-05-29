@@ -23,23 +23,27 @@ splineData.a = [A B C];
 splineData.a = [A B C];
 [CSick,vel,grad_norm] = karcherMeanAmpl(dSick,splineData,quadData,quadDataTensor);
 save('CSickA1B1C1','CSick');
+
 [CHealthy,vel,grad_norm] = karcherMeanAmpl(dHealthy,splineData,quadData,quadDataTensor);
 save('CHealthyA1B1C1','CHealthy');
 load('CHealthyA1B1C1');
 load('CSickA1B1C1');
 [CInitialGuess,vel,grad_norm] = karcherMeanAmpl({CSick,CHealthy},splineData,quadData,quadDataTensor);
 save('CInitialGuess','CInitialGuess');
+
 [CPatients,vel,grad_norm] = karcherMeanAmplGuess(dPatients_noloops,CInitialGuess,splineData,quadData,quadDataTensor);
 save('CPatientsA1B1C1','CPatients');
 
 %% Calculate Initial velocities from the mean to subjects
 load('CHealthyA1B1C1')
-[DistToMeanHealthyA1B1C1,InitialVelHealthyA1B1C1] = matchOneToAll(CHealthy,dHealthy,splineData,quadData,quadDataTensor);
-save('DistToMeanHealthyA1B1C1','DistToMeanHealthyA1B1C1');
+[DistToMeanHealthy,InitialVelHealthy] = matchOneToAll(CHealthy,dPatients_noloops,splineData,quadData,quadDataTensor);
+save('DistToMeanHealthy','DistToMeanHealthy');
+save('InitialVelHealthy','InitialVelHealthy');
 
 load('CSickA1B1C1')
-[DistToMeanSickA1B1C1,InitialVelSickA1B1C1] = matchOneToAll(CSick,dSick,splineData,quadData,quadDataTensor);
-save('DistToMeanSickA1B1C1','DistToMeanSickA1B1C1');
+[DistToMeanSick,InitialVelSick] = matchOneToAll(CSick,dPatients_noloops,splineData,quadData,quadDataTensor);
+save('DistToMeanSick','DistToMeanSick');
+save('InitialVelSick','InitialVelSick');
 
 load('CPatientsA1B1C1')
 [DistToMeanPatientsA1B1C1,InitialVelPatientsA1B1C1] = matchOneToAll(CPatients,dPatients_noloops,splineData,quadData,quadDataTensor);
@@ -47,7 +51,10 @@ save('DistToMeanPatientsA1B1C1','DistToMeanPatientsA1B1C1');
 save('InitialVelPatientsA1B1C1','InitialVelPatientsA1B1C1');
 
 %% Calculate Distance between means
-Dist = matchOneToAll(CSick,{CHealthy},splineData,quadData,quadDataTensor);
+[DistMeanToMean,InitialVelMeanToMean] = matchOneToAll(CSick,{CHealthy},splineData,quadData,quadDataTensor);
+save('InitialVelMeanToMean','InitialVelMeanToMean');
+
+
 
 %% Compute Distance-Matrix with Karcher means
 splineData.a = [A B C];
@@ -56,6 +63,24 @@ load('CSickA1B1C1');
 dPatientsMeans = {CHealthy,dPatients_noloops{1:19},CSick};
 DistA1B1C1Means = computeDistanceMatrix(dPatientsMeans,splineData,quadData,quadDataTensor);
 save('DistA1B1C1Means','DistA1B1C1Means');
+
+
+%% Calculate geodesic between Karcher means
+load('CHealthyA1B1C1');
+load('CSickA1B1C1');
+[~,dPathA1B1C1MeanToMean]=geodesicBvpAmpl(CSick,CHealthy,splineData,quadData,quadDataTensor,'mintrans',true,'minrot',false);
+save('dPathA1B1C1MeanToMean','dPathA1B1C1MeanToMean');
+
+
+
+
+
+
+
+
+
+
+
 
 
 %% Other Values for the constants in the  metric
@@ -112,33 +137,7 @@ save('DistA1B1C1Means','DistA1B1C1Means');
 % save('DistA20B30C50Means','DistA20B30C50Means');
 % 
 
-%% PCA Analysis of initial velocites to mean
-load('InitialVelPatientsA1B1C1.mat');
-load('CPatientsMeanA1B1C1.mat');
-V = zeros(splineData.N*splineData.dSpace,length(InitialVelPatientsA1B1C1));
-for ii = 1:length(InitialVelPatientsA1B1C1);
-    V(:,ii) = InitialVelPatientsA1B1C1{ii}(:);
-end
-G = metricMatrix( CPatients ,splineData,quadData);
-Gsqrt = sqrtm(G);
-Vsqrt = Gsqrt*V;
-%Vpca = pca(Vsqrt');
-[Vpca2,Vpca2Score,latent]  = princomp(Vsqrt');
-Vprin = Vpca2'*Vsqrt;
-Vproj = Vprin(1:2,:);
 
-%Plot
-plot(Vproj(1,1:9),Vproj(2,1:9),'o',Vproj(1,10:end),Vproj(2,10:end),'rx')
-axis equal
-n1 = 9;
-n2 = 10;
-Y = Vproj';
-for kk = 1:n1
-    text(Y(kk,1), Y(kk,2), [' ',num2str(kk)],'Color','blue','verticalAlignment', 'middle');
-end
-for kk = n1+1:n1+n2
-    text(Y(kk,1), Y(kk,2), [' ',num2str(kk)],'Color','red','verticalAlignment', 'middle');
-end
 
 
 
