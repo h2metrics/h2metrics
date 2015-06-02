@@ -7,8 +7,9 @@ optShift = false; % Constant shifts of the parametrization
 useComp = false;
 maxIter = [];
 display = 'off';
+globalRot = true;
 
-options = [];
+options = struct;
 
 % Some code for handling optional inputs
 ii = 1;
@@ -44,6 +45,9 @@ end
 if isfield(options, 'rigidDisplay')
     display = options.rigidDisplay;
 end
+if isfield(options, 'rigidGlobalRot')
+    globalRot = options.rigidGlobalRot;
+end
 
 dSpace = splineData.dSpace;
 N = splineData.N;
@@ -57,19 +61,19 @@ if noCurves < 2
 end
 
 %% Optimization settings
-options = optimoptions('fminunc');
-options = optimoptions(options,'Display', display);
-options = optimoptions(options,'DerivativeCheck', 'off');
-% options = optimoptions(options,'PlotFcns', @optimplotfval);
-options = optimoptions(options,'GradObj', 'off');
-options = optimoptions(options,'Hessian', 'off');
-options = optimoptions(options,'Algorithm', 'quasi-newton');
+optionsOpt = optimoptions('fminunc');
+optionsOpt = optimoptions(optionsOpt,'Display', display);
+optionsOpt = optimoptions(optionsOpt,'DerivativeCheck', 'off');
+% optionsOpt = optimoptions(optionsOpt,'PlotFcns', @optimplotfval);
+optionsOpt = optimoptions(optionsOpt,'GradObj', 'off');
+optionsOpt = optimoptions(optionsOpt,'Hessian', 'off');
+optionsOpt = optimoptions(optionsOpt,'Algorithm', 'quasi-newton');
 
-options = optimoptions(options, 'MaxFunEvals',300000);
-options = optimoptions(options, 'TolFun', 1e-6);
-options = optimoptions(options, 'TolX', 1e-6);
+optionsOpt = optimoptions(optionsOpt, 'MaxFunEvals',300000);
+optionsOpt = optimoptions(optionsOpt, 'TolFun', 1e-6);
+optionsOpt = optimoptions(optionsOpt, 'TolX', 1e-6);
 if ~isempty(maxIter) 
-    options = optimoptions(options, 'maxIter', maxIter);
+    optionsOpt = optimoptions(optionsOpt, 'maxIter', maxIter);
 end
 
 %% Optimization
@@ -81,7 +85,16 @@ F = @(coefs) rigidAlignmentDist( coefs(1:noCurves-1), ...
 
 init_coefs = zeros([(2+dSpace)*(noCurves-1), 1]);
 
-optimal_coefs = fminunc( F, init_coefs, options );
+% Deal with global rotations
+if globalRot
+    gaInit = findInitRot( dList, splineData, quadData, options);
+    if optShift
+        init_coefs(1) = gaInit.alpha;
+    end
+    init_coefs(noCurves-1+1) = gaInit.beta;
+end;
+
+optimal_coefs = fminunc( F, init_coefs, optionsOpt );
 
 %% Apply transformations to curve
 alpha = [0; optimal_coefs(1:noCurves-1)];
@@ -153,25 +166,84 @@ for jj = noCurves:-1:1
     end
 end
 
-%% Evaluate shifted (alpha) curves at quadrature sites
-cList = {};
+% %% Evaluate shifted (alpha) curves at quadrature sites
+% cList = {};
+% for jj = noCurves:-1:1
+%     if optShift
+%         cList{jj} = deBoor( knotsS, nS, dTransformed{jj}, ...
+%                             mod(quadPointsS - alpha(jj), 2*pi), 1, ...
+%                             'periodic', true );
+%     else
+%         cList{jj} = quadData.B_S * dTransformed{jj};
+%     end
+% end
+% 
+% %% Compute distance
+% D = 0;
+% for jj = 1:noCurves-1
+%     for kk = jj+1:noCurves
+%         D = D + sqrt( sum( sum( ...
+%             (cList{jj}- cList{kk}).^2, 2) .* quadWeightsS));
+%     end
+% end
+
 for jj = noCurves:-1:1
     if optShift
-        cList{jj} = deBoor( knotsS, nS, dTransformed{jj}, ...
-                            mod(quadPointsS - alpha(jj), 2*pi), 1, ...
-                            'periodic', true );
-    else
-        cList{jj} = quadData.B_S * dTransformed{jj};
+        dTransformed{jj} = ...
+            curveApplyShift( dTransformed{jj}, alpha(jj), ...
+                             splineData, quadData );
     end
 end
 
-%% Compute distance
 D = 0;
 for jj = 1:noCurves-1
     for kk = jj+1:noCurves
-        D = D + sqrt( sum( sum( ...
-            (cList{jj}- cList{kk}).^2, 2) .* quadWeightsS));
+        D = D + curveFlatH2Norm( dTransformed{jj} - dTransformed{kk}, ...
+                                 splineData, quadData );
     end
 end
 
+end
+
+function gaInit = findInitRot( dList, splineData, quadData, options )
+    d0 = dList{1};
+    d1 = dList{2};
+    
+    options2 = options;
+    options2.rigidGlobalRot = false;
+    options2.maxIter = 40;
+    
+    noRotGuess = 6;
+    
+    distList = zeros([noRotGuess, 1]);
+    for jj = 1:noRotGuess
+        angle = 2*pi / noRotGuess * (jj-1);
+        % [dTmp, center] = curveCenter(d1, splineData, quadData);
+        
+        rotation = [  cos(angle), sin(angle); ...
+                     -sin(angle), cos(angle) ];
+        dTmp = d1* rotation;
+        
+        if isfield(options, 'optShift') && options.optShift
+            dTmp = curveApplyShift(dTmp, -angle, splineData, quadData);
+        end
+        
+        % dTmp = dTmp + ones([splineData.N, 1]) * center';
+        
+        [dTmpList, ~] = rigidAlignment({d0, dTmp}, splineData, ...
+            quadData, 'options', options2);
+        
+%         c = quadData.B_S * (dTmpList{1} - dTmpList{2});
+        distList(jj) = curveFlatH2Norm( dTmpList{1} - dTmpList{2}, ...
+                                        splineData, quadData );
+    end
+    
+    [~, ind] = min(distList);
+    % ind = 4;
+    
+    gaInit = struct( 'phi', [], 'beta', [], 'v', [], 'alpha', []);
+    gaInit.beta = 2*pi / noRotGuess * (ind-1);
+    if isfield(options, 'optShift') && options.optShift
+        gaInit.alpha = -gaInit.beta;
+    end
 end
