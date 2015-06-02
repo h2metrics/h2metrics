@@ -1,4 +1,4 @@
-function [ c ] = curveCenter( d, splineData, quadData )
+function [ c, center ] = curveCenter( d, splineData, quadData )
 
 N = splineData.N;
 dSpace = splineData.dSpace;
@@ -16,6 +16,7 @@ for jj = dSpace:-1:1
 end
 
 c = d - ones([N, 1]) * cCenter';
+center = cCenter;
 
 end
 
