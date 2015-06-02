@@ -92,8 +92,6 @@ dPath2(end-N+1:end,:) = d1;
 Cu = quadDataTensor.Bu * dPath2;
 Ct = quadDataTensor.Bt * dPath2;
 Cut = quadDataTensor.But * dPath2;
-Cuu = quadDataTensor.Buu * dPath2;
-Cuut = quadDataTensor.Buut * dPath2;
 
 %% Remaining stuff (should be identical to energyH2)
 Cspeed = Cu(:,1) .* Cu(:,1);
@@ -117,30 +115,36 @@ Ct_H1 = Ct_H1 .* CspeedInv;
 % Ct_L2 = sum( Ct .* Ct, 2) .* Cspeed;
 % Ct_H1 = sum( Cut .* Cut, 2) .* CspeedInv;
 
-% H2 Energy terms
-CuCuu = Cu(:,1) .* Cuu(:,1);
-CutCut = Cut(:,1) .* Cut(:,1);   
-CutCuut = Cut(:,1) .* Cuut(:,1);
-CuutCuut = Cuut(:,1) .* Cuut(:,1);
+Ct_H2 = zeros(size(Ct_L2));
+if splineData.a(3) ~= 0
+    Cuu = quadDataTensor.Buu * dPath2;
+    Cuut = quadDataTensor.Buut * dPath2;
+    
+    % H2 Energy terms
+    CuCuu = Cu(:,1) .* Cuu(:,1);
+    CutCut = Cut(:,1) .* Cut(:,1);   
+    CutCuut = Cut(:,1) .* Cuut(:,1);
+    CuutCuut = Cuut(:,1) .* Cuut(:,1);
 
-for ii = 2:dSpace
-    CuCuu = CuCuu + Cu(:,ii) .* Cuu(:,ii);
-    CutCut = CutCut + Cut(:,ii) .* Cut(:,ii);
-    CutCuut = CutCuut + Cut(:,ii) .* Cuut(:,ii);
-    CuutCuut = CuutCuut + Cuut(:,ii) .* Cuut(:,ii);
+    for ii = 2:dSpace
+        CuCuu = CuCuu + Cu(:,ii) .* Cuu(:,ii);
+        CutCut = CutCut + Cut(:,ii) .* Cut(:,ii);
+        CutCuut = CutCuut + Cut(:,ii) .* Cuut(:,ii);
+        CuutCuut = CuutCuut + Cuut(:,ii) .* Cuut(:,ii);
+    end
+
+    % Ct_H2 = CutCut .* CuCuu.^2 ./ Cspeed.^7 ...
+    %     - 2 * CutCuut .* CuCuu ./ Cspeed .^ 5 ...
+    %     + CuutCuut ./ Cspeed .^ 3;
+
+    CspeedInv2 = CspeedInv .* CspeedInv;
+    CspeedInv3 = CspeedInv2 .* CspeedInv;
+    CspeedInv5 = CspeedInv3 .* CspeedInv2;
+    CspeedInv7 = CspeedInv5 .* CspeedInv2;
+    Ct_H2 = CutCut .* CuCuu.^2 .* CspeedInv7 ...
+        - 2 * CutCuut .* CuCuu .* CspeedInv5 ...
+        + CuutCuut .* CspeedInv3;
 end
-
-% Ct_H2 = CutCut .* CuCuu.^2 ./ Cspeed.^7 ...
-%     - 2 * CutCuut .* CuCuu ./ Cspeed .^ 5 ...
-%     + CuutCuut ./ Cspeed .^ 3;
-
-CspeedInv2 = CspeedInv .* CspeedInv;
-CspeedInv3 = CspeedInv2 .* CspeedInv;
-CspeedInv5 = CspeedInv3 .* CspeedInv2;
-CspeedInv7 = CspeedInv5 .* CspeedInv2;
-Ct_H2 = CutCut .* CuCuu.^2 .* CspeedInv7 ...
-    - 2 * CutCuut .* CuCuu .* CspeedInv5 ...
-    + CuutCuut .* CspeedInv3;
 
 a = splineData.a;
 energyIntegrand = a(1) * Ct_L2 + a(2) * Ct_H1 + a(3) * Ct_H2;
