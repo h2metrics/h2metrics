@@ -12,7 +12,7 @@ while ii <= length(varargin)
             case 'options'
                 ii = ii + 1;
                 options = varargin{ii};
-            case 'dinit'
+            case 'meaninit'
                 ii = ii + 1;
                 dInit = varargin{ii};
             otherwise
@@ -44,9 +44,9 @@ function stats = statsfun(problem, dIter, stats, store)
     gaLastList = store.gaList;
     
     stats.dIter = dIter;
-    stats.dPathList = dPathList;
-    stats.gaList = gaList;
-    stats.enList = enList;
+    stats.dPathList = store.dPathList;
+    stats.gaList = store.gaList;
+    stats.enList = store.enList;
 end
 
 function [sumE, store] = cost(dIter, store)
