@@ -1,4 +1,4 @@
-function [ G ] = metricMatrix( d, splineData,quadData )
+function [ G ] = metricMatrixH2( d, splineData,quadData )
 %Compute the metric matrix at the curve d.
 
 a = splineData.a;

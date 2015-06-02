@@ -130,7 +130,7 @@ export_fig xavierMds.pdf
 % for ii = 1:length(InitialVelPatientsA1B1C1);
 %     V(:,ii) = InitialVelPatientsA1B1C1{ii}(:);
 % end
-% G = metricMatrix( CPatients ,splineData,quadData);
+% G = metricMatrixH2( CPatients ,splineData,quadData);
 % Gsqrt = sqrtm(G);
 % Vsqrt = Gsqrt*V;
 % %Vpca = pca(Vsqrt');

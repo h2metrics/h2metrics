@@ -29,7 +29,7 @@ V = zeros(splineData.N*splineData.dSpace,noCurves);
 for ii = 1:noCurves;
     V(:,ii) = InitialVelPatientsA1B1C1{ii}(:);
 end
-G = metricMatrix(CPatients,splineData,quadData);
+G = metricMatrixH2(CPatients,splineData,quadData);
 Gsqrt = sqrtm(G);
 Sigma = zeros([N*dSpace, N*dSpace]);
 for jj = 1:noCurves;
@@ -131,7 +131,7 @@ V = zeros(splineData.N*splineData.dSpace,noCurves);
 for ii = 1:noCurves;
     V(:,ii) = InitialVelHealthy{ii}(:);
 end
-G = metricMatrix(CHealthy,splineData,quadData);
+G = metricMatrixH2(CHealthy,splineData,quadData);
 Gsqrt = sqrtm(G);
 Sigma = zeros([N*dSpace, N*dSpace]);
 for jj = 1:noCurves;
@@ -218,7 +218,7 @@ V = zeros(splineData.N*splineData.dSpace,noCurves);
 for ii = 1:noCurves;
     V(:,ii) = InitialVelSick{9+ii}(:);
 end
-G = metricMatrix(CSick,splineData,quadData);
+G = metricMatrixH2(CSick,splineData,quadData);
 Gsqrt = sqrtm(G);
 Sigma = zeros([N*dSpace, N*dSpace]);
 for jj = 1:noCurves;
@@ -312,7 +312,7 @@ export_fig xavierPcaSickOnly.pdf
 % for ii = 1:noCurves;
 %     V(:,ii) = InitialVelHealthy{ii}(:);
 % end
-% G = metricMatrix(CHealthy,splineData,quadData);
+% G = metricMatrixH2(CHealthy,splineData,quadData);
 % Gsqrt = sqrtm(G);
 % Sigma = zeros([N*dSpace, N*dSpace]);
 % for jj = 1:noCurves;
@@ -412,7 +412,7 @@ export_fig xavierPcaSickOnly.pdf
 % for ii = 1:noCurves;
 %     V(:,ii) = InitialVelSick{9+ii}(:);
 % end
-% G = metricMatrix(CSick,splineData,quadData);
+% G = metricMatrixH2(CSick,splineData,quadData);
 % Gsqrt = sqrtm(G);
 % Sigma = zeros([N*dSpace, N*dSpace]);
 % for jj = 1:noCurves;
@@ -515,7 +515,7 @@ export_fig xavierPcaSickOnly.pdf
 % for ii = 1:noCurves;
 %     V(:,ii) = InitialVelHealthy{ii}(:);
 % end
-% G = metricMatrix(CHealthy,splineData,quadData);
+% G = metricMatrixH2(CHealthy,splineData,quadData);
 % Gsqrt = sqrtm(G);
 % Sigma = zeros([N*dSpace, N*dSpace]);
 % for jj = 1:noCurves;
@@ -615,7 +615,7 @@ export_fig xavierPcaSickOnly.pdf
 % for ii = 1:noCurves;
 %     V(:,ii) = InitialVelSick{ii}(:);
 % end
-% G = metricMatrix(CSick,splineData,quadData);
+% G = metricMatrixH2(CSick,splineData,quadData);
 % Gsqrt = sqrtm(G);
 % Sigma = zeros([N*dSpace, N*dSpace]);
 % for jj = 1:noCurves;
