@@ -136,8 +136,9 @@ end
 
 quadDataTensor = struct('B',[],'Bu',[],'Buu',[],'Bt',[],'But',[],...
     'Buut',[],'quadWeights',[],...
+    'BuTr',[],'BuuTr',[],'BtTr',[],'ButTr',[],'BuutTr',[],...
     'B_phi',[],'Bu_phi',[],'Bt_phi',[],'Buu_phi',[],'But_phi',[],...
-    'Buut_phi',[],'Buuu_phi',[],'timestamp',timestamp) ;
+    'Buut_phi',[],'Buuu_phi',[],'timestamp',timestamp,'nnz',[]) ;
 
 if doS && doT
     quadDataTensor.quadWeights = reshape(quadWeightsS'*quadWeightsT,[],1);
@@ -160,6 +161,12 @@ if doS && doT
                 noQuadPointsS*noQuadPointsT ,1)' ;
         end
     end
+    quadDataTensor.BuTr = quadDataTensor.Bu';
+    quadDataTensor.BtTr = quadDataTensor.Bt';
+    quadDataTensor.BuuTr = quadDataTensor.Buu';
+    quadDataTensor.ButTr = quadDataTensor.But';
+    quadDataTensor.BuutTr = quadDataTensor.Buut';
+    quadDataTensor.nnz = nnz( quadDataTensor.Bu);
 end
 
 %phiPath
