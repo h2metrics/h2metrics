@@ -74,7 +74,7 @@ else
 end
 minOptions = optimoptions(minOptions,'DerivativeCheck', 'off');
 % minOptions = optimoptions(minOptions,'PlotFcns', @optimplotfval);
-minOptions = optimoptions(minOptions,'GradObj', 'off');
+minOptions = optimoptions(minOptions,'GradObj', 'on');
 minOptions = optimoptions(minOptions,'Hessian', 'off');
 minOptions = optimoptions(minOptions,'MaxFunEvals', 1000000);
 if isfield(options, 'display')
@@ -107,13 +107,13 @@ if optDiff
     % have to be increasing by at least phiEps
     d_greville = aveknt(splineData.knotsPhi, nPhi+1)'; % Control points of Id
 
-    A_diff = zeros([Nphi+nPhi-1, N*dSpace*(Nt-2)+Nphi+dSpace+1]);
+    A_diff = zeros([Nphi+nPhi-1, N*dSpace*(Nt-2)+Nphi+dSpace+2]);
     for kk = 1:Nphi-1
         A_diff(kk, N*dSpace*(Nt-2) + kk) = 1;
         A_diff(kk, N*dSpace*(Nt-2) + kk + 1) = -1;
     end
-    A(Nphi, N*dSpace*(Nt-2) + Nphi) = 1;
-    A(Nphi, N*dSpace*(Nt-2) + 1) = -1;
+    A_diff(Nphi, N*dSpace*(Nt-2) + Nphi) = 1;
+    A_diff(Nphi, N*dSpace*(Nt-2) + 1) = -1;
     for kk = 1:nPhi-1 % Because of periodicity, the first control points are
                       % repeated at the end
         A_diff(Nphi + kk, N*dSpace*(Nt-2) + kk) = 1;
