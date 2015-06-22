@@ -43,7 +43,7 @@
 %       This corresponds to the output of spcol.
 function y = deBoor( knots, nS, d, evalPoints, order, varargin )
 
-useFastBSpline = true;
+useFastBSpline = false;
 periodic = false;
 
 ii = 1;
@@ -89,13 +89,13 @@ else
 end
 
 %% Use fastBSpline if possible
-if order == 1 && useFastBSpline
-    evalPoints(evalPoints == t_max) = t_max - 1e-16;
-    for jj = noCols:-1:1
-        y(:,jj) = fastBSplineEval(knots, d_nonper(:,jj), nS, evalPoints);
-    end
-    return
-end
+% if order == 1 && useFastBSpline
+%     evalPoints(evalPoints == t_max) = t_max - 1e-16;
+%     for jj = noCols:-1:1
+%         y(:,jj) = fastBSplineEval(knots, d_nonper(:,jj), nS, evalPoints);
+%     end
+%     return
+% end
 
 %% de Boor's algorithm vectorized
 r = floor((t_work-t_min)*N / ...

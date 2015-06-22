@@ -30,6 +30,17 @@ options = [];
 dInitPath = [];
 gaInit = [];
 
+%% Extract parameters
+N = splineData.N;
+Nt = splineData.Nt;
+nS = splineData.nS;
+nT = splineData.Nt;
+dSpace = splineData.dSpace;
+if optDiff
+    Nphi = splineData.Nphi;
+    nPhi = splineData.nPhi;
+end
+
 % Some code for handling optional inputs
 ii = 1;
 while ii <= length(varargin)
@@ -67,15 +78,28 @@ end
    
 if optDiff
     minOptions = optimoptions('fmincon');
+%     minOptions = optimoptions(minOptions,'Algorithm', 'trust-region-reflective');
     minOptions = optimoptions(minOptions,'Algorithm', 'interior-point');
+    
+    Hopt = @(coeff,lambda) energyH2DiffHessian( ...
+    [d0; reshape(coeff(1:N*(Nt-2)*dSpace), [N*(Nt-2), dSpace]); d1], ...
+    coeff(end-Nphi-dSpace-2+1:end-dSpace-2), ...
+    coeff(end-dSpace-2+1:end-2), coeff(end-1), coeff(end), ...
+    splineData, quadData, quadDataTensor, ...
+    'optDiff', optDiff, 'optTra', optTra, 'optRot', optRot, ...
+    'optShift', optShift );
+
+    minOptions = optimoptions(minOptions,'Hessian', 'user-supplied',...
+        'HessFcn',Hopt);
 else
     minOptions = optimoptions('fminunc');
     minOptions = optimoptions(minOptions,'Algorithm', 'quasi-newton');
+    minOptions = optimoptions(minOptions,'Hessian', 'off');
 end
 minOptions = optimoptions(minOptions,'DerivativeCheck', 'off');
 % minOptions = optimoptions(minOptions,'PlotFcns', @optimplotfval);
 minOptions = optimoptions(minOptions,'GradObj', 'on');
-minOptions = optimoptions(minOptions,'Hessian', 'off');
+% minOptions = optimoptions(minOptions,'Hessian', 'off');
 minOptions = optimoptions(minOptions,'MaxFunEvals', 1000000);
 if isfield(options, 'display')
     minOptions = optimoptions(minOptions, 'Display', options.display);
@@ -163,7 +187,7 @@ if optShift
     coeffInit(end) = gaInit.alpha;
 end
 
-Fopt = @(coeff) energyH2Diff( ...
+Fopt = @(coeff) energyH2Diff2( ...
     [d0; reshape(coeff(1:N*(Nt-2)*dSpace), [N*(Nt-2), dSpace]); d1], ...
     coeff(end-Nphi-dSpace-2+1:end-dSpace-2), ...
     coeff(end-dSpace-2+1:end-2), coeff(end-1), coeff(end), ...
