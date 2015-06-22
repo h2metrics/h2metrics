@@ -226,16 +226,17 @@ elseif optShift
     optGa.alpha = coeffOptimal(end);
     dEnd = curveApplyShift(dEnd, optGa.alpha, splineData, quadData);
 end
+if optTra
+    optGa.v = coeffOptimal(end-dSpace-2+1:end-2);
+    dEnd = dEnd + ones([N, 1]) * optGa.v';
+end
 if optRot
     optGa.beta = coeffOptimal(end-1);
     rotation = [ cos(optGa.beta), sin(optGa.beta); ...
                  -sin(optGa.beta), cos(optGa.beta) ];
     dEnd = dEnd * rotation;
 end
-if optTra
-    optGa.v = coeffOptimal(end-dSpace-2+1:end-2);
-    dEnd = dEnd + ones([N, 1]) * optGa.v';
-end
+
 
 dPath = [ d0; ...
           reshape(coeffOptimal(1:N*(Nt-2)*dSpace), [N*(Nt-2), dSpace]); ...
