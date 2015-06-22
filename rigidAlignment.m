@@ -155,6 +155,7 @@ beta = [0; beta];
 lambda = [ zeros([1, dSpace]); lambda];
                                  
 %% Apply translations (lambda) and rotations (beta)
+dTransformed = dList;
 for jj = noCurves:-1:1
     if optTra
         dTransformed{jj} = dList{jj} + ones([N, 1]) * lambda(jj,:);

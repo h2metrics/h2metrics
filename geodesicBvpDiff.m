@@ -93,8 +93,8 @@ if optDiff
         'HessFcn',Hopt);
 else
     minOptions = optimoptions('fminunc');
-    minOptions = optimoptions(minOptions,'Algorithm', 'quasi-newton');
-    minOptions = optimoptions(minOptions,'Hessian', 'off');
+    minOptions = optimoptions(minOptions,'Algorithm', 'trust-region');
+    minOptions = optimoptions(minOptions,'Hessian', 'on');
 end
 minOptions = optimoptions(minOptions,'DerivativeCheck', 'off');
 % minOptions = optimoptions(minOptions,'PlotFcns', @optimplotfval);
@@ -131,20 +131,23 @@ if optDiff
     % have to be increasing by at least phiEps
     d_greville = aveknt(splineData.knotsPhi, nPhi+1)'; % Control points of Id
 
-    A_diff = zeros([Nphi+nPhi-1, N*dSpace*(Nt-2)+Nphi+dSpace+2]);
+%     A_diff = zeros([Nphi+(nPhi-1), N*dSpace*(Nt-2)+Nphi+dSpace+2]);
+    A_diff = zeros([Nphi, N*dSpace*(Nt-2)+Nphi+dSpace+2]);
     for kk = 1:Nphi-1
         A_diff(kk, N*dSpace*(Nt-2) + kk) = 1;
         A_diff(kk, N*dSpace*(Nt-2) + kk + 1) = -1;
     end
     A_diff(Nphi, N*dSpace*(Nt-2) + Nphi) = 1;
     A_diff(Nphi, N*dSpace*(Nt-2) + 1) = -1;
-    for kk = 1:nPhi-1 % Because of periodicity, the first control points are
-                      % repeated at the end
-        A_diff(Nphi + kk, N*dSpace*(Nt-2) + kk) = 1;
-        A_diff(Nphi + kk, N*dSpace*(Nt-2) + kk + 1) = -1;
-    end
+%     for kk = 1:nPhi-1 % Because of periodicity, the first control points are
+%                       % repeated at the end
+%         A_diff(Nphi + kk, N*dSpace*(Nt-2) + kk) = 1;
+%         A_diff(Nphi + kk, N*dSpace*(Nt-2) + kk + 1) = -1;
+%     end
     A_diff = sparse(A_diff);
-    b_diff = diff(d_greville) + splineData.phiEps;
+    
+    b_diff = diff(d_greville);
+    b_diff = b_diff(1:end-(nPhi-1)) + splineData.phiEps;
 
     % phi1_nonper = [ zeros([N*dSpace*(Nt-2), 1]); phi1 ];
     % disp(A_diff * phi1_nonper < b_diff);
@@ -187,7 +190,7 @@ if optShift
     coeffInit(end) = gaInit.alpha;
 end
 
-Fopt = @(coeff) energyH2Diff2( ...
+Fopt = @(coeff) energyH2Diff( ...
     [d0; reshape(coeff(1:N*(Nt-2)*dSpace), [N*(Nt-2), dSpace]); d1], ...
     coeff(end-Nphi-dSpace-2+1:end-dSpace-2), ...
     coeff(end-dSpace-2+1:end-2), coeff(end-1), coeff(end), ...
@@ -223,15 +226,15 @@ elseif optShift
     optGa.alpha = coeffOptimal(end);
     dEnd = curveApplyShift(dEnd, optGa.alpha, splineData, quadData);
 end
-if optTra
-    optGa.v = coeffOptimal(end-dSpace-2+1:end-2);
-    dEnd = dEnd + ones([N, 1]) * optGa.v';
-end
 if optRot
     optGa.beta = coeffOptimal(end-1);
     rotation = [ cos(optGa.beta), sin(optGa.beta); ...
                  -sin(optGa.beta), cos(optGa.beta) ];
     dEnd = dEnd * rotation;
+end
+if optTra
+    optGa.v = coeffOptimal(end-dSpace-2+1:end-2);
+    dEnd = dEnd + ones([N, 1]) * optGa.v';
 end
 
 dPath = [ d0; ...
@@ -240,5 +243,13 @@ dPath = [ d0; ...
       
 exitFlag = exitflag;
 noIter = output.iterations;
+
+end
+
+function [H] = energyH2DiffHessian( dPath, phi, v, beta, alpha, ...
+    splineData, quadData, quadDataTensor, varargin)
+
+[~,~,H] = energyH2Diff(dPath, phi, v, beta, alpha,...
+    splineData, quadData, quadDataTensor, varargin{:} );
 
 end
