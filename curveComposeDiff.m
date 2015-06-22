@@ -31,15 +31,15 @@ phiPts = B_interpolPhi * phi;
 phiPts = phiPts + splineData.interpolS;
 phiPts = mod(phiPts, 2*pi);
 
-dNonper = [ d; d(1:nS,:) ];
 
 %fastBsplineEval
+% dNonper = [ d; d(1:nS,:) ];
 % for ii = dSpace:-1:1
 %     cPts(:,ii) = fastBSplineEval(knotsS, dNonper(:,ii), nS, phiPts);
 % end
 
 %deBoor
-cPts = deBoor( knotsS, nS, d1, phiPts,1,'periodic',true);
+cPts = deBoor( knotsS, nS, d, phiPts,1,'periodic',true);
 
 % [ knots_dx,weights_dx,order_dx] = fastBSplineDer( knotsS,dNonper(:,1),nS );
 % [ knots_dx,weights_dy,order_dx] = fastBSplineDer( knotsS,dNonper(:,2),nS );
