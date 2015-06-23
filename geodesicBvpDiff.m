@@ -91,6 +91,10 @@ if optDiff
 
     minOptions = optimoptions(minOptions,'Hessian', 'user-supplied',...
         'HessFcn',Hopt);
+    
+%     minOptions = optimoptions('fminunc');
+%     minOptions = optimoptions(minOptions,'Algorithm', 'trust-region');
+%     minOptions = optimoptions(minOptions,'Hessian', 'on');
 else
     minOptions = optimoptions('fminunc');
     minOptions = optimoptions(minOptions,'Algorithm', 'trust-region');
@@ -205,6 +209,11 @@ if optDiff
     % tic
     [coeffOptimal, optE, exitflag, output] = fmincon( problem );
     % toc
+    
+%     problem = struct( 'objective', Fopt, 'x0', coeffInit, ...
+%         'options', minOptions, 'solver', 'fminunc' );
+%     % tic
+%     [coeffOptimal, optE, exitflag, output] = fminunc( problem );
 else
     problem = struct( 'objective', Fopt, 'x0', coeffInit, ...
                       'options', minOptions, 'solver', 'fminunc' );
