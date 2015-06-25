@@ -1,4 +1,4 @@
-function q = geodesicForward(q0,q1,Nsteps,splineData,quadData,varargin)
+function q = geodesicForward2(q0,q1,Nsteps,splineData,quadData,varargin)
 %Compute a forward shooting of a geodesic defined by the two first points
 %q0 and q1 on a discrete path.
 %
@@ -101,6 +101,7 @@ function [ Eder ] = LagragianLeftDer( d2,d1,d0,quadData )
 %Solve F(q2,h) = 0, for all h = B_i*e_k.
 N = size(d0,1);
 Eder = zeros( N, 2);
+noQuadPointsS = quadData.noQuadPointsS;
 
 %Compute G(d1-d0,d1-d0)
 %W(q0,q1) = G_q0(q1-q0,q1-q0)
@@ -108,17 +109,17 @@ Eder = zeros( N, 2);
 d_v1 = d1 - d0;
 d_v2 = d2 - d1;
 
-B = full(quadData.B_S);
-Bu = full(quadData.Bu_S);
-Buu = full(quadData.Buu_S);
+B = (quadData.B_S);
+Bu = (quadData.Bu_S);
+Buu = (quadData.Buu_S);
 
 %C = quadData.B*Coefs;
 C0u = Bu*d0;
 C0uu = Buu*d0;
 C0speed = sum( C0u.^2 , 2).^(1/2);
 C0speedInv = 1./C0speed;
-C0speedInv2 = 1./C0speed.^2;
-C0speedInv4 = C0speedInv.^4;
+C0speedInv2 = C0speedInv.^2;
+C0speedInv4 = C0speedInv2.^2;
 %C0speedInv6 = C0speedInv.^6;
 C0uC0uu = sum(C0u.*C0uu,2);
 
@@ -126,10 +127,10 @@ C1u = Bu*d1;
 C1uu = Buu*d1;
 C1speed = sum( C1u.^2 , 2).^(1/2);
 C1speedInv = 1./C1speed;
-C1speedInv2 = 1./C1speed.^2;
-C1speedInv3 = 1./C1speed.^3;
-C1speedInv4 = 1./C1speed.^4;
-C1speedInv6 = C1speedInv.^6;
+C1speedInv2 = C1speedInv.^2;
+C1speedInv3 = C1speedInv.*C1speedInv2;
+C1speedInv4 = C1speedInv2.^2;
+C1speedInv6 = C1speedInv3.^2;
 C1uC1uu = sum(C1u.*C1uu,2);
 
 V1 = B*d_v1;
@@ -144,7 +145,7 @@ V2uu = Buu*d_v2;
 L2V2 = sum( V2.^2,2);
 
 %H1 terms, D_S V = 1/|c'|*V'
-H1V2 = C1speedInv.^2.*sum(V2u.^2,2);
+H1V2 = C1speedInv2.*sum(V2u.^2,2);
 
 V2_C1Ds_X = C1speedInv.*V2u(:,1);
 V2_C1Ds_Y = C1speedInv.*V2u(:,2);
@@ -163,72 +164,65 @@ V2_C1Ds2_X = C1Ds2_1.*V2u(:,1) + C1Ds2_2.*V2uu(:,1);
 V2_C1Ds2_Y = C1Ds2_1.*V2u(:,2) + C1Ds2_2.*V2uu(:,2);
 
 H2V2 = V2_C1Ds2_X.^2 + V2_C1Ds2_Y.^2;
-%
-for jj = N:-1:1
-    %%% G_q0(v1,h)
-    L2_V1h(:,jj,1) = V1(:,1).*B(:,jj);
-    L2_V1h(:,jj,2) = V1(:,2).*B(:,jj);
-    
-    H1_V1h(:,jj,1) = C0speedInv2.*V1u(:,1).*Bu(:,jj);
-    H1_V1h(:,jj,2) = C0speedInv2.*V1u(:,2).*Bu(:,jj);
-    
-    h_C0DS2 = C0Ds2_1.*Bu(:,jj) + C0Ds2_2.*Buu(:,jj);
-    H2_V1h(:,jj,1) = V1_C0Ds2_X.*h_C0DS2;
-    H2_V1h(:,jj,2) = V1_C0Ds2_Y.*h_C0DS2;
-    
-    %%% G_q1(v2,h)
-    L2_V2h(:,jj,1) = V2(:,1).*B(:,jj);
-    L2_V2h(:,jj,2) = V2(:,2).*B(:,jj);
-    
-    H1_V2h(:,jj,1) = V2_C1Ds_X.*Bu(:,jj).*C1speedInv;
-    H1_V2h(:,jj,2) = V2_C1Ds_Y.*Bu(:,jj).*C1speedInv;
-    
-    h_C1Ds2 = C1Ds2_1.*Bu(:,jj) + C1Ds2_2.*Buu(:,jj);
-    H2_V2h(:,jj,1) = V2_C1Ds2_X.*h_C1Ds2;
-    H2_V2h(:,jj,2) = V2_C1Ds2_Y.*h_C1Ds2; 
-    
-    %%% D_(q1,h)G(v2,v2)
-    C1u1Bu = C1u(:,1).*Bu(:,jj);
-    C1u2Bu = C1u(:,2).*Bu(:,jj);
 
-    C1speed_Var(:,jj,1) = C1speedInv.*C1u1Bu;
-    C1speed_Var(:,jj,2) = C1speedInv.*C1u2Bu;
-    
-    V2_C1Ds_Var_X(:,jj,1) = - C1speedInv3.*C1u1Bu.*V2u(:,1);
-    V2_C1Ds_Var_Y(:,jj,1) = - C1speedInv3.*C1u1Bu.*V2u(:,2);
-    V2_C1Ds_Var_X(:,jj,2) = - C1speedInv3.*C1u2Bu.*V2u(:,1);
-    V2_C1Ds_Var_Y(:,jj,2) = - C1speedInv3.*C1u2Bu.*V2u(:,2);
-    
-    V2_C1Ds2_Var_X(:,jj,1) = 4.*C1speedInv6.*C1u1Bu.*C1uC1uu.*V2u(:,1) - ...
-        C1speedInv4.*( (C1uu(:,1).*Bu(:,jj) + C1u(:,1).*Buu(:,jj)).*V2u(:,1) ...
-        + 2*C1u1Bu.*V2uu(:,1) );
-    V2_C1Ds2_Var_Y(:,jj,1) = 4.*C1speedInv6.*C1u1Bu.*C1uC1uu.*V2u(:,2) - ...
-        C1speedInv4.*( (C1uu(:,1).*Bu(:,jj) + C1u(:,1).*Buu(:,jj)).*V2u(:,2) ...
-        + 2*C1u1Bu.*V2uu(:,2) );
-    
-    V2_C1Ds2_Var_X(:,jj,2) = 4.*C1speedInv6.*C1u2Bu.*C1uC1uu.*V2u(:,1) - ...
-        C1speedInv4.*( (C1uu(:,2).*Bu(:,jj) + C1u(:,2).*Buu(:,jj)).*V2u(:,1) ...
-        + 2*C1u2Bu.*V2uu(:,1) );
-    V2_C1Ds2_Var_Y(:,jj,2) = 4.*C1speedInv6.*C1u2Bu.*C1uC1uu.*V2u(:,2) - ...
-        C1speedInv4.*( (C1uu(:,2).*Bu(:,jj) + C1u(:,2).*Buu(:,jj)).*V2u(:,2) ...
-        + 2*C1u2Bu.*V2uu(:,2) );
-    
-    %%% Compute F(q2)
-    Eder(jj,1) = 2*sum( ( 2*C0speed.*(a0*L2_V1h(:,jj,1) + a1*H1_V1h(:,jj,1)+ a2*H2_V1h(:,jj,1)) ...
-    - 2*C1speed.*(a0*L2_V2h(:,jj,1) + a1*H1_V2h(:,jj,1) + a2*H2_V2h(:,jj,1)) ...
-    + C1speed_Var(:,jj,1).*(a0*L2V2 +a1*H1V2 + a2*H2V2) ...
-    + 2*C1speed.*( a1*(V2_C1Ds_X.*V2_C1Ds_Var_X(:,jj,1) + V2_C1Ds_Y.*V2_C1Ds_Var_Y(:,jj,1))+ ...
-    a2*(V2_C1Ds2_X.*V2_C1Ds2_Var_X(:,jj,1) + V2_C1Ds2_Y.*V2_C1Ds2_Var_Y(:,jj,1)) ) ...
-    ).*quadData.quadWeightsS) ;
-    
-    Eder(jj,2) = 2*sum( ( 2*C0speed.*(a0*L2_V1h(:,jj,2)+a1*H1_V1h(:,jj,2) + a2*H2_V1h(:,jj,2)) ...
-    - 2*C1speed.*(a0*L2_V2h(:,jj,2) + a1*H1_V2h(:,jj,2) + a2*H2_V2h(:,jj,2)) ...
-    + C1speed_Var(:,jj,2).*(a0*L2V2 + a1*H1V2 + a2*H2V2) ...
-    + 2*C1speed.*( a1*(V2_C1Ds_X.*V2_C1Ds_Var_X(:,jj,2) + V2_C1Ds_Y.*V2_C1Ds_Var_Y(:,jj,2))+...
-    a2*(V2_C1Ds2_X.*V2_C1Ds2_Var_X(:,jj,2) + V2_C1Ds2_Y.*V2_C1Ds2_Var_Y(:,jj,2)) ) ...
-    ).*quadData.quadWeightsS) ;
-end
+%%% G_q0(v1,h)
+L2_V1h_1 = sparse(1:noQuadPointsS,1:noQuadPointsS,V1(:,1))*B;
+L2_V1h_2 = sparse(1:noQuadPointsS,1:noQuadPointsS,V1(:,2))*B;
 
+H1_V1h_1 = sparse(1:noQuadPointsS,1:noQuadPointsS,C0speedInv2.*V1u(:,1))*Bu;
+H1_V1h_2 = sparse(1:noQuadPointsS,1:noQuadPointsS,C0speedInv2.*V1u(:,2))*Bu;
+
+H2_V1h_1 = sparse(1:noQuadPointsS,1:noQuadPointsS,C0Ds2_1.*V1_C0Ds2_X)*Bu + ...
+    sparse(1:noQuadPointsS,1:noQuadPointsS,C0Ds2_2.*V1_C0Ds2_X)*Buu;
+H2_V1h_2 = sparse(1:noQuadPointsS,1:noQuadPointsS,C0Ds2_1.*V1_C0Ds2_Y)*Bu + ...
+    sparse(1:noQuadPointsS,1:noQuadPointsS,C0Ds2_2.*V1_C0Ds2_Y)*Buu;
+
+%%% G_q1(v2,h)
+L2_V2h_1 = sparse(1:noQuadPointsS,1:noQuadPointsS,V2(:,1))*B;
+L2_V2h_2 = sparse(1:noQuadPointsS,1:noQuadPointsS,V2(:,2))*B;
+
+H1_V2h_1 = sparse(1:noQuadPointsS,1:noQuadPointsS,V2_C1Ds_X.*C1speedInv)*Bu;
+H1_V2h_2 = sparse(1:noQuadPointsS,1:noQuadPointsS,V2_C1Ds_Y.*C1speedInv)*Bu;
+
+H2_V2h_1 = sparse(1:noQuadPointsS,1:noQuadPointsS,C1Ds2_1.*V2_C1Ds2_X)*Bu + ...
+    sparse(1:noQuadPointsS,1:noQuadPointsS,C1Ds2_2.*V2_C1Ds2_X)*Buu;
+H2_V2h_2 = sparse(1:noQuadPointsS,1:noQuadPointsS,C1Ds2_1.*V2_C1Ds2_Y)*Bu + ...
+    sparse(1:noQuadPointsS,1:noQuadPointsS,C1Ds2_2.*V2_C1Ds2_Y)*Buu;
+
+%%% D_(q1,h)G(v2,v2)
+C1speed_Var_1 = sparse(1:noQuadPointsS,1:noQuadPointsS,C1speedInv.*C1u(:,1))*Bu;
+C1speed_Var_2 = sparse(1:noQuadPointsS,1:noQuadPointsS,C1speedInv.*C1u(:,2))*Bu;
+
+V2_C1Ds_Var_X_1 = sparse(1:noQuadPointsS,1:noQuadPointsS,-V2_C1Ds_X.*C1speedInv3.*C1u(:,1).*V2u(:,1))*Bu;
+V2_C1Ds_Var_Y_1 = sparse(1:noQuadPointsS,1:noQuadPointsS,-V2_C1Ds_Y.*C1speedInv3.*C1u(:,1).*V2u(:,2))*Bu;
+V2_C1Ds_Var_X_2 = sparse(1:noQuadPointsS,1:noQuadPointsS,-V2_C1Ds_X.*C1speedInv3.*C1u(:,2).*V2u(:,1))*Bu;
+V2_C1Ds_Var_Y_2 = sparse(1:noQuadPointsS,1:noQuadPointsS,-V2_C1Ds_Y.*C1speedInv3.*C1u(:,2).*V2u(:,2))*Bu;
+
+V2_C1Ds2_Var_X_1 = sparse(1:noQuadPointsS,1:noQuadPointsS,V2_C1Ds2_X.*(4*C1speedInv6.*C1u(:,1).*C1uC1uu.*V2u(:,1)-C1speedInv4.*(C1uu(:,1).*V2u(:,1)+2*C1u(:,1).*V2uu(:,1))) )*Bu...
+    - sparse(1:noQuadPointsS,1:noQuadPointsS,V2_C1Ds2_X.*C1speedInv4.*C1u(:,1).*V2u(:,1))*Buu;
+V2_C1Ds2_Var_Y_1 = sparse(1:noQuadPointsS,1:noQuadPointsS,V2_C1Ds2_Y.*(4*C1speedInv6.*C1u(:,1).*C1uC1uu.*V2u(:,2)-C1speedInv4.*(C1uu(:,1).*V2u(:,2)+2*C1u(:,1).*V2uu(:,2))) )*Bu...
+    - sparse(1:noQuadPointsS,1:noQuadPointsS,V2_C1Ds2_Y.*C1speedInv4.*C1u(:,1).*V2u(:,2))*Buu;
+V2_C1Ds2_Var_X_2 = sparse(1:noQuadPointsS,1:noQuadPointsS,V2_C1Ds2_X.*(4*C1speedInv6.*C1u(:,2).*C1uC1uu.*V2u(:,1)-C1speedInv4.*(C1uu(:,2).*V2u(:,1)+2*C1u(:,2).*V2uu(:,1))) )*Bu...
+    - sparse(1:noQuadPointsS,1:noQuadPointsS,V2_C1Ds2_X.*C1speedInv4.*C1u(:,2).*V2u(:,1))*Buu;
+V2_C1Ds2_Var_Y_2 = sparse(1:noQuadPointsS,1:noQuadPointsS,V2_C1Ds2_Y.*(4*C1speedInv6.*C1u(:,2).*C1uC1uu.*V2u(:,2)-C1speedInv4.*(C1uu(:,2).*V2u(:,2)+2*C1u(:,2).*V2uu(:,2))) )*Bu...
+    - sparse(1:noQuadPointsS,1:noQuadPointsS,V2_C1Ds2_Y.*C1speedInv4.*C1u(:,2).*V2u(:,2))*Buu;
+
+    Eder_1_alt = 2*(...
+    (2*C0speed.*quadData.quadWeightsS)'*(a0*L2_V1h_1 + a1*H1_V1h_1+ a2*H2_V1h_1)...
+    - (2*C1speed.*quadData.quadWeightsS)'*(a0*L2_V2h_1 + a1*H1_V2h_1 + a2*H2_V2h_1)...
+    + ((a0*L2V2 +a1*H1V2 + a2*H2V2).*quadData.quadWeightsS)'*C1speed_Var_1...
+    + (2*C1speed.*quadData.quadWeightsS)'*( a1*(V2_C1Ds_Var_X_1 + V2_C1Ds_Var_Y_1)...
+    + a2*(V2_C1Ds2_Var_X_1+V2_C1Ds2_Var_Y_1)) );
+
+    Eder_2_alt = 2*(...
+    (2*C0speed.*quadData.quadWeightsS)'*(a0*L2_V1h_2 + a1*H1_V1h_2+ a2*H2_V1h_2)...
+    - (2*C1speed.*quadData.quadWeightsS)'*(a0*L2_V2h_2 + a1*H1_V2h_2 + a2*H2_V2h_2)...
+    + ((a0*L2V2 +a1*H1V2 + a2*H2V2).*quadData.quadWeightsS)'*C1speed_Var_2...
+    + (2*C1speed.*quadData.quadWeightsS)'*(a1*(V2_C1Ds_Var_X_2 + V2_C1Ds_Var_Y_2)...
+    + a2*(V2_C1Ds2_Var_X_2+V2_C1Ds2_Var_Y_2) ) );
+
+    Eder = [Eder_1_alt',Eder_2_alt'];
+    
 end
 
 function [ Eder ] = LagragianMidDer( d2,d1,d0,quadData )
