@@ -151,20 +151,24 @@ if optDiff
     A_diff = sparse(A_diff);
     
     b_diff = diff(d_greville);
-    b_diff = b_diff(1:end-(nPhi-1)) + splineData.phiEps;
+    b_diff = b_diff(1:end-(nPhi-1)) - splineData.phiEps;
 
     % phi1_nonper = [ zeros([N*dSpace*(Nt-2), 1]); phi1 ];
     % disp(A_diff * phi1_nonper < b_diff);
     %% Equality constraints
     %phi(0) = 0
-    NphiEye = speye(Nphi);
-    Ni_0 = zeros(1,nPhi);
-    for ii = 1:nPhi
-        Ni_0(ii) = deBoor(splineData.knotsPhi, splineData.nPhi,NphiEye(:,ii)...
-            ,0,1,'periodic',true);
-    end
-    Aeq = sparse(ones(1,nPhi),N*dSpace*(Nt-2)+(1:nPhi),...
-        Ni_0,1,N*dSpace*(Nt-2)+Nphi+dSpace+2);
+%     NphiEye = speye(Nphi);
+%     Ni_0 = zeros(1,nPhi);
+%     for ii = 1:nPhi
+%         Ni_0(ii) = deBoor(splineData.knotsPhi, splineData.nPhi,NphiEye(:,ii)...
+%             ,0,1,'periodic',true);
+%     end
+%     Aeq = sparse(ones(1,nPhi),N*dSpace*(Nt-2)+(1:nPhi),...
+%         Ni_0,1,N*dSpace*(Nt-2)+Nphi+dSpace+2);
+    
+    Aeq = sparse(ones(1,Nphi),N*dSpace*(Nt-2)+(1:Nphi),...
+        ones(Nphi,1),1,N*dSpace*(Nt-2)+Nphi+dSpace+2);
+    
     
 else
     Nphi = 1; % Simpler than setting to 0
@@ -216,7 +220,7 @@ Fopt = @(coeff) energyH2Diff( ...
 if optDiff
     problem = struct( 'objective', Fopt, 'x0', coeffInit, ...
                       'Aineq', A_diff, 'bineq', b_diff, ...
-                      ...%'Aeq',Aeq,'beq',0,...
+                      'Aeq',Aeq,'beq',0,...
                       'options', minOptions, 'solver', 'fmincon' );
     % tic
     [coeffOptimal, optE, exitflag, output] = fmincon( problem );
