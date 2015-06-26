@@ -27,7 +27,9 @@
 %       Only returns the data corresponding to the given indices. The
 %       ordering of the curves will depend on the dataset. Usually it will
 %       correspond to the alphabetic ordering of files in the source
-%       directory.
+%       directory. Example
+%           loadDataSet( ..., 'ind', [1, 2, 5, 6])
+%       To return all curves, pass an empty array ([]).
 %
 % Output
 %   dList

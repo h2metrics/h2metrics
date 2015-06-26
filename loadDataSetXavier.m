@@ -4,8 +4,10 @@
 % Optional arguments
 %   'version' = {'v1' (default), 'v2'}
 %       Describes, which version of the data to use.
-%   'noLoops' (only if version='v1')
-%       Returns only curves, which do not have selfintersections.
+%   'ind'='noLoops' (only if version='v1')
+%       Returns only curves, which do not have selfintersections. Usage
+%           loadDataSet( 'xavier_heart', ..., 
+%                        'version', 'v1', 'ind', 'noLoops' );
 %
 function dList = loadDataSetXavier(splineData, dataDir, varargin)
 
