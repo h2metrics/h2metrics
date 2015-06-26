@@ -1,11 +1,10 @@
 %% curveFlatH2InnerProd
-% Computes the norm
-%   |u| = \sqrt{ <u, u>},
-% where <u,u> is given by curveFlatH2InnerProd.
+% Computes the inner product
+%   <u, v> = \int a(1) * u.v + a(2) * u'.v' + a(3) * u''.v'' d\th
 %
 % Input
-%   u
-%       The spline curve
+%   u, v
+%       The spline curves
 %   splineData, quadData
 %       General supporting files
 %
@@ -15,10 +14,10 @@
 %
 % Output
 %   G
-%       The norm
+%       The inner product
 %   components = [L2, H1, H2]
 %       We have the identity
-%           G = sqrt{L2^2 + H1^2 + H2^2}
+%           G = L2 + H1 + H2
 %
 % Notes
 %   The order of precedence for the constants are as follows
@@ -26,8 +25,8 @@
 %     -) splineData.a
 %     -) a = [1 0 1]
 %
-function [G, components] = curveFlatH2Norm( d, splineData, quadData, ...
-                                            varargin)
+function [G, components] = curveFlatH2InnerProd( u, v, splineData, ...
+                                                 quadData, varargin)
 
 % Set constants to be used in metric
 a = [1 0 1];
@@ -49,13 +48,17 @@ while ii <= length(varargin)
     end
 end
 
-c = quadData.B_S * d;
-cu = quadData.Bu_S * d;
-cuu = quadData.Buu_S * d;
+U = quadData.B_S * u;
+Uu = quadData.Bu_S * u;
+Uuu = quadData.Buu_S * u;
 
-L2 = sum(sum(c .* c, 2) .* quadData.quadWeightsS);
-H1 = sum(sum(cu .* cu, 2) .* quadData.quadWeightsS);
-H2 = sum(sum(cuu .* cuu, 2) .* quadData.quadWeightsS);
+V = quadData.B_S * v;
+Vu = quadData.Bu_S * v;
+Vuu = quadData.Buu_S * v;
+
+L2 = sum(sum(U .* V, 2) .* quadData.quadWeightsS);
+H1 = sum(sum(Uu .* Vu, 2) .* quadData.quadWeightsS);
+H2 = sum(sum(Uuu .* Vuu, 2) .* quadData.quadWeightsS);
 
 G = sqrt(a(1) * L2 + a(2) * H1 + a(3) * H2);
 
@@ -64,4 +67,3 @@ if nargout > 1 % Return each component separately
 end
 
 end
-
