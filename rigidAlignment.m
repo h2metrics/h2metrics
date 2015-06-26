@@ -1,3 +1,7 @@
+% Works only for dSpace = 2 and periodic curves. For nonperiodic curves
+% shifts don't work and for higher dimensions rotations have to be
+% rethought.
+
 function [dAligned, gaOpt] = rigidAlignment( dList, splineData, ...
                                              quadData, varargin) 
 
@@ -8,6 +12,7 @@ useComp = false;
 maxIter = [];
 display = 'off';
 globalRot = true;
+a = [1 0 1];
 
 options = struct;
 
@@ -48,7 +53,9 @@ end
 if isfield(options, 'rigidGlobalRot')
     globalRot = options.rigidGlobalRot;
 end
-
+if isfield(options, 'rigidA')
+    a = options.rigidA;
+end
 dSpace = splineData.dSpace;
 N = splineData.N;
 
@@ -81,7 +88,7 @@ F = @(coefs) rigidAlignmentDist( coefs(1:noCurves-1), ...
     coefs(noCurves:2*(noCurves-1)), ...
     reshape(coefs(2*(noCurves-1)+1:end), [noCurves-1, dSpace]), ...
     dAligned(1:noCurves), splineData, quadData, ...
-    optTra, optRot, optShift );
+    optTra, optRot, optShift, a );
 
 init_coefs = zeros([(2+dSpace)*(noCurves-1), 1]);
 
@@ -135,7 +142,7 @@ end
 
 function D = rigidAlignmentDist( alpha, beta, lambda, ...
                                  dList, splineData, quadData, ...
-                                 optTra, optRot, optShift )
+                                 optTra, optRot, optShift, a )
 % Only for dSpace=2 and periodic curves
 
 dSpace = size(dList{1}, 2);
@@ -199,8 +206,10 @@ end
 D = 0;
 for jj = 1:noCurves-1
     for kk = jj+1:noCurves
-        D = D + curveFlatH2Norm( dTransformed{jj} - dTransformed{kk}, ...
-                                 splineData, quadData );
+        comp = curveFlatH2Norm( dTransformed{jj} - dTransformed{kk}, ...
+                                splineData, quadData );
+        D = D + sqrt(a(1) * comp(1)^2 + a(2) * comp(2)^2 + ...
+                     a(3) * comp(3)^2);
     end
 end
 
