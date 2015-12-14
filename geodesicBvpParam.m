@@ -53,7 +53,7 @@ optShift = false; % Constant shifts of the parametrization
 
 options = [];
 dInitPath = [];
-gaInit = [];
+initGa = [];
 
 %% Extract parameters
 N = splineData.N;
@@ -73,9 +73,9 @@ while ii <= length(varargin)
             case 'initpath'
                 ii = ii + 1;
                 dInitPath = varargin{ii};
-            case 'gainit'
+            case 'initga'
                 ii = ii + 1;
-                gaInit = varargin{ii};
+                initGa = varargin{ii};
             otherwise
                 error('Invalid option: ''%s''.',varargin{ii});
         end
@@ -115,14 +115,14 @@ if isfield(options, 'maxIter')
 end
 
 %% Create initial guess for path if not provided one
-if isempty(gaInit)
+if isempty(initGa)
     [~, gaTmp] = rigidAlignment( {d0, d1}, splineData, quadData, ...
                                  'options', options );
-    gaInit = gaTmp{2};
+    initGa = gaTmp{2};
 end
 
 if isempty(dInitPath)
-    d1Ga = curveApplyGamma(d1, gaInit, splineData, quadData);
+    d1Ga = curveApplyGamma(d1, initGa, splineData, quadData);
     dInitPath = linearPath(d0, d1Ga, splineData);
 end
 
@@ -136,13 +136,13 @@ coeffInit(end-dSpace-2+1:end-2) = zeros([ dSpace, 1]); % Translation
 coeffInit(end-1) = 0; % Rotation
 coeffInit(end) = 0; % Shift
 if optTra
-    coeffInit(end-dSpace-2+1:end-2) = gaInit.v;
+    coeffInit(end-dSpace-2+1:end-2) = initGa.v;
 end
 if optRot
-    coeffInit(end-1) = gaInit.beta;
+    coeffInit(end-1) = initGa.beta;
 end
 if optShift
-    coeffInit(end) = gaInit.alpha;
+    coeffInit(end) = initGa.alpha;
 end
 
 Fopt = @(coeff) energyH2Diff( ...
