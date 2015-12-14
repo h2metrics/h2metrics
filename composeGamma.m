@@ -1,3 +1,22 @@
+%% composeGamma
+%
+% Calculates the composition of two Gamma structures
+%
+% IMPORTANT -- NOT WORKING YET
+%   We cannot use curveComposeDiff to compose two diffeomorphisms!! Need
+%   another function, diffComposeDiff, for that.
+%
+% Input
+%   ga1, ga2
+%       Gamma structures to be composed
+%   splineData
+%       General information about the splines used.
+%   quadData
+%       Precomputed spline collocation matrices at quadrature points.
+%
+% Output
+%   ga
+%       Gamma structure of the composition
 function ga = composeGamma(ga1, ga2, splineData, quadData)
 
 ga = struct( 'phi', [], 'beta', [], 'v', [], 'alpha', []);
@@ -9,6 +28,7 @@ if ~isempty(ga1.beta) && ~isempty(ga2.v)
 	ga.v = ga.v + rotation * ga2.v;
 elseif ~isempty(ga2.beta)
     ga.v = ga.v + ga2.b;
+end
 
 ga.beta = ga1.beta;
 if ~isempty(ga2.beta)

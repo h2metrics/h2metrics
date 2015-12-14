@@ -1,3 +1,28 @@
+%% curveApplyGamma
+%
+% Transforms the curve by the Gamma structure. The formula is
+%   c(th) = R_beta * ( d( phi(th) - alpha ) + v )
+% and R_beta = exp(i beta) is the counterclockwise rotation by beta.
+%
+% Input
+%   d
+%       Control points of the curve
+%   gamma
+%       Gamma structures to be applied
+%   splineData
+%       General information about the splines used.
+%   quadData
+%       Precomputed spline collocation matrices at quadrature points.
+%
+% Optional parameters
+%   applyDiff = {true (default), false}
+%       If false, we ignore gamma.phi
+%   applyShift = {true (default), false}
+%       If false, we ignore gamma.alpha
+%
+% Output
+%   c
+%       The transformed curve
 function c = curveApplyGamma(d, gamma, splineData, quadData, varargin)
 
 applyDiff = true;
@@ -31,7 +56,7 @@ end
 
 c = d;
 if applyDiff && ~isempty(gamma.phi)
-    if applyShift && ~isempy(gamma.alpha)
+    if applyShift && ~isempty(gamma.alpha)
         c = curveComposeDiff( c, gamma.phi - gamma.alpha, ...
                               splineData, quadData );
     else

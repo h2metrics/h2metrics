@@ -1,8 +1,6 @@
 %% curveComposeDiff
 %
-% Function computes the composition of a periodic curve and a
-% diffeomorphism. It uses the fastBSpline library to speed up spline
-% evaluation.
+% Function computes the composition of a curve and a diffeomorphism.
 %
 % Points that are used to fit the control points of the composition are
 % given by splineData.interpolS.
@@ -20,7 +18,6 @@
 %       Spline curve approximating d o phi.
 function c = curveComposeDiff(d, phi, splineData, quadData)
 
-dSpace = splineData.dSpace;
 nS = splineData.nS;
 knotsS = splineData.knotsS;
 
@@ -31,16 +28,19 @@ phiPts = B_interpolPhi * phi;
 phiPts = phiPts + splineData.interpolS;
 phiPts = mod(phiPts, 2*pi);
 
-
-%fastBsplineEval
+% fastBsplineEval
+% dSpace = splineData.dSpace;
 % dNonper = [ d; d(1:nS,:) ];
 % for ii = dSpace:-1:1
 %     cPts(:,ii) = fastBSplineEval(knotsS, dNonper(:,ii), nS, phiPts);
 % end
 
-%deBoor
-cPts = deBoor( knotsS, nS, d, phiPts,1,'periodic',true);
+% For compatibility purposes, use deBoor.
+cPts = deBoor( knotsS, nS, d, phiPts, 1, 'periodic', true );
 
+c = B_interpolS \ cPts;
+
+% When we wanted to use first derivatives for interpolation...
 % [ knots_dx,weights_dx,order_dx] = fastBSplineDer( knotsS,dNonper(:,1),nS );
 % [ knots_dx,weights_dy,order_dx] = fastBSplineDer( knotsS,dNonper(:,2),nS );
 % dcPts(:,1) = fastBSplineEval(knots_dx, weights_dx, nS-1, phiPts);
@@ -52,8 +52,6 @@ cPts = deBoor( knotsS, nS, d, phiPts,1,'periodic',true);
 % dcPts_alt(:,1) = fastBSplineEval(knots_dx_alt, weights_dx_alt, nS-1, phiPts);
 % dcPts_alt(:,2) = fastBSplineEval(knots_dx_alt, weights_dy_alt, nS-1, phiPts);
 
-c = B_interpolS \ cPts;
-
-%[ knots_dx,weights_dx,order_dx] = fastBSplineDer( knotsS,dNonper(:,1),nS )
+% [ knots_dx,weights_dx,order_dx] = fastBSplineDer( knotsS,dNonper(:,1),nS )
 
 end

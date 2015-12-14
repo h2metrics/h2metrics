@@ -1,6 +1,6 @@
 %% curveFlatH2InnerProd
 % Computes the norm
-%   |u| = \sqrt{ <u, u>},
+%   |u| = \sqrt{ <u,u> },
 % where <u,u> is given by curveFlatH2InnerProd.
 %
 % Input
@@ -60,7 +60,7 @@ H2 = sum(sum(cuu .* cuu, 2) .* quadData.quadWeightsS);
 G = sqrt(a(1) * L2 + a(2) * H1 + a(3) * H2);
 
 if nargout > 1 % Return each component separately
-    components = [sqrt(L2), sqrt(H1), sqrt(H2)];
+    components = [sqrt(a(1)*L2), sqrt(a(2)*H1), sqrt(a(3)*H2)];
 end
 
 end

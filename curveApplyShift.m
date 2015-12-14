@@ -1,4 +1,22 @@
-function c = curveApplyShift(d, alpha, splineData, quadData, varargin)
+%% curveApplyShift
+%
+% Applies a shift by -alpha to the curve. The formula is
+%   c(th) = d( th - alpha )
+%
+% Input
+%   d
+%       Control points of the curve
+%   alpha
+%       Shift to be applied
+%   splineData
+%       General information about the splines used.
+%   quadData
+%       Precomputed spline collocation matrices at quadrature points.
+%
+% Output
+%   c
+%       The transformed curve
+function c = curveApplyShift(d, alpha, splineData, quadData)
 
 % We don't know, if Nphi is set.
 splineData2 = splineData;
