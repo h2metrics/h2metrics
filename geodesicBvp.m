@@ -49,12 +49,6 @@
 function [optE, optPath, optGa, info] = geodesicBvp(d0, d1, ...
     splineData, quadData, quadDataTensor, varargin)
 
-%TODO: Add all decision functionality
-optTra = false;
-optRot = false;
-optDiff = false;
-optShift = false;
-
 % Some code for handling optional inputs
 ii = 1;
 while ii <= length(varargin)
@@ -70,18 +64,22 @@ if ~isfield(options, 'useAmpl')
     options.useAmpl = false;
 end
 
-if ~options.useAmpl
-    %TODO: Create real geodesicBvpMatlab functionality
-%     [optE, optPath, optGa, info] = geodesicBvpMatlab(d0, d1, ...
-%         splineData, quadData, quadDataTensor, varargin);
-    
-    %Do basic parametrized energy
-    if ((~optTra) && (~optRot) && (~optDiff) && (~optShift)) 
-        [optE, optPath, optGa, info] = geodesicBvpFminunc(d0, d1, ...
-            splineData, quadData, quadDataTensor, varargin);
-    end
-else
+% Decision tree
+% if useAmpl
+%   call geodesicBvpAmpl
+% elseif optDiff
+%   call geodesicBvpDiff
+% else
+%   call geodesicBvpParam
+
+if isfield(options, 'useAmpl') && options.useAmpl
     error('Ampl version not implemented yet...');
+elseif isfield(options, 'optDiff') && options.optDiff
+    [optE, optPath, optGa, info] = geodesicBvpDiff(d0, d1, ...
+        splineData, quadData, quadDataTensor, varargin{:});
+else
+    [optE, optPath, optGa, info] = geodesicBvpParam(d0, d1, ...
+        splineData, quadData, quadDataTensor, varargin{:});
 end
 
 end

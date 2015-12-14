@@ -136,12 +136,20 @@ if nargout < 2
     return
 end
 
-nnzmaxST = noSubQuadPointsT*(nT+1)*noSubQuadPointsS*(nS+1)*N*Nt;
-matrixAllocST = spalloc(noQuadPointsS*noQuadPointsT,N*Nt,nnzmaxST);
-%TODO: Are B_phi evaluated at the right points?
-%TODO: calculate nnz( quadData.B_phi(:,1)) analytically
-nnzmaxPhiT = noSubQuadPointsT*(nT+1)*nnz( quadData.B_phi(:,1) )*Nphi*Nt;
-matrixAllocPhiT = spalloc(noQuadPointsS*noQuadPointsT,Nphi*Nt,nnzmaxPhiT);
+if doS && doT
+    nnzmaxST = noSubQuadPointsT*(nT+1)*noSubQuadPointsS*(nS+1)*N*Nt;
+    matrixAllocST = spalloc(noQuadPointsS*noQuadPointsT,N*Nt,nnzmaxST);
+else
+    matrixAllocST = [];
+end
+if doPhi && doT
+    %TODO: Are B_phi evaluated at the right points?
+    %TODO: calculate nnz( quadData.B_phi(:,1)) analytically
+    nnzmaxPhiT = noSubQuadPointsT*(nT+1)*nnz( quadData.B_phi(:,1) )*Nphi*Nt;
+    matrixAllocPhiT = spalloc(noQuadPointsS*noQuadPointsT,Nphi*Nt,nnzmaxPhiT);
+else
+    matrixAllocPhiT = [];
+end
 
 
 quadDataTensor = struct('B',matrixAllocST,'Bu',matrixAllocST,'Buu',matrixAllocST,...

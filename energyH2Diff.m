@@ -78,8 +78,8 @@ a = splineData.a; a0 = a(1); a1 = a(2); a2 = a(3);
 noInterpolPoints = size(quadData.B_interpolPhi,1);
 
 rotation = [ cos(beta), sin(beta); ...
-                 -sin(beta), cos(beta) ]; %Transpose of rotation matrix
-rotation90 = [0, 1; -1,0]; %Transpose of rotation matrix
+            -sin(beta), cos(beta) ]; %Transpose of rotation matrix
+rotation90 = [0, 1; -1, 0]; %Transpose of rotation matrix
 
 noControlPoints = splineData.N*splineData.Nt;
 noControls = noControlPoints*splineData.dSpace;
@@ -89,34 +89,8 @@ noQuadSites = length( quadDataTensor.quadWeights );
 %% Apply diffeomorphism, translation, rotation and shift
 d1 = dPath(end-N+1:end,:);
 
-% d1_fixed = dPath(end-N+1:end,:);
-% if optDiff
-%     phiPts = quadData.B_interpolPhi * (phi- logical(optShift)*alpha);
-%     phiPts = phiPts + splineData.interpolS; %Id  + f
-%     phiPts = mod(phiPts, 2*pi); %Domain of definition [0,2*pi]
-%     
-% %     d1PhiInterpol = deBoorTest(d1,splineData.knotsS, splineData.nS, phiPts,1);
-%     d1PhiInterpol = deBoor(splineData.knotsS, splineData.nS,d1, phiPts,1,...
-%         'periodic',true);
-%     d1 = quadData.B_interpolS \ d1PhiInterpol;
-% elseif optShift
-%     phiPts = splineData.interpolS - alpha;
-%     
-%     d1PhiInterpol = deBoor(splineData.knotsS, splineData.nS,d1, phiPts,1,...
-%         'periodic',true);
-%     d1 = quadData.B_interpolS \ d1PhiInterpol;
-% else
-%     phiPts = splineData.interpolS;
-% end
-
 if optDiff
     d1 = curveComposeDiff(d1, phi-logical(optShift)*alpha, splineData, quadData);
-%     phiPts = quadData.B_interpolPhi * (phi-alpha);
-%     phiPts = phiPts + splineData.interpolS; %Id  + f
-%     phiPts = mod(phiPts, 2*pi); %Domain of definition [0,2*pi]
-%     d1PhiInterpol = deBoor(splineData.knotsS, splineData.nS,d1, phiPts,1...
-%     'periodic',true);
-%     d1 = quadData.B_interpolS \ d1PhiInterpol;
 elseif optShift
     d1 = curveApplyShift(d1, alpha, splineData, quadData);
 end
@@ -155,26 +129,23 @@ CspeedInv5 = CspeedInv3 .* CspeedInv2;
 CspeedInv7 = CspeedInv5 .* CspeedInv2;
 CspeedInv9 = CspeedInv7 .* CspeedInv2;
 
-%% Remaining stuff (should be identical to energyH2)
-% Energy of the path
+%% Energy of the path
 % L2 Energy terms
 Ct_L2 = CtCt.*Cspeed;
 
-%H1 Energy terms
+% H1 Energy terms
 Ct_H1 = CspeedInv.*CutCut;
 
-%H2 Energy terms
+% H2 Energy terms
 Ct_H2 = CutCut .* CuCuu2 .* CspeedInv7 ...
     - 2 * CutCuut .* CuCuu .* CspeedInv5 ...
     + CuutCuut .* CspeedInv3;
 
-Ct_L2H1H2 = (a(1)*Ct_L2 +a(2)*Ct_H1+ a(3)*Ct_H2);
+Ct_L2H1H2 = a(1)*Ct_L2 +a(2)*Ct_H1+ a(3)*Ct_H2;
 energyIntegrand = Ct_L2H1H2;
 
-% weightMatrix = spdiags( quadDataTensor.quadWeights );
-
 % Compute final energy
-E = quadDataTensor.quadWeights'*energyIntegrand;
+E = quadDataTensor.quadWeights' * energyIntegrand;
 
 %% Compute Gradient
 if nargout > 1
@@ -200,14 +171,13 @@ if nargout > 1
     
     dE = zeros( splineData.N*splineData.Nt, splineData.dSpace);
     for kk = splineData.dSpace:-1:1
-        
-    term1test  = (term1.*Cu(:,kk) + term2.*Cuu(:,kk))'*quadDataTensor.Bu;
-    term2test = (term2.*Cu(:,kk))'*quadDataTensor.Buu;
-    term3test  = (term3.*Ct(:,kk))'*quadDataTensor.Bt;
-    term4test  = (term4.*Cut(:,kk)+term5.*Cuut(:,kk))'*quadDataTensor.But;
-    term5test  = (term6.*Cuut(:,kk)+term5.*Cut(:,kk))'*quadDataTensor.Buut;
-  
-    dE(:,kk) = term1test + term2test + term3test + term4test + term5test;
+        term1test = (term1.*Cu(:,kk) + term2.*Cuu(:,kk))'*quadDataTensor.Bu;
+        term2test = (term2.*Cu(:,kk))'*quadDataTensor.Buu;
+        term3test = (term3.*Ct(:,kk))'*quadDataTensor.Bt;
+        term4test = (term4.*Cut(:,kk)+term5.*Cuut(:,kk))'*quadDataTensor.But;
+        term5test = (term6.*Cuut(:,kk)+term5.*Cut(:,kk))'*quadDataTensor.Buut;
+
+        dE(:,kk) = term1test + term2test + term3test + term4test + term5test;
     end
     
     Edc1 = dE(end-splineData.N+1:end,:);
@@ -473,13 +443,12 @@ if nargout > 2
 %     d1PhiDotPhiInterpol = reshape( d1PhiDotPhiInterpol, [], dSpace*splineData.Nphi );
 %     %     temp1 = [temp, - d1_0];
     
-
-    d1uuPhiInterpolMat = sparse( [1:noInterpolPoints,(1:noInterpolPoints)+noInterpolPoints],...
-        repmat(1:noInterpolPoints,1,dSpace),d1uuPhiInterpol(:)  );
-    d1uuPhiDotPhiInterpol = d1uuPhiInterpolMat*quadData.B_interpolPhi;
-    
     %c1 dphidphi
     if optDiff
+        d1uuPhiInterpolMat = sparse( [1:noInterpolPoints,(1:noInterpolPoints)+noInterpolPoints],...
+        repmat(1:noInterpolPoints,1,dSpace),d1uuPhiInterpol(:)  );
+        d1uuPhiDotPhiInterpol = d1uuPhiInterpolMat*quadData.B_interpolPhi;
+        
         for ii = 1:splineData.Nphi %TODO: Change for-loop to something faster
             for jj = ii:splineData.Nphi
 %                 Phi_jj_Mat = sparse(1:dSpace*noInterpolPoints,1:dSpace*noInterpolPoints,...
