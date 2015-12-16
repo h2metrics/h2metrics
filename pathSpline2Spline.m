@@ -22,7 +22,11 @@ function dPathNew = pathSpline2Spline( dPath, splineData, splineDataNew )
 
 % Choose interpolation sites
 innerKnotsS = splineDataNew.innerKnotsS;
-interpolS = innerKnotsS(1:end-1) + 0.5*diff(innerKnotsS);
+if mod(splineDataNew.nS, 2) == 0
+    interpolS = innerKnotsS(1:end-1) + 0.5*diff(innerKnotsS);
+else
+    interpolS = innerKnotsS(1:end-1);
+end
 interpolT = chbpnt(splineDataNew.knotsT, splineDataNew.nT+1);
 
 % Evaluate dPath at said sites
