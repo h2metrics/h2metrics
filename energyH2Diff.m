@@ -210,69 +210,76 @@ if nargout > 1
     end
     
     %Phi
-    d1_fixed = dPath(end-N+1:end,:);
-    if optDiff
-        phiPts = quadData.B_interpolPhi * (phi-logical(optShift)*alpha);
-        phiPts = phiPts + splineData.interpolS; %Id  + f
-        phiPts = mod(phiPts, 2*pi); %Domain of definition [0,2*pi]
-    else
-        phiPts = splineData.interpolS - logical(optShift)*alpha;
-        phiPts = mod(phiPts, 2*pi);
-    end
-
-%     dNonper = [ d1_fixed; d1_fixed(1:splineData.nS,:) ];     
-%     for ii = dSpace:-1:1
-%         [ knotsS_d,dNonper_d,nS_d] = fastBSplineDer( splineData.knotsS,...
-%             dNonper(:,ii),splineData.nS);
-%         [ knotsS_dd,dNonper_dd,nS_dd] = fastBSplineDer( knotsS_d,...
-%             dNonper_d,nS_d);
-%         
-% %         d1PhiInterpol(:,ii) = fastBSplineEval(splineData.knotsS, dNonper(:,ii), splineData.nS, phiPts);
-%         d1uPhiInterpol(:,ii) = fastBSplineEval(knotsS_d, dNonper_d, nS_d, phiPts);
-% %         d1uuPhiInterpol(:,ii) = fastBSplineEval(knotsS_dd, dNonper_dd, nS_dd, phiPts);
-%     end
-    
-    %Alternative deBoorTest
-    d1All = deBoor(splineData.knotsS, splineData.nS,d1_fixed, phiPts,3,...
-        'periodic',true);
-    
-    d1PhiInterpol = d1All(1:3:end,:);
-    d1uPhiInterpol = d1All(2:3:end,:);
-    d1uuPhiInterpol = d1All(3:3:end,:);
-    
-%     d1PhiInterpol = d1DeBoor;
-%     d1uPhiInterpol = d1uDeBoor;
-%     d1uuPhiInterpol = d1uuDeBoor;
-    
-    %Apply rotation
-    if optRot
-        d1PhiInterpol = d1PhiInterpol*rotation;
-        d1uPhiInterpol = d1uPhiInterpol*rotation;
-        d1uuPhiInterpol = d1uuPhiInterpol*rotation;
-    end
-    
-    %d1uPhiDotPhi
-    if optDiff
-        d1uPhiInterpolMat = sparse( [1:noInterpolPoints,(1:noInterpolPoints)+noInterpolPoints],...
-            repmat(1:noInterpolPoints,1,dSpace),d1uPhiInterpol(:)  );
-        d1uPhiDotPhiInterpol = d1uPhiInterpolMat*quadData.B_interpolPhi;
-        d1uPhiDotPhiInterpol = reshape( d1uPhiDotPhiInterpol, [], dSpace*splineData.Nphi );
-        %     temp1 = [temp, - d1_0];
-        d1uPhiDotPhi = quadData.B_interpolS \ d1uPhiDotPhiInterpol;
-        d1uPhiDotPhi = reshape( d1uPhiDotPhi, splineData.dSpace*splineData.N, [] ); %|[]|=Nphi
-        c1dphi = d1uPhiDotPhi;
-    else
-        c1dphi = zeros( splineData.N*splineData.dSpace, 1);
-    end
-    
-    %alpha
-    if optShift
-        d1uPhiDotAlpha = quadData.B_interpolS \ (-d1uPhiInterpol);
-        %     d1uPhiDotAlpha = d1uPhiDotAlpha(:);
-        c1dalpha = d1uPhiDotAlpha(:);
-    else
+    if (optDiff || optShift)
+        d1_fixed = dPath(end-N+1:end,:);
+        if optDiff
+            phiPts = quadData.B_interpolPhi * (phi-logical(optShift)*alpha);
+            phiPts = phiPts + splineData.interpolS; %Id  + f
+            phiPts = mod(phiPts, 2*pi); %Domain of definition [0,2*pi]
+        else
+            phiPts = splineData.interpolS - logical(optShift)*alpha;
+            phiPts = mod(phiPts, 2*pi);
+        end
+        
+        %     dNonper = [ d1_fixed; d1_fixed(1:splineData.nS,:) ];
+        %     for ii = dSpace:-1:1
+        %         [ knotsS_d,dNonper_d,nS_d] = fastBSplineDer( splineData.knotsS,...
+        %             dNonper(:,ii),splineData.nS);
+        %         [ knotsS_dd,dNonper_dd,nS_dd] = fastBSplineDer( knotsS_d,...
+        %             dNonper_d,nS_d);
+        %
+        % %         d1PhiInterpol(:,ii) = fastBSplineEval(splineData.knotsS, dNonper(:,ii), splineData.nS, phiPts);
+        %         d1uPhiInterpol(:,ii) = fastBSplineEval(knotsS_d, dNonper_d, nS_d, phiPts);
+        % %         d1uuPhiInterpol(:,ii) = fastBSplineEval(knotsS_dd, dNonper_dd, nS_dd, phiPts);
+        %     end
+        
+        %Alternative deBoorTest
+        d1All = deBoor(splineData.knotsS, splineData.nS,d1_fixed, phiPts,3,...
+            'periodic',true);
+        
+        d1PhiInterpol = d1All(1:3:end,:);
+        d1uPhiInterpol = d1All(2:3:end,:);
+        d1uuPhiInterpol = d1All(3:3:end,:);
+        
+        %     d1PhiInterpol = d1DeBoor;
+        %     d1uPhiInterpol = d1uDeBoor;
+        %     d1uuPhiInterpol = d1uuDeBoor;
+        
+        %Apply rotation
+        if optRot
+            d1PhiInterpol = d1PhiInterpol*rotation;
+            d1uPhiInterpol = d1uPhiInterpol*rotation;
+            d1uuPhiInterpol = d1uuPhiInterpol*rotation;
+        end
+        
+        %d1uPhiDotPhi
+        if optDiff
+            d1uPhiInterpolMat = sparse( [1:noInterpolPoints,(1:noInterpolPoints)+noInterpolPoints],...
+                repmat(1:noInterpolPoints,1,dSpace),d1uPhiInterpol(:)  );
+            d1uPhiDotPhiInterpol = d1uPhiInterpolMat*quadData.B_interpolPhi;
+            d1uPhiDotPhiInterpol = reshape( d1uPhiDotPhiInterpol, [], dSpace*splineData.Nphi );
+            %     temp1 = [temp, - d1_0];
+            d1uPhiDotPhi = quadData.B_interpolS \ d1uPhiDotPhiInterpol;
+            d1uPhiDotPhi = reshape( d1uPhiDotPhi, splineData.dSpace*splineData.N, [] ); %|[]|=Nphi
+            c1dphi = d1uPhiDotPhi;
+        else
+            c1dphi = zeros( splineData.N*splineData.dSpace, 1);
+        end
+        
+        %alpha
+        if optShift
+            d1uPhiDotAlpha = quadData.B_interpolS \ (-d1uPhiInterpol);
+            %     d1uPhiDotAlpha = d1uPhiDotAlpha(:);
+            c1dalpha = d1uPhiDotAlpha(:);
+        else
+            c1dalpha = zeros(splineData.N*splineData.dSpace,1);
+        end
+        
+    else % No diff/shift optimization
         c1dalpha = zeros(splineData.N*splineData.dSpace,1);
+        c1dphi = zeros( splineData.N*splineData.dSpace,1);
     end
+    
     Edc1 = Edc1(:)';
     
     %Selection of all toggles for optimiziation
