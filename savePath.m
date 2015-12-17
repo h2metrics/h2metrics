@@ -23,6 +23,7 @@ function savePath( name, dPath, splineData, varargin )
 
 workdir = '';
 manualName = false;
+saveEnergy = false;
 
 % Some code for handling optional inputs
 ii = 1;
@@ -44,6 +45,10 @@ while ii <= length(varargin)
                  else
                      error('Invalid value for option ''manualName''.');
                  end
+             case 'energy'
+                 ii = ii + 1;
+                 saveEnergy = true;
+                 energy = varargin{ii};
              otherwise
                  error('Invalid option: ''%s''.',varargin{ii});
          end
@@ -69,4 +74,7 @@ end
 
 save(filename, 'dPath', 'splineData');
 
+if saveEnergy
+    save(filename, 'energy', '-append');
+end
 end
