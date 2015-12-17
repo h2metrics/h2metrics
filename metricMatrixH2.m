@@ -1,77 +1,73 @@
-function [ G ] = metricMatrixH2( d, splineData,quadData )
-%Compute the metric matrix at the curve d.
+%% metricMatrixH2
+%
+% Function computes the metric matrix at the curve d. The metric matrix
+% corresponds to the flattening of d as
+%   [d(:,1), d(:,2), ..., d(:,dSpace)]
+%
+% Input
+%   d
+%       The curve. Has dimensions [N, dSpace]
+%   splineData
+%       splineData describing the curve
+%   quadData
+%       Quadrature collocation matrices
+%
+% Output
+%   G
+%       Matrix of the Riemannian metric. Has dimensions 
+%         [N*dSpace, N*dSpace]
+%
+function [ G ] = metricMatrixH2( d, splineData, quadData )
 
 a = splineData.a;
 
-%C = quadData.B*Coefs;
-Cu = quadData.Bu_S*d;
-Cuu = quadData.Buu_S*d;
+N = splineData.N;
+nS = splineData.nS;
+dSpace = splineData.dSpace;
+noQuadSites = quadData.noQuadPointsS;
+quadWeights = quadData.quadWeightsS;
+
+B = quadData.B_S;
+Bu = quadData.Bu_S;
+Buu = quadData.Buu_S;
+
+Cu = quadData.Bu_S * d;
+Cuu = quadData.Buu_S * d;
+
+CuCuu = sum(Cu.*Cuu,2);
+CuCuu2 = CuCuu .* CuCuu;
+
 Cspeed = sum( Cu.^2 , 2).^(1/2);
-CspeedInv = 1./Cspeed;
-CspeedInv2 = CspeedInv.^2;
+CspeedInv = 1 ./ Cspeed;
+CspeedInv2 = CspeedInv .* CspeedInv;
+CspeedInv3 = CspeedInv .* CspeedInv2;
+CspeedInv5 = CspeedInv3 .* CspeedInv2;
+CspeedInv7 = CspeedInv5 .* CspeedInv2;
 
-CH2First = -( sum(Cu.*Cuu,2) )./Cspeed.^4;
-CH2Second = 1./Cspeed.^2;
+G = spalloc(N*dSpace, N*dSpace, N*(nS+1)*dSpace);
 
-G = zeros( splineData.N*splineData.dSpace );
+weight_L2 = Cspeed .* quadWeights;
+sparseW_L2 = sparse(1:noQuadSites, 1:noQuadSites, weight_L2);
 
-for ii = 1:splineData.N
-    for jj = ii:splineData.N
-        V_i = quadData.B_S(:,ii);
-        Vu_i = quadData.Bu_S(:,ii);
-        Vuu_i = quadData.Buu_S(:,ii);
-        
-        V_j = quadData.B_S(:,jj);
-        Vu_j = quadData.Bu_S(:,jj);
-        Vuu_j = quadData.Buu_S(:,jj);
-        
-        %L2 Energy terms
-        L2 = sum( V_i.*V_j,2);
-        
-        %H1 Energy terms
-        H1 = CspeedInv2.*Vu_i.*Vu_j;
-        
-        %H2 Energy terms
-        V1H2 = CH2First.*Vu_i + CH2Second.*Vuu_i;
-        V2H2 = CH2First.*Vu_j + CH2Second.*Vuu_j;
-        
-        H2 = V1H2.*V2H2;
-        
-        energyIntegrand = (a(1)*L2+ a(2)*H1 + a(3)*H2).*Cspeed;
-        G(ii,jj) = sum(quadData.quadWeightsS.*energyIntegrand);
-        G(jj,ii) = G(ii,jj);
-    end
+weight_H1 = CspeedInv .* quadWeights;
+sparseW_H1 = sparse(1:noQuadSites, 1:noQuadSites, weight_H1);
+
+weight_H2_1 = CspeedInv7 .* CuCuu2 .* quadWeights;
+weight_H2_2 = -CspeedInv5 .* CuCuu .* quadWeights;
+weight_H2_3 = CspeedInv3 .* quadWeights;
+sparseW_H2_1 = sparse(1:noQuadSites, 1:noQuadSites, weight_H2_1);
+sparseW_H2_2 = sparse(1:noQuadSites, 1:noQuadSites, weight_H2_2);
+sparseW_H2_3 = sparse(1:noQuadSites, 1:noQuadSites, weight_H2_3);
+
+G_L2 = a(1) * B'*sparseW_L2*B;
+G_H1 = a(2) * Bu'*sparseW_H1*Bu;
+G_H2 = a(3) * (Bu'*sparseW_H2_1*Bu + Bu'*sparseW_H2_2*Buu + ...
+               Buu'*sparseW_H2_2*Bu + Buu'*sparseW_H2_3*Buu);
+
+for kk = 1:dSpace
+    G( (kk-1)*N+1:kk*N, (kk-1)*N+1:kk*N ) = G_L2 + G_H1 + G_H2;
 end
 
-for kk = 2:splineData.dSpace
-    G( (kk-1)*splineData.N+1:kk*splineData.N,...
-        (kk-1)*splineData.N+1:kk*splineData.N) = ...
-        G(1:splineData.N,1:splineData.N);
 end
 
-
-%Compute final energy
-end
-
-% Alternative implementation of metrixMatrix, slower but easier to debug,
-% relies on curveRiemH2InnerProd.
-
-% N = splineData.N;
-% dSpace = splineData.dSpace;
-% 
-% G = [];
-% for jj = N*dSpace:-1:1
-%     for kk = N*dSpace:-1:jj
-%         U = zeros([N*dSpace, 1]);
-%         V = zeros([N*dSpace, 1]);
-%         U(jj) = 1;
-%         V(kk) = 1;
-%         
-%         u = reshape(U, [N, dSpace]);
-%         v = reshape(V, [N, dSpace]);
-%         
-%         G(jj, kk) = curveRiemH2InnerProd(d, u, v, splineData, quadData);
-%         G(kk, jj) = G(jj, kk);
-%     end
-% end
 
