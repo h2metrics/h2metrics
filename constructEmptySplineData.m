@@ -1,5 +1,13 @@
+%% constructEmptySplineData
+%
+% Function constructs an empty splineData struct. Some default parameters
+% are being set; others are set to empty arrays.
+%
+% Output
+%   splineData
+%       The created struct.
+%
 function [ splineData ] = constructEmptySplineData
-% Create an empty splineData struct
 
 splineData = struct('nS',[],...
     'nT',[],...

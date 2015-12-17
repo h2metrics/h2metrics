@@ -1,6 +1,19 @@
+%% constructKnots
+%
+% Function constructs the knot sequences with the given parameters from
+% splineData. The knot sequences are uniform in space and time, periodic in
+% space and with full multiplicity at the boundary in time.
+%
+% Input
+%   splineData
+%       Contains information about spline degree and number of control
+%       points.
+%
+% Output
+%   splineData
+%       Same as input with knot sequences.
+%
 function [ splineData ] = constructKnots( splineData )
-% Given parameters for the the BVP problem, compute knot vectors
-% Knots are assumed to be uniform.
 
 if ~isempty(splineData.N) && ~isempty(splineData.nS)
     N = splineData.N;
@@ -21,7 +34,7 @@ end
 if ~isempty(splineData.Nphi) && ~isempty(splineData.nPhi)
     Nphi = splineData.Nphi;
     nPhi = splineData.nPhi;
-    %normalize, domain of definition is [0,2*pi]
+    % Normalize, domain of definition is [0,2*pi]
     splineData.knotsPhi =  [(-nPhi):(Nphi+nPhi)]/Nphi*2*pi; 
     splineData.innerKnotsPhi = splineData.knotsPhi(nPhi+1:end-nPhi);
 end
