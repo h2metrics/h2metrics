@@ -16,8 +16,10 @@
 %       The path
 %   splineData (optional)
 %       splineData struct associated to the path
+%   energy (optional)
+%       Energy of the path
 
-function [ dPath, splineData ] = loadPath(filename, varargin)
+function [ dPath, splineData, energy ] = loadPath(filename, varargin)
 
 autocomplete = true;
 workdir = '';
@@ -78,6 +80,14 @@ if nargout > 1
         splineData = curveFile.splineData;
     else
         error('File ''%s'' does not contain field splineData.', filename);
+    end
+end
+
+if nargout > 2 
+    if ~isempty(who(curveFile, 'energy'))
+        energy = curveFile.energy;
+    else
+        error('File ''%s'' does not contain field energy.', filename);
     end
 end
 
