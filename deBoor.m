@@ -3,10 +3,21 @@
 % Uses de Boor algorithm to evaluate the spline with given knots and
 % control points d at given points.
 %
-% IMPORTANT
-%   For non-periodic input the function is only correct up to and
-%   including the first derivative. For higher derivatives boundary knots
-%   create problems.
+% IMPORTANT - About the choice of method
+%   spcol (default)
+%       Uses Matlab function spcol. Safest method to use.
+%   fastBSpline
+%       Fastest method available, if mex-compiled version is being used.
+%       However, it has accuracy issues near the boundary for non-periodic
+%       splines. Use with caution, especially for derivatives.
+%   Hunyadi
+%       B-spline library of Levente Hunyadi. Slower than spcol, not
+%       recommended for use.
+%   Manual
+%       Self-coded version of deBoor's algorithm. Only first three
+%       derivatives are supported; knot sequences are assumed to be
+%       uniform; for non-periodic splines only first derivative is correct.
+%       Under these restrictions it is fast.
 %
 % Input
 %   knots
@@ -23,13 +34,15 @@
 %       How many derivatives do we want to evaluate. To evaluate the first
 %       derivative, set
 %           order=2
-%       Only up to three derivatives (order={1,2,3,4}) are supported 
-%       at the moment.
 %
 % Optional parameters
 %   'periodic' = {true, false (default)}
 %       If true, then the vector d contains the independent control points
 %       of a periodic spline.
+%   'method' = {'spcol' (default), 'fastBSpline', 'Hunyadi', 'manual'}
+%       Chooses, which library to call for evaluation
+%   'usemex' = {true (default), false}
+%       Use compiled version of fastBSpline
 %
 % Output
 %   y
@@ -43,8 +56,9 @@
 %       This corresponds to the output of spcol.
 function y = deBoor( knots, nS, d, evalPoints, order, varargin )
 
-useFastBSpline = false;
+usemex = true;
 periodic = false;
+method = 'spcol';
 
 ii = 1;
 while ii <= length(varargin)
@@ -57,6 +71,16 @@ while ii <= length(varargin)
                 else
                     error('Invalid value for option ''periodic''.');
                 end
+            case 'usemex'
+                ii = ii + 1;
+                if isnumeric(varargin{ii}) || islogical(varargin{ii})
+                    usemex = logical(varargin{ii});
+                else
+                    error('Invalid value for option ''usemex''.');
+                end
+            case 'method'
+                ii = ii + 1;
+                method = lower(varargin{ii});
             otherwise
                 error('Invalid option: ''%s''.',varargin{ii});
         end
@@ -64,13 +88,91 @@ while ii <= length(varargin)
     end
 end
 
+if periodic
+    d_nonper = [ d; d(1:nS,:) ];
+else
+    d_nonper = d;
+end
+ 
+switch (method)
+    case 'spcol'
+        y = useSpCol( knots, d_nonper, evalPoints, order );
+    case 'fastbspline'
+        y = useFastBSpline( knots, d_nonper, evalPoints, order, usemex );
+    case 'hunyadi'
+        y = useHunyadi( knots, d_nonper, evalPoints, order );
+    case 'manual'
+        y = useManual( knots, d_nonper, evalPoints, order );
+end
+end
+
+%% Use the built-in Matlab function spcol
+function y = useSpCol( knots, d, evalPoints, order )
+
+nS = length(knots) - size(d, 1) - 1;
+
+B = spcol(knots, nS+1, brk2knt( evalPoints, order ));
+y = B * d;
+end
+
+%% Use the fastBSpline library
+function y = useFastBSpline( knots, d, evalPoints, order, usemex)
+
+noPoints = length(evalPoints);
+noCols = size(d, 2);
+nS = length(knots) - size(d, 1) - 1;
+
+t_min = knots(nS+1); % Limits for inner knots
+t_max = knots(end-nS);
+evalPoints(evalPoints == t_min) = t_min + 1e-10;
+evalPoints(evalPoints == t_max) = t_max - 1e-10;
+
+y = zeros([noPoints*order, noCols]);
+for jj = noCols:-1:1
+    knots_work = knots;
+    weights_work = d(:,jj)';
+    
+    for kk = 1:order
+        y(kk:order:end,jj) = ...
+            fastBSplineEval(knots_work, weights_work, evalPoints, usemex);
+        [knots_work, weights_work] = ...
+            fastBSplineDx(knots_work, weights_work);
+    end
+end
+end
+
+%% Use B-spline library by Hunyadi
+function y = useHunyadi( knots, d, evalPoints, order )
+
+noPoints = length(evalPoints);
+noCols = size(d, 2);
+nS = length(knots) - size(d, 1) - 1;
+
+y = zeros([noPoints*order, noCols]);
+
+knots_work = knots;
+weights_work = d';
+    
+for kk = 1:order
+    y(kk:order:end,:) = ...
+        bspline_deboor(nS+1, knots_work, weights_work, evalPoints);
+    [knots_work, weights_work] = ...
+        bspline_deriv(nS+1, knots_work, weights_work);
+    nS = nS - 1;
+end
+end
+
+function y = useManual( knots, d, evalPoints, order )
+
 if order > 4
     error ('Order too high. Only three derivatives supported.');
 end
 
 noPoints = length(evalPoints);
 noCols = size(d, 2);
+nS = length(knots) - size(d, 1) - 1;
 N = length(knots) - 2*nS - 1;
+
 y = zeros([noPoints*order, noCols]);
 
 t_min = knots(nS+1); % Limits for inner knots
@@ -81,21 +183,6 @@ t_work = evalPoints;
 if size(evalPoints,1) == 1 % evalPoints has to be a column vector
     t_work = evalPoints';
 end
-
-if periodic
-    d_nonper = [ d; d(1:nS,:) ];
-else
-    d_nonper = d;
-end
-
-%% Use fastBSpline if possible
-% if order == 1 && useFastBSpline
-%     evalPoints(evalPoints == t_max) = t_max - 1e-16;
-%     for jj = noCols:-1:1
-%         y(:,jj) = fastBSplineEval(knots, d_nonper(:,jj), nS, evalPoints);
-%     end
-%     return
-% end
 
 %% de Boor's algorithm vectorized
 r = floor((t_work-t_min)*N / ...
@@ -111,7 +198,7 @@ end
 d_work = zeros(noPoints,noCols,nS+1);
 for jj=1:noCols
     for kk = 1:nS+1
-        d_work(:,jj,kk) = d_nonper(r-nS-1+kk, jj);
+        d_work(:,jj,kk) = d(r-nS-1+kk, jj);
     end
 end
 
@@ -149,5 +236,5 @@ for kk = 1:nS
     end
 end
 y(1:order:end,:) = d_work(:,:,nS+1);
-
 end
+
