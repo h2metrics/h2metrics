@@ -105,6 +105,14 @@ if isfield(options, 'maxIter')
     minOptions = optimoptions(minOptions, 'maxIter', options.maxIter);
 end
 
+%% Output function
+fvalList = [];
+    function stop = outfun(~, optimValues, ~)
+        fvalList(end+1) = optimValues.fval;
+        stop = false;
+    end
+minOptions = optimoptions(minOptions, 'OutputFcn', @outfun);
+
 %% Generate constraints
 
 % As phi = Id + f, the constraints encode that the control points of Id+f
@@ -140,9 +148,9 @@ else
     if isempty(initGa.phi)
         initGa.phi = zeros([ Nphi, 1 ]);
     end
-    if isempty(initGa.alpha)
-        initGa.alpha = 0;
-    end
+end
+if isempty(initGa.alpha)
+    initGa.alpha = 0;
 end
 
 if isempty(dInitPath)
@@ -197,8 +205,11 @@ dPath = [ d0; ...
           reshape(coeffOptimal(1:N*(Nt-2)*dSpace), [N*(Nt-2), dSpace]); ...
           dEnd ];
       
+fvalList = fvalList(2:end-1); % First and last entries are doubled.
+      
 info = struct( 'exitFlag', exitflag, ...
-               'noIter', output.iterations );
+               'noIter', output.iterations, ...
+               'fvalList', fvalList ); 
 
 end
 
