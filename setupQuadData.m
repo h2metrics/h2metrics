@@ -13,6 +13,8 @@
 %       space and time.
 %   quadDataTensor
 %       Quadrature data and collocation matrices for 2D integrals
+%   splineData
+%       Adds quadData and quadDataTensor as fields in splineData.
 %
 function [quadData, quadDataTensor, splineData] = ...
     setupQuadData( splineData )
