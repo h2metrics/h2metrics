@@ -43,6 +43,8 @@ switch (lower(setName))
         dList = loadDataSetXavier(splineData, dataDir, varargin{:});
     case 'corpus_callosum_tilak'
         dList = loadDataSetTilak(splineData, dataDir, varargin{:});
+    case 'basic'
+        dList = loadDataSetBasic(splineData, dataDir, varargin{:});
     otherwise
         error('Invalid dataset: ''%s''.',varargin{ii});
 end
