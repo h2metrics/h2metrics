@@ -72,6 +72,9 @@ else
                 '_nT',num2str(nT),'_Nt',num2str(Nt),'.mat'];
 end
 
+splineData.quadData = [];
+splineData.quadDataTensor = [];
+
 save(filename, 'dPath', 'splineData');
 
 if saveEnergy

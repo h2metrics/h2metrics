@@ -65,6 +65,9 @@ else
     filename = [workdir, name,'_n',num2str(nS),'_N',num2str(N),'.mat'];
 end
 
+splineData.quadData = [];
+splineData.quadDataTensor = [];
+
 save(filename, 'd0', 'splineData');
 
 end
