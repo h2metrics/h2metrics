@@ -4,6 +4,8 @@
 % splineData. The knot sequences are uniform in space and time, periodic in
 % space and with full multiplicity at the boundary in time.
 %
+% interpolS is set automatically using N and nS, unless set otherwise.
+%
 % Input
 %   splineData
 %       Contains information about spline degree and number of control
@@ -39,7 +41,16 @@ if ~isempty(splineData.Nphi) && ~isempty(splineData.nPhi)
     splineData.innerKnotsPhi = splineData.knotsPhi(nPhi+1:end-nPhi);
 end
 
-if ~isempty(splineData.noInterpolS)
+if isempty(splineData.noInterpolS)
+    splineData.noInterpolS = splineData.N;
+    innerKnotsS = splineData.innerKnotsS;
+    if mod(splineData.nS, 2) == 0 % See deBoor for reasons for this.
+        splineData.interpolS = innerKnotsS(1:end-1)' + ...
+                                0.5*diff(innerKnotsS)';
+    else
+        splineData.interpolS = innerKnotsS(1:end-1)';
+    end
+elseif ~isempty(splineData.noInterpolS) && isempty(splineData.interpolS)
     splineData.interpolS = linspace( 0, 2*pi, splineData.noInterpolS+1)';
     % Last point correponds to first point
     splineData.interpolS = splineData.interpolS(1:end-1); 

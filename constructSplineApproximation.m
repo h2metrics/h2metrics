@@ -1,17 +1,26 @@
-function d = constructSplineApproximation(f,splineData,varargin);
-% Given a function f, construct an approximation of f using the data in
-% splineData.
+%% constructSplineApproximation
 %
-% Input: f, function handle
-%        splineData, splineData struct
+% Given a function or a set of points, construct a spline approximating f
+% using the data in splineData.
 %
-% Output: d, control points of the computed approximation
+% Input
+%   f
+%       Can be a function handle or a set of points.
+%   splineData
+%       Information about the spline to be constructed.
+%
+% Output
+%   d
+%       Control points of the resulting spline.
+%
+function d = constructSplineApproximation(f,splineData,varargin)
 
 if isa(f, 'function_handle') %f is a handle
     % Interpolate data from parametrizations with splines
-    noInterpolPoints = max(2*splineData.N,200);
-    interpolS = linspace( 0, 2*pi, noInterpolPoints+1)';
-    interpolS = interpolS(1:end-1); %remove last point, correponds to first point
+    interpolS = splineData.interpolS;
+%     noInterpolPoints = max(2*splineData.N,200);
+%     interpolS = linspace( 0, 2*pi, noInterpolPoints+1)';
+%     interpolS = interpolS(1:end-1); %remove last point, correponds to first point
     B_interpol = spcol( splineData.knotsS, splineData.nS+1, brk2knt( interpolS, 1 ),'sparse');
     B_interpol_p = [B_interpol(:,1:splineData.nS) + B_interpol(:,end-splineData.nS+1:end), B_interpol(:,splineData.nS+1:end-splineData.nS)];
     
