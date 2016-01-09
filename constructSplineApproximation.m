@@ -18,9 +18,6 @@ function d = constructSplineApproximation(f,splineData,varargin)
 if isa(f, 'function_handle') %f is a handle
     % Interpolate data from parametrizations with splines
     interpolS = splineData.interpolS;
-%     noInterpolPoints = max(2*splineData.N,200);
-%     interpolS = linspace( 0, 2*pi, noInterpolPoints+1)';
-%     interpolS = interpolS(1:end-1); %remove last point, correponds to first point
     B_interpol = spcol( splineData.knotsS, splineData.nS+1, brk2knt( interpolS, 1 ),'sparse');
     B_interpol_p = [B_interpol(:,1:splineData.nS) + B_interpol(:,end-splineData.nS+1:end), B_interpol(:,splineData.nS+1:end-splineData.nS)];
     
