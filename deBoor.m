@@ -109,10 +109,22 @@ end
 %% Use the built-in Matlab function spcol
 function y = useSpCol( knots, d, evalPoints, order )
 
+evalPoints = evalPoints(:); % Now a column vector
+
+noPoints = length(evalPoints);
+noCols = size(d, 2);
 nS = length(knots) - size(d, 1) - 1;
 
-B = spcol(knots, nS+1, brk2knt( evalPoints, order ));
-y = B * d;
+[x, I] = sort(evalPoints); % spcol needs sorted points
+
+B = spcol(knots, nS+1, brk2knt( x, order ));
+y_sort = B * d;
+
+y = zeros([noPoints*order, noCols]);
+for jj = 1:order
+    y(jj:order:end,:) = y_sort(order*(I-1)+jj,:);
+end
+    
 end
 
 %% Use the fastBSpline library

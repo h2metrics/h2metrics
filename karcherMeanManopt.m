@@ -26,7 +26,7 @@ N = splineData.N;
 dSpace = splineData.dSpace;
 noCurves = length(dList);
 
-splineData.stepsT = 50; % HAS TO BE AN OPTION
+splineData.stepsT = splineData.stepsT;
 
 curveManifold = constructCurveManifold(splineData, quadData);
 
@@ -64,7 +64,7 @@ function [sumE, store] = cost(dIter, store)
                 [optE, dPath, optGa] = geodesicBvpDiff(dIter, dList{jj},...
                     splineData, quadData, quadDataTensor, ...
                     'options', options, 'initPath', dInitPath, ...
-                    'gaInit', gaLastList{jj});
+                    'initGa', gaLastList{jj});
             else
                 [optE, dPath, optGa] = ...
                     geodesicBvpDiff(dIter, dList{jj}, splineData, ...
