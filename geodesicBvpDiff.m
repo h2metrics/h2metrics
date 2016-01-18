@@ -70,6 +70,7 @@ end
 if isfield(options, 'optRot')
     optRot = options.optRot;
 end
+options.optShift = true;
    
 minOptions = optimoptions('fmincon');
 % minOptions = optimoptions(minOptions,'Algorithm', ...
