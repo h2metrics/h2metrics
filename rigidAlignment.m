@@ -67,6 +67,12 @@ if noCurves < 2
     return
 end
 
+if noCurves==2 && optShift && ~useComp && ~optTra && ~optRot
+    [dAligned, gaOpt] = shiftOnlyTwoCurves(dList, splineData, a);
+    return
+end
+    
+
 %% Optimization settings
 optionsOpt = optimoptions('fminunc');
 optionsOpt = optimoptions(optionsOpt,'Display', display);
@@ -93,7 +99,7 @@ F = @(coefs) rigidAlignmentDist( coefs(1:noCurves-1), ...
 init_coefs = zeros([(2+dSpace)*(noCurves-1), 1]);
 
 % Deal with global rotations
-if globalRot
+if optRot && globalRot
     gaInit = findInitRot( dList, splineData, quadData, options);
     if optShift
         init_coefs(1) = gaInit.alpha;
@@ -256,4 +262,21 @@ function gaInit = findInitRot( dList, splineData, quadData, options )
     if isfield(options, 'optShift') && options.optShift
         gaInit.alpha = -gaInit.beta;
     end
+end
+
+function [dAligned, gaOpt] = shiftOnlyTwoCurves(dList, splineData, a)
+    d0 = dList{1};
+    d1 = dList{2};
+    
+    for jj = splineData.N:-1:1
+        dist(jj) = curveFlatH2Norm(d0 - circshift(d1,jj-1,1), ...
+                        splineData, splineData.quadData, 'a', a);
+    end
+    [~, optShift] = min(dist);
+    alpha = optShift * 2*pi / splineData.N;
+    
+    dAligned = {d0, circshift(d1, optShift-1, 1)};
+    gaOpt = { struct( 'phi', [], 'beta', [], 'v', [], 'alpha', []), ...
+              struct( 'phi', [], 'beta', [], 'v', [], 'alpha', alpha) };
+    
 end
