@@ -77,6 +77,12 @@ noGamma = (Nphi + dSpace + 1 + 1); %Assumes dSpace = 2, dim(O(2)) = 1.
 a = splineData.a; a0 = a(1); a1 = a(2); a2 = a(3);
 noInterpolPoints = size(quadData.B_interpolPhi,1);
 
+if ~optRot
+    beta = 0;
+end
+if ~optTra
+    v = zeros(dSpace, 1);
+end
 rotation = [ cos(beta), sin(beta); ...
             -sin(beta), cos(beta) ]; %Transpose of rotation matrix
 rotation90 = [0, 1; -1, 0]; %Transpose of rotation matrix
@@ -90,7 +96,12 @@ noQuadSites = length( quadDataTensor.quadWeights );
 d1 = dPath(end-N+1:end,:);
 
 if optDiff
-    d1 = curveComposeDiff(d1, phi-logical(optShift)*alpha, splineData, quadData);
+    if optShift
+        phi_tmp = phi - alpha;
+    else
+        phi_tmp = phi;
+    end
+    d1 = curveComposeDiff(d1, phi_tmp, splineData, quadData);
 elseif optShift
     d1 = curveApplyShift(d1, alpha, splineData, quadData);
 end
@@ -213,11 +224,21 @@ if nargout > 1
     if (optDiff || optShift)
         d1_fixed = dPath(end-N+1:end,:);
         if optDiff
-            phiPts = quadData.B_interpolPhi * (phi-logical(optShift)*alpha);
+            if optShift
+                phi_tmp = phi - alpha;
+            else
+                phi_tmp = phi;
+            end
+            phiPts = quadData.B_interpolPhi * phi_tmp;
             phiPts = phiPts + splineData.interpolS; %Id  + f
             phiPts = mod(phiPts, 2*pi); %Domain of definition [0,2*pi]
         else
-            phiPts = splineData.interpolS - logical(optShift)*alpha;
+            if optShift
+                phiPts = splineData.interpolS - alpha;
+            else
+                phiPts = splineData.interpolS;
+            end
+            %phiPts = splineData.interpolS - logical(optShift)*alpha;
             phiPts = mod(phiPts, 2*pi);
         end
         
@@ -257,6 +278,7 @@ if nargout > 1
             d1uPhiInterpolMat = sparse( [1:noInterpolPoints,(1:noInterpolPoints)+noInterpolPoints],...
                 repmat(1:noInterpolPoints,1,dSpace),d1uPhiInterpol(:)  );
             d1uPhiDotPhiInterpol = d1uPhiInterpolMat*quadData.B_interpolPhi;
+            
             d1uPhiDotPhiInterpol = reshape( d1uPhiDotPhiInterpol, [], dSpace*splineData.Nphi );
             %     temp1 = [temp, - d1_0];
             d1uPhiDotPhi = quadData.B_interpolS \ d1uPhiDotPhiInterpol;
