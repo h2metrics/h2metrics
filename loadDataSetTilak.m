@@ -122,9 +122,12 @@ end
 function tilakFindCurve( sourceFile, splineFile, splineData, ...
                          constSpeed, plotCurve )
                      
+quadData = setupQuadData(splineData);
+
 C = dlmread(sourceFile);
 C = C(2:end, :); % First row contains only number of data points
 d0 = constructSplineApproximation(C, splineData);
+[d0, center] = curveCenter(d0, splineData, splineData.quadData);
 
 % Reparametrize to constant speed
 if constSpeed
@@ -142,15 +145,18 @@ end
 % Superimpose boundary over cell -- curve
 handle = figure(2);
 handle.Visible = 'off';
-plot(C(:,1), C(:,2) , 'b', 'LineWidth', 2);
+plot(C(:,1)-center(1), C(:,2)-center(2) , 'b', 'LineWidth', 2);
 
 % Superimpose interpolation over leaf
 noPlotPoints = size(C, 1);
 plotPoints = linspace(0, 2*pi, noPlotPoints);
 boundary2 = deBoor( splineData.knotsS, splineData.nS, d0, ...
                     plotPoints, 1, 'periodic', true);
+pt0 = deBoor( splineData.knotsS, splineData.nS, d0, ...
+              0, 1, 'periodic', true );
 hold on;
 plot(boundary2(:,1), boundary2(:,2) , 'r', 'LineWidth', 2);
+plot(pt0(1), pt0(2), 'ko', 'LineWidth', 2);
 hold off;
 
 % Save figure
