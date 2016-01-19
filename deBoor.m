@@ -121,8 +121,11 @@ B = spcol(knots, nS+1, brk2knt( x, order ));
 y_sort = B * d;
 
 y = zeros([noPoints*order, noCols]);
+tmp = zeros([noPoints, noCols]);
 for jj = 1:order
-    y(jj:order:end,:) = y_sort(order*(I-1)+jj,:);
+    tmp(I,:) = y_sort(jj:order:end,:);
+    y(jj:order:end,:) = tmp;
+    %y(jj:order:end,:) = y_sort(order*(I-1)+jj,:);
 end
     
 end

@@ -36,21 +36,22 @@ Nt = 100; %Number of time control points
 nT = 5; %time degree
 knotsT = [ zeros(1, nT), linspace(0,1,Nt - nT + 1), ones(1, nT)];
 
-noPts = 100;
+noPts = 2;
 t = rand([1, noPts]);
+%t = [0.4, 0.3];
 d_time = rand([Nt,2]);
 order = 2;
 
 [t_sort, I] = sort(t);
 
-y1_sort = deBoor(knotsT, nT, d_time, t, order, ...
-                 'periodic', false, 'method', 'spcol');
-y1 = zeros([noPts*order, 2]);
-for jj = 1:order
-    y1(order*(I-1)+jj,:) = y1_sort(jj:order:end,:);
-end
+y1 = deBoor(knotsT, nT, d_time, t, order, ...
+            'periodic', false, 'method', 'spcol');
 
 B = spcol(knotsT, nT+1, brk2knt( t_sort, order ));
 y2 = B * d_time;
-        
-assert( norm(y1-y2) < 1e-14 );
+
+for jj = 1:noPts
+    a = order*(I(jj)-1) + 1;
+    b = order*(jj-1) + 1;
+    assert( norm(y1(a:a+order-1,:)-y2(b:b+order-1,:)) < 1e-14 );
+end
