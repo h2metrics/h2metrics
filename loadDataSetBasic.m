@@ -11,7 +11,8 @@ constSpeed = false; % Reparametrize to constant speed
 curveSet = {};
 returnCell = true;
 
-allCurves = {'H', 'O', 'T', 'U', 'prop0', 'prop3', 'prop4'};
+allCurves = {'H', 'O', 'T', 'U', 'prop0', 'prop3', 'prop4', ...
+             'circle', 'wrap'};
 noise = 0;
 
 ii = 1;
@@ -48,6 +49,8 @@ for kk=length(curveSet):-1:1
         case {'prop0', 'prop3', 'prop4'}
             d0 = loadCurvePropeller(curveSet{kk}, noise, true, ...
                                     splineData, constSpeed);
+        case {'circle', 'wrap'}
+            d0 = loadCurveWrap(curveSet{kk}, splineData, constSpeed);
     end
     
     dList{kk} = d0;
@@ -205,6 +208,33 @@ else
 end
 
 d = d / dLength * 2*pi;
+
+if constSpeed
+    d = curveReparamConstSpeed(d, splineData, splineData.quadData);
+end
+
+end
+
+function d = loadCurveWrap(curveCode, splineData, constSpeed)
+
+switch(curveCode)
+    case 'wrap'
+        f = @(t) 1/100*[ 17 - 34*cos(t) - 79*cos(2*t) + ...
+            7*cos(3*t) - 2*cos(4*t) + 3*cos(5*t) - 24*sin(t) ...
+            - 86*sin(2*t) + 13*sin(3*t) - sin(4*t) - 5*sin(5*t), ...
+            -5 - 58*cos(t) - 53*cos(2*t) - 3*cos(3*t) + ...
+            13*cos(4*t) - 11*cos(5*t) + 79*sin(t) + 8*sin(2*t) + ...
+            19*sin(3*t) - 8*sin(4*t) ];
+
+    case 'circle'
+        f = @(t) 1/100*[150*cos(-t - 3*pi/4), ...
+                        150*sin(-t - 3*pi/4)] ;
+end
+
+d = constructSplineApproximation(f, splineData);
+lenCircle = 3*pi;
+
+d = d / lenCircle * 2*pi;
 
 if constSpeed
     d = curveReparamConstSpeed(d, splineData, splineData.quadData);
