@@ -1,13 +1,11 @@
 function plotPath(dPath, splineData)
 
-dSpace = splineData.dSpace;
 N = splineData.N;
 Nt = splineData.Nt;
 nS = splineData.nS;
 nT = splineData.nT;
 knotsS = splineData.knotsS;
 knotsT = splineData.knotsT;
-quadData = splineData.quadData;
 
 % Plot parameters
 noPlotPtsS = 500;

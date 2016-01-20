@@ -1,5 +1,4 @@
-function [G, comp] = pathRiemH2Length( dPath, splineData, ...
-                                       quadData, quadDataTensor, varargin )
+function [G, comp] = pathRiemH2Length( dPath, splineData, varargin )
                                    
 % Set constants to be used in metric
 a = [1 0 1];
@@ -22,6 +21,8 @@ while ii <= length(varargin)
 end
 
 dSpace = splineData.dSpace;
+quadData = splineData.quadData;
+quadDataTensor = splineData.quadDataTensor;
 
 %% Evaluate path at quadrature sites
 Cu = quadDataTensor.Bu * dPath;

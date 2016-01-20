@@ -16,11 +16,11 @@ splineData.N = 21; %no. control points, must be bigger than n+1
 splineData.nS = 3; %spacial degree
 splineData.quadDegree = [6, 4];
 splineData = constructKnots(splineData);
-quadData = setupQuadData(splineData);
+splineData = setupQuadData(splineData);
 
 d = constructSplineApproximation(f0, splineData);
 
-matG = metricMatrixH2(d, splineData, quadData);
+matG = metricMatrixH2(d, splineData);
 
 % Now compute by hand
 N = splineData.N;
@@ -37,7 +37,7 @@ for jj = N*dSpace:-1:1
         u = reshape(U, [N, dSpace]);
         v = reshape(V, [N, dSpace]);
         
-        matGalt(jj, kk) = curveRiemH2InnerProd(d, u, v, splineData, quadData);
+        matGalt(jj, kk) = curveRiemH2InnerProd(d, u, v, splineData);
         matGalt(kk, jj) = matGalt(jj, kk);
     end
 end
@@ -60,11 +60,11 @@ splineData.nS = 3; %spacial degree
 splineData.quadDegree = [6, 4];
 splineData.a = [1, 1, 0];
 splineData = constructKnots(splineData);
-quadData = setupQuadData(splineData);
+splineData = setupQuadData(splineData);
 
 d = constructSplineApproximation(f0, splineData);
 
-matG = metricMatrixH2(d, splineData, quadData);
+matG = metricMatrixH2(d, splineData);
 
 % Now compute by hand
 N = splineData.N;
@@ -81,7 +81,7 @@ for jj = N*dSpace:-1:1
         u = reshape(U, [N, dSpace]);
         v = reshape(V, [N, dSpace]);
         
-        matGalt(jj, kk) = curveRiemH2InnerProd(d, u, v, splineData, quadData);
+        matGalt(jj, kk) = curveRiemH2InnerProd(d, u, v, splineData);
         matGalt(kk, jj) = matGalt(jj, kk);
     end
 end

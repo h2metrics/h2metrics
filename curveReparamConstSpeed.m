@@ -1,5 +1,6 @@
-function c = curveReparamConstSpeed(d, splineData, quadData)
+function c = curveReparamConstSpeed(d, splineData)
 
+quadData = splineData.quadData;
 nS = splineData.nS;
 knotsS = splineData.knotsS;
 interpolS = splineData.interpolS;
@@ -12,8 +13,6 @@ cPts = deBoor(knotsS, nS, d, phiPts, 1, 'periodic', true);
 c = B_interpolS \ cPts;
 
 end
-
-
 
 function [ inverseTheta ] = arcLengthInverse(evalS, d, splineData, quadData )
 % Compute the inverse of the "arc-length function" (the constant speed

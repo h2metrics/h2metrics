@@ -121,17 +121,15 @@ end
 
 function tilakFindCurve( sourceFile, splineFile, splineData, ...
                          constSpeed, plotCurve )
-                     
-quadData = setupQuadData(splineData);
 
 C = dlmread(sourceFile);
 C = C(2:end, :); % First row contains only number of data points
 d0 = constructSplineApproximation(C, splineData);
-[d0, center] = curveCenter(d0, splineData, splineData.quadData);
+[d0, center] = curveCenter(d0, splineData);
 
 % Reparametrize to constant speed
 if constSpeed
-    d0 = curveReparamConstSpeed(d0, splineData, quadData);
+    d0 = curveReparamConstSpeed(d0, splineData);
 end
 
 % Save curve

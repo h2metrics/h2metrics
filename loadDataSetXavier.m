@@ -127,7 +127,7 @@ else
     auxSplineData.nS = splineData.nS;
     auxSplineData.dSpace = 2;
     auxSplineData = constructKnots(auxSplineData);
-    quadData = setupQuadData(splineData);
+    quadData = splineData.quadData;
     
     dTemp = constructSplineApproximation(C, auxSplineData);
     dPts = deBoor(auxSplineData.knotsS, auxSplineData.nS, dTemp, ...
@@ -137,7 +137,7 @@ end
 
 % Reparametrize to constant speed
 if constSpeed
-    d0 = curveReparamConstSpeed(d0, splineData, quadData);
+    d0 = curveReparamConstSpeed(d0, splineData);
 end
 
 %% Save curve

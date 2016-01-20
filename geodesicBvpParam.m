@@ -13,8 +13,6 @@
 %       Initial and final curves. Matrix of dimensions [N, dSpace].
 %   splineData
 %       General information about the splines used.
-%   quadData, quadDataTensor
-%       Precomputed spline collocation matrices at quadrature points.
 %
 % Optional parameters
 %   options
@@ -44,7 +42,7 @@
 %       Structure containing information about the minimization process
 %
 function [optE, optPath, optGa, info] = geodesicBvpParam(d0, d1, ...
-    splineData, quadData, quadDataTensor, varargin)
+    splineData, varargin)
 
 %% Default parameters
 optTra = true;
@@ -116,13 +114,12 @@ end
 
 %% Create initial guess for path if not provided one
 if isempty(initGa)
-    [~, gaTmp] = rigidAlignment( {d0, d1}, splineData, quadData, ...
-                                 'options', options );
+    [~, gaTmp] = rigidAlignment({d0, d1}, splineData, 'options', options);
     initGa = gaTmp{2};
 end
 
 if isempty(dInitPath)
-    d1Ga = curveApplyGamma(d1, initGa, splineData, quadData);
+    d1Ga = curveApplyGamma(d1, initGa, splineData);
     dInitPath = linearPath(d0, d1Ga, splineData);
 end
 
@@ -149,8 +146,7 @@ Fopt = @(coeff) energyH2Diff( ...
     [d0; reshape(coeff(1:N*(Nt-2)*dSpace), [N*(Nt-2), dSpace]); d1], ...
     coeff(end-Nphi-dSpace-2+1:end-dSpace-2), ...
     coeff(end-dSpace-2+1:end-2), coeff(end-1), coeff(end), ...
-    splineData, quadData, quadDataTensor, ...
-    'optDiff', false, 'optTra', optTra, 'optRot', optRot, ...
+    splineData, 'optDiff', false, 'optTra', optTra, 'optRot', optRot, ...
     'optShift', optShift );
 
 problem = struct( 'objective', Fopt, 'x0', coeffInit, ...
@@ -167,7 +163,7 @@ optGa = struct( 'phi', [], 'beta', [], 'v', [], 'alpha', []);
 dEnd = d1;
 if optShift
     optGa.alpha = coeffOptimal(end);
-    dEnd = curveApplyShift(dEnd, optGa.alpha, splineData, quadData);
+    dEnd = curveApplyShift(dEnd, optGa.alpha, splineData);
 end
 if optTra
     optGa.v = coeffOptimal(end-dSpace-2+1:end-2);

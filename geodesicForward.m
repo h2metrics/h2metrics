@@ -1,4 +1,4 @@
-function q = geodesicForward2(q0,q1,Nsteps,splineData,quadData,varargin)
+function q = geodesicForward(q0,q1,Nsteps,splineData,varargin)
 %Compute a forward shooting of a geodesic defined by the two first points
 %q0 and q1 on a discrete path.
 %
@@ -39,6 +39,8 @@ while ii <= length(varargin)
     end
     ii = ii + 1;  
 end
+
+quadData = splineData.quadData;
 
 %Nsteps = 100;
 geodesicPoints = zeros(splineData.N,splineData.dSpace,Nsteps);

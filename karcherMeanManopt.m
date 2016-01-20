@@ -1,5 +1,4 @@
-function [dMean, info] = karcherMeanManopt(dList, ...
-    splineData, quadData, quadDataTensor, varargin)
+function [dMean, info] = karcherMeanManopt(dList, splineData, varargin)
 
 options = [];
 dInit = [];
@@ -26,9 +25,9 @@ N = splineData.N;
 dSpace = splineData.dSpace;
 noCurves = length(dList);
 
-splineData.stepsT = splineData.stepsT;
+% splineData.stepsT = splineData.stepsT;
 
-curveManifold = constructCurveManifold(splineData, quadData);
+curveManifold = constructCurveManifold(splineData);
 
 dLast = [];
 dLastPathList = [];
@@ -62,13 +61,12 @@ function [sumE, store] = cost(dIter, store)
                                 splineData );
                 
                 [optE, dPath, optGa] = geodesicBvp(dIter, dList{jj},...
-                    splineData, quadData, quadDataTensor, ...
-                    'options', options, 'initPath', dInitPath, ...
-                    'initGa', gaLastList{jj});
+                    splineData, 'options', options, ...
+                    'initPath', dInitPath, 'initGa', gaLastList{jj});
             else
                 [optE, dPath, optGa] = ...
                     geodesicBvp(dIter, dList{jj}, splineData, ...
-                        quadData, quadDataTensor, 'options', options);
+                                'options', options);
             end
             dPathList{jj} = dPath;
             gaList{jj} = optGa;
@@ -122,10 +120,9 @@ karcherOptions.verbosity = 3;
     
 end
 
-function M = constructCurveManifold( splineData, quadData )
+function M = constructCurveManifold( splineData )
     
     M.splineData = splineData;
-    M.quadData = quadData;
     
     M.name = @() sprintf('Curve manifold with N=%d, n=%d', ...
         splineData.N, splineData.nS);
@@ -133,7 +130,7 @@ function M = constructCurveManifold( splineData, quadData )
     M.dim = @() splineData.N * splineData.dSpace;
     
     M.inner = @(c, v1, v2) ...
-        curveRiemH2InnerProd(c, v1, v2, splineData, quadData);
+        curveRiemH2InnerProd(c, v1, v2, splineData);
     
     M.norm = @(c, v) sqrt(M.inner(c, v, v));
     
@@ -156,7 +153,7 @@ function M = constructCurveManifold( splineData, quadData )
     %     rhess = M.proj(x, ehess) - (x(:)'*egrad(:))*u;
 	% end
     
-    M.exp = @(c, v, t) exponential(c, v, t, splineData, quadData);
+    M.exp = @(c, v, t) exponential(c, v, t, splineData);
     
     M.retr = @(c, v, t) M.exp(c, v, t);
 
@@ -195,9 +192,9 @@ function M = constructCurveManifold( splineData, quadData )
 end
 
 % Exponential on the sphere
-function d = exponential(c, v, t, splineData, quadData)
+function d = exponential(c, v, t, splineData)
     d = geodesicForward(c, c + t / splineData.stepsT * v, ...
-        splineData.stepsT, splineData, quadData, 'endpoint');
+        splineData.stepsT, splineData, 'endpoint');
 end
 
 % Linear combination of tangent vectors

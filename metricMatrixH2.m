@@ -9,21 +9,20 @@
 %       The curve. Has dimensions [N, dSpace]
 %   splineData
 %       splineData describing the curve
-%   quadData
-%       Quadrature collocation matrices
 %
 % Output
 %   G
 %       Matrix of the Riemannian metric. Has dimensions 
 %         [N*dSpace, N*dSpace]
 %
-function [ G ] = metricMatrixH2( d, splineData, quadData )
+function [ G ] = metricMatrixH2( d, splineData )
 
 a = splineData.a;
 
 N = splineData.N;
 nS = splineData.nS;
 dSpace = splineData.dSpace;
+quadData = splineData.quadData;
 noQuadSites = quadData.noQuadPointsS;
 quadWeights = quadData.quadWeightsS;
 
@@ -64,6 +63,7 @@ G_H1 = a(2) * Bu'*sparseW_H1*Bu;
 G_H2 = a(3) * (Bu'*sparseW_H2_1*Bu + Bu'*sparseW_H2_2*Buu + ...
                Buu'*sparseW_H2_2*Bu + Buu'*sparseW_H2_3*Buu);
 
+G = zeros(N*dSpace, N*dSpace);
 for kk = 1:dSpace
     G( (kk-1)*N+1:kk*N, (kk-1)*N+1:kk*N ) = G_L2 + G_H1 + G_H2;
 end

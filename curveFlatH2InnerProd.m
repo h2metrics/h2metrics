@@ -6,8 +6,8 @@
 % Input
 %   u, v
 %       The spline curves
-%   splineData, quadData
-%       General supporting files
+%   splineData
+%       General information about the splines used.
 %
 % Optional inputs
 %   a
@@ -26,8 +26,7 @@
 %     -) splineData.a
 %     -) a = [1 0 1]
 %
-function [G, components] = curveFlatH2InnerProd( u, v, splineData, ...
-                                                 quadData, varargin)
+function [G, components] = curveFlatH2InnerProd(u, v, splineData, varargin)
 
 % Set constants to be used in metric
 a = [1 0 1];
@@ -48,6 +47,8 @@ while ii <= length(varargin)
     ii = ii + 1; 
     end
 end
+
+quadData = splineData.quadData;
 
 U = quadData.B_S * u;
 Uu = quadData.Bu_S * u;

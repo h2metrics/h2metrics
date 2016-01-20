@@ -8,16 +8,10 @@
 %       Information about splines used and quadrature degrees.
 %
 % Output
-%   quadData
-%       Quadrature data and collocation matrices for 1D integrals, both in
-%       space and time.
-%   quadDataTensor
-%       Quadrature data and collocation matrices for 2D integrals
 %   splineData
 %       Adds quadData and quadDataTensor as fields in splineData.
 %
-function [quadData, quadDataTensor, splineData] = ...
-    setupQuadData( splineData )
+function splineData = setupQuadData( splineData )
 
 quadData = struct('quadPointsS', [], 'quadPointsT', [], ...
     'noQuadPointsS', [], 'noQuadPointsT', [], ...
@@ -113,8 +107,10 @@ if doPhi
 end
 
 if doInterpolS
+    nS = splineData.nS;
     interpolS = splineData.interpolS;
-    B_interpolS = spcol( knotsS, nS+1, brk2knt(interpolS, 1), 'sparse');
+    B_interpolS = spcol( splineData.knotsS, nS+1, ...
+                         brk2knt(interpolS, 1), 'sparse');
     B_interpolS = [ B_interpolS(:,1:nS) + B_interpolS(:,end-nS+1:end), ...
                     B_interpolS(:,nS+1:end-nS) ];
     quadData.B_interpolS = B_interpolS;
@@ -130,10 +126,6 @@ if doInterpolPhi
 end
 
 %% Compute outer products for tensor spline
-if nargout < 2
-    return
-end
-
 quadDataTensor = struct('B',[],'Bu',[],'Buu',[],'Bt',[],'But',[],...
     'Buut',[],'Buuu',[], 'quadWeights',[],...
     'BuTr',[],'BuuTr',[],'BtTr',[],'ButTr',[],'BuutTr',[],...
@@ -199,10 +191,6 @@ if doPhi && doT
 end
 
 %% Save quadData as field in splineData
-if nargout < 3
-    return;
-end
-
 splineData.quadData = quadData;
 splineData.quadDataTensor = quadDataTensor;
     

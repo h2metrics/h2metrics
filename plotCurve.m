@@ -1,10 +1,7 @@
 function plotCurve(d0, splineData)
 
-dSpace = splineData.dSpace;
-N = splineData.N;
 nS = splineData.nS;
 knotsS = splineData.knotsS;
-quadData = splineData.quadData;
 
 % Plot parameters
 noPlotPtsS = 500;

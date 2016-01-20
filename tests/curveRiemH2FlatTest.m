@@ -17,14 +17,14 @@ splineData.nS = 3; %spacial degree
 splineData.quadDegree = [6, 4];
 splineData.a = [1 2 3];
 splineData = constructKnots(splineData);
-quadData = setupQuadData(splineData);
+splineData = setupQuadData(splineData);
 
 d = constructSplineApproximation(f0, splineData);
 v = constructSplineApproximation(v0, splineData);
 w = constructSplineApproximation(w0, splineData);
 
-G1 = curveRiemH2InnerProd(d, v, w, splineData, quadData);
-p = curveRiemH2Flat(d, v, splineData, quadData);
+G1 = curveRiemH2InnerProd(d, v, w, splineData);
+p = curveRiemH2Flat(d, v, splineData);
 G2 = sum(sum(p.*w));
 
 assert(abs(G1 - G2) < tol);

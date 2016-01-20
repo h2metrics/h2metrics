@@ -1,6 +1,5 @@
 function plotTangentVector(d, v, splineData)
 
-N = splineData.N;
 nS = splineData.nS;
 knotsS = splineData.knotsS;
 

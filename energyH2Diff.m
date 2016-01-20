@@ -9,15 +9,13 @@
 %       Reparametrization of the final curve
 %   splineData
 %       General information about the splines used.
-%   quadData, quadDataTensor
-%       Precomputed spline collocation matrices at quadrature points.
 %
 % Output
 %   E
 %       Energy of the path.
 %
 function [E,dE,H] = energyH2Diff( dPath, phi, v, beta, alpha, ...
-    splineData, quadData, quadDataTensor, varargin)
+    splineData, varargin)
 
 optDiff = true;
 optTra = true;
@@ -67,6 +65,8 @@ end
 %% Extract parameters
 dSpace = splineData.dSpace;
 N = splineData.N;
+quadData = splineData.quadData;
+quadDataTensor = splineData.quadDataTensor;
 if optDiff
     Nphi = splineData.Nphi;
 else
@@ -101,9 +101,9 @@ if optDiff
     else
         phi_tmp = phi;
     end
-    d1 = curveComposeDiff(d1, phi_tmp, splineData, quadData);
+    d1 = curveComposeDiff(d1, phi_tmp, splineData);
 elseif optShift
-    d1 = curveApplyShift(d1, alpha, splineData, quadData);
+    d1 = curveApplyShift(d1, alpha, splineData);
 end
 if optTra
     d1 = d1 + ones([N, 1]) * v';

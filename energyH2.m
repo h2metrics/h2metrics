@@ -1,5 +1,4 @@
-function [E, dE, Hess] = energyH2( dPath, splineData, quadDataTensor, ...
-                                   varargin )
+function [E, dE, Hess] = energyH2( dPath, splineData, varargin )
 %Compute the energy of the path given by coefs and splineData.
 %
 % Input: dPath, [N*Nt, dSpace], matrix of coefficent of the spline path in
@@ -30,6 +29,7 @@ end
 N = splineData.N;
 Nt = splineData.Nt;
 dSpace = splineData.dSpace;
+quadDataTensor = splineData.quadDataTensor;
 
 noControlPoints = N * Nt;
 noControls = noControlPoints * dSpace;

@@ -125,7 +125,6 @@ tmp = zeros([noPoints, noCols]);
 for jj = 1:order
     tmp(I,:) = y_sort(jj:order:end,:);
     y(jj:order:end,:) = tmp;
-    %y(jj:order:end,:) = y_sort(order*(I-1)+jj,:);
 end
     
 end

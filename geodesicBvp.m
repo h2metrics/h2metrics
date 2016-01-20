@@ -14,8 +14,6 @@
 %       Initial and final curves. Matrix of dimensions [N, dSpace].
 %   splineData
 %       General information about the splines used.
-%   quadData, quadDataTensor
-%       Precomputed spline collocation matrices at quadrature points.
 %
 % Optional parameters
 %   options
@@ -47,7 +45,7 @@
 %       Structure containing information about the minimization process
 %
 function [optE, optPath, optGa, info] = geodesicBvp(d0, d1, ...
-    splineData, quadData, quadDataTensor, varargin)
+    splineData, varargin)
 
 % Some code for handling optional inputs
 ii = 1;
@@ -76,10 +74,10 @@ if isfield(options, 'useAmpl') && options.useAmpl
     error('Ampl version not implemented yet...');
 elseif isfield(options, 'optDiff') && options.optDiff
     [optE, optPath, optGa, info] = geodesicBvpDiff(d0, d1, ...
-        splineData, quadData, quadDataTensor, varargin{:});
+        splineData, varargin{:});
 else
     [optE, optPath, optGa, info] = geodesicBvpParam(d0, d1, ...
-        splineData, quadData, quadDataTensor, varargin{:});
+        splineData, varargin{:});
 end
 
 end

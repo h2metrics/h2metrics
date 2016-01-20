@@ -1,7 +1,9 @@
-function [ dist, comp ] = pathFlatH1H2dist( d1,splineData1,quadData1,d2,splineData2,quadData2)
+function [ dist, comp ] = pathFlatH1H2dist( d1,splineData1,d2,splineData2)
 % Computes the H1H2 distance between two spline paths, defined on (possibly)
 % two different knot sequences. 
-    
+    quadData1 = splineData1.quadData;
+    quadData2 = splineData2.quadData;
+
     %% Get the quadrature data of the finest spline
     if splineData1.N >= splineData2.N
         quadPointsS = quadData1.quadPointsS;

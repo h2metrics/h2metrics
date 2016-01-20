@@ -11,18 +11,17 @@
 %       Control points of the curve
 %   splineData
 %       General information about the splines used.
-%   quadData
-%       Precomputed spline collocation matrices at quadrature points.
 %
 % Output
 %   c
 %       The transformed curve
 %   center
 %       Center of mass of d
-function [ c, center ] = curveCenter( d, splineData, quadData )
+function [ c, center ] = curveCenter( d, splineData )
 
 N = splineData.N;
 dSpace = splineData.dSpace;
+quadData = splineData.quadData;
 
 cQuad = quadData.B_S * d;
 cQuad_u = quadData.Bu_S * d;

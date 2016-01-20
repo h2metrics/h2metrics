@@ -6,8 +6,8 @@
 % Input
 %   u
 %       The spline curve
-%   splineData, quadData
-%       General supporting files
+%   splineData
+%       Information about splines used.
 %
 % Optional inputs
 %   a
@@ -26,8 +26,7 @@
 %     -) splineData.a
 %     -) a = [1 0 1]
 %
-function [G, components] = curveFlatH2Norm( d, splineData, quadData, ...
-                                            varargin)
+function [G, components] = curveFlatH2Norm( d, splineData, varargin )
 
 % Set constants to be used in metric
 a = [1 0 1];
@@ -48,6 +47,8 @@ while ii <= length(varargin)
     ii = ii + 1; 
     end
 end
+
+quadData = splineData.quadData;
 
 c = quadData.B_S * d;
 cu = quadData.Bu_S * d;

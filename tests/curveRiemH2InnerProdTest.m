@@ -17,23 +17,22 @@ splineData.nS = 3; %spacial degree
 splineData.quadDegree = [6, 4];
 splineData.a = [1, 1, 1];
 splineData = constructKnots(splineData);
-quadData = setupQuadData(splineData);
+splineData = setupQuadData(splineData);
 
 d = constructSplineApproximation(f0, splineData);
 u = constructSplineApproximation(u0, splineData);
 v = constructSplineApproximation(v0, splineData);
 
 % Now run adiMat
-G = curveRiemH2InnerProd(d, u, v, splineData, quadData);
+G = curveRiemH2InnerProd(d, u, v, splineData);
 
 adopts = admOptions();
 adopts.functionResults = {G}; % for admDiffRev
 adopts.independents = [1];
 
-J_AD = admDiffRev( @curveRiemH2InnerProd, 1, d, u, v, ...
-                   splineData, quadData, adopts );
+J_AD = admDiffRev(@curveRiemH2InnerProd, 1, d, u, v, splineData, adopts);
 J_AD = reshape(J_AD, [splineData.N, splineData.dSpace]);
 
-[~, Gder] = curveRiemH2InnerProd(d, u, v, splineData, quadData);
+[~, Gder] = curveRiemH2InnerProd(d, u, v, splineData);
 
 assert(norm(Gder-J_AD) < tol);

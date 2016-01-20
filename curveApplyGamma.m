@@ -11,8 +11,6 @@
 %       Gamma structures to be applied
 %   splineData
 %       General information about the splines used.
-%   quadData
-%       Precomputed spline collocation matrices at quadrature points.
 %
 % Optional parameters
 %   applyDiff = {true (default), false}
@@ -29,8 +27,7 @@
 %       The transformed curve
 %   dc
 %       Jacobi matrix with respect to non-empty entries of gamma
-function [c, dc] = curveApplyGamma(d, gamma, ...
-                                   splineData, quadData, varargin)
+function [c, dc] = curveApplyGamma(d, gamma, splineData, varargin)
 
 applyDiff = true;
 applyTra = true;
@@ -103,9 +100,9 @@ else
 end
 
 if applyDiff
-    cPhi = curveComposeDiff(d, phi, splineData, quadData);
+    cPhi = curveComposeDiff(d, phi, splineData);
 elseif applyShift
-    cPhi = curveApplyShift(d, alpha, splineData, quadData);
+    cPhi = curveApplyShift(d, alpha, splineData);
 else
     cPhi = d;
 end
@@ -121,6 +118,7 @@ N = splineData.N;
 Nphi = splineData.Nphi;
 dSpace = splineData.dSpace;
 interpolS = splineData.interpolS;
+quadData = splineData.quadData;
 
 if isempty(Nphi)
     Nphi = 1;

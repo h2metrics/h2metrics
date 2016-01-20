@@ -12,8 +12,6 @@
 %       Tangent vectors.
 %   splineData
 %       splineData describing the curve
-%   quadData
-%       Quadrature collocation matrices
 %
 % Output
 %   G
@@ -21,12 +19,13 @@
 %   Gder
 %       Derivative of the Riemannian metric. Has dimensions [N, dSpace].
 %
-function [G, Gder] = curveRiemH2InnerProd( d, v, w, splineData, quadData )
+function [G, Gder] = curveRiemH2InnerProd( d, v, w, splineData )
 
 %% Extract parameters
 a = splineData.a;
 N = splineData.N;
 dSpace = splineData.dSpace;
+quadData = splineData.quadData;
 
 noQuadSites = quadData.noQuadPointsS;
 quadWeights = quadData.quadWeightsS;

@@ -11,6 +11,7 @@ splineData = constructEmptySplineData;
 splineData.N = 10; %no. control points, must be bigger than n+1
 splineData.nS = 1; %spacial degree
 splineData = constructKnots(splineData);
+splineData = setupQuadData(splineData);
 
 d0 = constructSplineApproximation(f0, splineData);
 d1 = curveSpline2Spline(d0, splineData, splineData);
@@ -30,11 +31,13 @@ splineData = constructEmptySplineData;
 splineData.N = 11; %no. control points, must be bigger than n+1
 splineData.nS = 2; %spacial degree
 splineData = constructKnots(splineData);
+splineData = setupQuadData(splineData);
 
 splineDataNew = constructEmptySplineData;
 splineDataNew.N = 500; %no. control points, must be bigger than n+1
 splineDataNew.nS = 5; %spacial degree
 splineDataNew = constructKnots(splineDataNew);
+splineDataNew = setupQuadData(splineDataNew);
 
 d1 = constructSplineApproximation(f0, splineData);
 d2 = curveSpline2Spline(d1, splineData, splineDataNew);

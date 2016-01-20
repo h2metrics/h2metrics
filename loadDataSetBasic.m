@@ -164,7 +164,7 @@ d = constructSplineApproximation(f, splineData);
 d = d / len * 2*pi;
 
 if constSpeed
-    d = curveReparamConstSpeed(d, splineData, splineData.quadData);
+    d = curveReparamConstSpeed(d, splineData);
 end
 
 end
@@ -200,9 +200,9 @@ d = constructSplineApproximation(c, splineData);
 if rescale && abs(noise > eps)
     dNoNoise = loadCurvePropeller( curveCode, 0, false, ...
                                    splineData, constSpeed );
-    dLength = curveLength(dNoNoise, splineData, splineData.quadData);
+    dLength = curveLength(dNoNoise, splineData);
 elseif rescale
-    dLength = curveLength(d, splineData, splineData.quadData);
+    dLength = curveLength(d, splineData);
 else
     dLength = 2*pi;
 end
@@ -210,7 +210,7 @@ end
 d = d / dLength * 2*pi;
 
 if constSpeed
-    d = curveReparamConstSpeed(d, splineData, splineData.quadData);
+    d = curveReparamConstSpeed(d, splineData);
 end
 
 end
@@ -237,7 +237,7 @@ lenCircle = 3*pi;
 d = d / lenCircle * 2*pi;
 
 if constSpeed
-    d = curveReparamConstSpeed(d, splineData, splineData.quadData);
+    d = curveReparamConstSpeed(d, splineData);
 end
 
 end

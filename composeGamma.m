@@ -11,13 +11,11 @@
 %       Gamma structures to be composed
 %   splineData
 %       General information about the splines used.
-%   quadData
-%       Precomputed spline collocation matrices at quadrature points.
 %
 % Output
 %   ga
 %       Gamma structure of the composition
-function ga = composeGamma(ga1, ga2, splineData, quadData)
+function ga = composeGamma(ga1, ga2, splineData)
 
 ga = struct( 'phi', [], 'beta', [], 'v', [], 'alpha', []);
 
@@ -44,11 +42,10 @@ ga.phi = ga1.phi;
 if ~isempty(ga2.phi)
     if ~isempty(ga2.alpha)
         ga.phi = ga2.phi + ...
-            curveComposeDiff( ga1.phi, ga2.phi - ga2.alpha, ...
-                              splineData, quadData );
+            curveComposeDiff( ga1.phi, ga2.phi - ga2.alpha, splineData );
     else
         ga.phi = ga2.phi + ...
-            curveComposeDiff( ga1.phi, ga2.phi, splineData, quadData );
+            curveComposeDiff( ga1.phi, ga2.phi, splineData );
     end
 end
 

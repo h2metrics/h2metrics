@@ -7,14 +7,14 @@
 %   d
 %       Control points of the curve
 %   splineData
-%       General information about the splines used. (Not used currently.)
-%   quadData
-%       Precomputed spline collocation matrices at quadrature points.
+%       General information about the splines used.
 %
 % Output
 %   ell
 %       Length of the curve
-function ell = curveLength(d, splineData, quadData)
+function ell = curveLength(d, splineData)
+
+quadData = splineData.quadData;
 
 cQuad_u = quadData.Bu_S * d;
 cSpeed = sum( cQuad_u.^2 , 2).^(1/2);

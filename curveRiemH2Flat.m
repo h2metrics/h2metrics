@@ -12,19 +12,18 @@
 %       Tangent vector.
 %   splineData
 %       splineData describing the curve
-%   quadData
-%       Quadrature collocation matrices
 %
 % Output
 %   p
 %       Result of the flat map applied to v at d.
 %
-function [p] = curveRiemH2Flat( d, v, splineData, quadData )
+function [p] = curveRiemH2Flat( d, v, splineData )
 
 %% Extract parameters
 a = splineData.a;
 N = splineData.N;
 dSpace = splineData.dSpace;
+quadData = splineData.quadData;
 
 noQuadSites = quadData.noQuadPointsS;
 quadWeights = quadData.quadWeightsS;
