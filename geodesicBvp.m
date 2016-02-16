@@ -57,22 +57,13 @@ while ii <= length(varargin)
     ii = ii + 1;  
 end
 
-% Enforce default options
-if ~isfield(options, 'useAmpl')
-    options.useAmpl = false;
-end
-
 % Decision tree
-% if useAmpl
-%   call geodesicBvpAmpl
-% elseif optDiff
+% if optDiff
 %   call geodesicBvpDiff
 % else
 %   call geodesicBvpParam
 
-if isfield(options, 'useAmpl') && options.useAmpl
-    error('Ampl version not implemented yet...');
-elseif isfield(options, 'optDiff') && options.optDiff
+if isfield(options, 'optDiff') && options.optDiff
     [optE, optPath, optGa, info] = geodesicBvpDiff(d0, d1, ...
         splineData, varargin{:});
 else
