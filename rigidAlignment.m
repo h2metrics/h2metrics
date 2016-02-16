@@ -182,10 +182,9 @@ end
 D = 0;
 for jj = 1:noCurves-1
     for kk = jj+1:noCurves
-        [~, comp] = curveFlatH2Norm( dTransformed{jj} - dTransformed{kk}, ...
-                                splineData );
-        D = D + sqrt(a(1) * comp(1)^2 + a(2) * comp(2)^2 + ...
-                     a(3) * comp(3)^2);
+        [E, ~] = curveFlatH2Norm( dTransformed{jj} - dTransformed{kk}, ...
+                                  splineData, 'a', a );
+        D = D + E;
     end
 end
 
