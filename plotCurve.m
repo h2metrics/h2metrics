@@ -1,4 +1,8 @@
-function plotCurve(d0, splineData)
+function plotCurve(d0, splineData, lineStyle)
+
+if nargin < 3
+    lineStyle = 'k-';
+end
 
 nS = splineData.nS;
 knotsS = splineData.knotsS;
@@ -15,5 +19,5 @@ hold on;
 axis equal;
 
 %% Do plotting
-plot(c0(:, 1), c0(:, 2), 'k-', 'LineWidth', 1);
+plot(c0(:, 1), c0(:, 2), lineStyle, 'LineWidth', 1);
 plot(pt0(1), pt0(2), 'ko', 'LineWidth', 1);
