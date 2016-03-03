@@ -44,6 +44,10 @@ end
 splineDir = [ dataDir, 'splines/hela_murphy/n', ...
               num2str(splineData.nS), '_N', ...
               num2str(splineData.N), constSpeedSuffix, '/'];
+if ~exist(splineDir, 'dir')
+    mkdir(splineDir);
+end          
+          
 loadDir = [ dataDir, 'source/hela_murphy/' ];
 
 listAll = dir([loadDir, 'r*--1---2.dat.png']);
@@ -84,11 +88,11 @@ auxSplineData.dSpace = splineData.dSpace;
 auxSplineData = constructKnots(auxSplineData);
 
 % This spline data has interpolation parametrs set; don't use for saving
-splineDataInterpol = splineData;
-splineDataInterpol.noInterpolS = 12 * splineData.N;
-splineDataInterpol = constructKnots(splineDataInterpol);
-splineDataInterpol = setupQuadData(splineDataInterpol);
-quadDataInterpol = splineDataInterpol.quadData;
+% splineDataInterpol = splineData;
+% splineDataInterpol.noInterpolS = 12 * splineData.N;
+% splineDataInterpol = constructKnots(splineDataInterpol);
+% splineDataInterpol = setupQuadData(splineDataInterpol);
+% quadDataInterpol = splineDataInterpol.quadData;
 
 %% Load curve
 % Use Otsu's method of thresholding
@@ -109,13 +113,14 @@ boundary = flip(boundary, 2); % Switch x- and y-coordinates
 % upsample to higher order
 boundary = boundary(1:end-1,:); % Last point equals first
 d0 = constructSplineApproximation(boundary, auxSplineData);
-dPts = deBoor(auxSplineData.knotsS, auxSplineData.nS, d0, ...
-    splineDataInterpol.interpolS, 1, 'periodic', true);
-d0 = quadDataInterpol.B_interpolS \ dPts;
+d0 = curveSpline2Spline(d0, auxSplineData, splineData);
+% dPts = deBoor(auxSplineData.knotsS, auxSplineData.nS, d0, ...
+%     splineDataInterpol.interpolS, 1, 'periodic', true);
+% d0 = quadDataInterpol.B_interpolS \ dPts;
 
 % Reparametrize to constant speed
 if constSpeed
-    d0 = curveReparamConstSpeed(d0, splineDataInterpol);
+    d0 = curveReparamConstSpeed(d0, splineData);
 end
 
 % Save curve
@@ -147,6 +152,6 @@ hold off;
 
 % Save figure
 figname = [splineFile, '.jpg'];
-% export_fig(figname);
-saveTightFigure(handle, figname);
+export_fig(figname);
+% saveTightFigure(handle, figname);
 end
