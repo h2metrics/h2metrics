@@ -1,8 +1,8 @@
 %% Setup
 clear;
 
-dataDir = '~/diss/openprojects/h2_numerics/data/';
-prefixDir = '~/diss/openprojects/h2_numerics/journal/';
+dataDir = '../data/';
+prefixDir = 'journal/';
 plotDir = [prefixDir, 'final_plots/'];
 
 %% Create basic shapes
