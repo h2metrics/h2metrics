@@ -15,17 +15,13 @@
 %       The transformed curve
 function c = curveApplyShift(d, alpha, splineData)
 
-% We don't know, if Nphi is set.
-splineData2 = splineData;
-if isempty(splineData.Nphi) || isempty(splineData.nPhi)
-    splineData2.Nphi = 5;
-    splineData2.nPhi = 3;
-    splineData2.noInterpolS = 5 * max(splineData2.N, splineData2.Nphi);
-    splineData2 = constructKnots(splineData2);
-    splineData2 = setupQuadData(splineData2);
-end
+nS = splineData.nS;
+knotsS = splineData.knotsS;
 
-phi = ones([splineData2.Nphi, 1]) * -alpha;
-c = curveComposeDiff( d, phi, splineData2);
+interpolS = splineData.interpolS;
+phiPts = mod(interpolS - alpha, 2*pi);
+cPts = deBoor( knotsS, nS, d, phiPts, 1, 'periodic', true );
+
+c = splineData.quadData.B_interpolS \ cPts;
 
 end
