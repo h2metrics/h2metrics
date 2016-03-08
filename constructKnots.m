@@ -4,7 +4,7 @@
 % splineData. The knot sequences are uniform in space and time, periodic in
 % space and with full multiplicity at the boundary in time.
 %
-% interpolS is set automatically using N and nS, unless set otherwise.
+% interpolS is set automatically using N and nS.
 %
 % Input
 %   splineData

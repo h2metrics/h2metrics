@@ -3,6 +3,8 @@
 %
 % NOTE: First version, signature might change.
 %
+% NOTE: Only works if all roots of characteristic polynomial are distinct
+%
 % Input
 %   a
 %       Coefficient vector [L2 H1 H2 ... Hn]

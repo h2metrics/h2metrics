@@ -1,10 +1,22 @@
+%% plotTangentVector
+%
+% Helper function to plot a vector field along a curve
+%
+% Input
+%   d
+%       The curve
+%   v
+%       The vector field
+%   splineData
+%       General information about the splines used.
+%
 function plotTangentVector(d, v, splineData)
 
 nS = splineData.nS;
 knotsS = splineData.knotsS;
 
 % Plot parameters
-noPlotPtsS = 500;
+noPlotPtsS = 100;
 
 plotPtsS = linspace(0, 2*pi, noPlotPtsS+1);
 

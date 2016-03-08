@@ -1,15 +1,24 @@
+%% geodesicForward
+%
+% Computes geodesic forward shooting
+%
+% Input
+%   q0, q1
+%       Initial conditions for discrete exponential map
+%   Nsteps
+%       Number of iterations to compute
+%   splineData
+%       General information about the splines used.
+%
+% Optional parameters
+%   'endpoint'
+%       Return only endpoint of geodesic path
+%
+% Output
+%   q
+%       Discrete geodesic path
+%
 function q = geodesicForward(q0,q1,Nsteps,splineData,varargin)
-%Compute a forward shooting of a geodesic defined by the two first points
-%q0 and q1 on a discrete path.
-%
-% Input:
-%       q0,q1, first two inital points
-%       Nsteps, number of steps to take, must have Nsteps > 2.
-%
-%
-% Output:
-%       q, discrete geodesic path
-%
 
 %TODO: Avoid using "full" command on B.
 a0 = splineData.a(1); %L2
@@ -29,8 +38,6 @@ while ii <= length(varargin)
                  rule = 'mid';
              case 'right'
                  rule = 'right';
-             case 'tolfun'
-                 varargin{ii+1}
              case 'endpoint'
                  endpoint = 1;
              otherwise

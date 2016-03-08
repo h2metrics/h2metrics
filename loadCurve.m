@@ -6,7 +6,7 @@
 %       File to load
 %
 % Optional parameters
-%   'autocomplete' = {true, false}
+%   'autocomplete' = {true (default), false}
 %       Finds files of the form 'filename*.mat'
 %   'workdir'
 %       Appends an optional working directory in front of filename
@@ -18,8 +18,6 @@
 %       splineData struct associated to the curve
 
 function [ d0, splineData ] = loadCurve(filename, varargin)
-% 'autocomplete' {true, false}
-% 'workDir'
 
 autocomplete = true;
 workdir = '';

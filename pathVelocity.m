@@ -1,17 +1,30 @@
-function [ d ] = pathVelocity(dPath,evalT, splineData )
-%Extract control points for the velocity field of the path at each time t.
+%% pathVelocity
+%
+% Evaluates the derivative of a path at a given time point.
+%
+% Input
+%   dPath
+%       Control points of the path
+%   evalT
+%       Where to evaluate the path.
+%   splineData
+%       General information about the splines used.
+%
+% Output
+%   d
+%       Control points of the curve dPath(evalT,.); Has dimensions 
+%           [N, dSpace, noT]
+%
+function [ d ] = pathVelocity(dPath, evalT, splineData)
 
-%TODO: determine if dPath contains a diffeomorphism
-
-%d = zeros( size(dPath,1),size(dPath,2), length(t));
-
-controlPointWeights = spcol( splineData.knotsT, splineData.nT+1, brk2knt(evalT,2))';
-
-d_x = reshape( dPath(:,1), splineData.N,splineData.Nt)*controlPointWeights(:,2);
-d_y = reshape( dPath(:,2), splineData.N,splineData.Nt)*controlPointWeights(:,2);
-
-d(:,:,1) = d_x;
-d(:,:,2) = d_y;
+controlPointWeights = spcol( splineData.knotsT, splineData.nT+1, ...
+                             brk2knt(evalT, 2) )';
+                         
+for jj = splineData.dSpace:-1:1
+    d_x = reshape(dPath(:,jj), splineData.N, splineData.Nt) * ...
+            controlPointWeights(:,2);
+    d(:,:,jj) = d_x;
+end
 
 d = permute(d, [1 3 2]);
 

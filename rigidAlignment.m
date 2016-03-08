@@ -1,7 +1,27 @@
-% Works only for dSpace = 2 and periodic curves. For nonperiodic curves
-% shifts don't work and for higher dimensions rotations have to be
-% rethought.
-
+%% rigidAlignment
+%
+% Computes the rigidAlignment between a set of curves
+%
+% NOTE: Code works only for dSpace=2 and periodic curves. For nonperiodic
+% curves shifts don't work and in more than two dimensions rotations have
+% to be rethought.
+%
+% Input
+%   dList
+%       List of curves
+%   splineData
+%       General information about the splines used.
+%
+% Optional inputs
+%   lineStyle = 'k-' (default)
+%       lineStyle parameter to be passed to plot.
+%
+% Output
+%   dAligned
+%       List of aligned curves
+%   gaOpt
+%       List of gamma structures to attain alignment
+%
 function [dAligned, gaOpt] = rigidAlignment( dList, splineData, varargin) 
 
 optTra = true;

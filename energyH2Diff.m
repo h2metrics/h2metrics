@@ -1,18 +1,38 @@
 %% energyH2Diff
 %
-% Computes the energy of dPath after some reparametrizations...
+% Computes the energy of dPath after some reparametrizations.
 %
 % Input
 %   dPath
 %       Path of curves; matrix of dimension [N*Nt, dSpace]
 %   phi
 %       Reparametrization of the final curve
+%   v
+%       Translation to be applied
+%   beta
+%       Rotation to be applied
+%   alpha
+%       Shift to tbe applied
 %   splineData
 %       General information about the splines used.
+%
+% Optional parameters
+%   optDiff = {true (default), false}
+%       If false, we ignore phi
+%   optTra = {true (default), false}
+%       If false, we ignore v
+%   optRot = {true (default), false}
+%       If false, we ignore beta
+%   optShift = {true (default), false}
+%       If false, we ignore alpha
 %
 % Output
 %   E
 %       Energy of the path.
+%   dE
+%       Derivative of the energy
+%   H
+%       Hessian of the energy
 %
 function [E,dE,H] = energyH2Diff( dPath, phi, v, beta, alpha, ...
     splineData, varargin)

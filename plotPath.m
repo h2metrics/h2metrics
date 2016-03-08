@@ -1,3 +1,13 @@
+%% plotPath
+%
+% Helper function to plot a path
+%
+% Input
+%   dPath
+%       The path
+%   splineData
+%       General information about the splines used.
+%
 function plotPath(dPath, splineData)
 
 N = splineData.N;

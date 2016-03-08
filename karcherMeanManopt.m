@@ -1,3 +1,31 @@
+%% karcherMeanManopt
+%
+% Computes the Karcher mean of a set of curves
+%
+% Input
+%   dList
+%       List of curves
+%   splineData
+%       General information about the splines used.
+%
+% Optional parameters
+%   meanInit
+%       Initial guess for Karcher mean
+%   options
+%       Option struct. Possible fields:
+%           karcherTolGradNorm
+%               Tolerance for conjugate gradient algorithm
+%           karcherMaxIter
+%               Maximal number of iterations for CG.
+%       Options struct is passed on to
+%           geodesicBvp
+%           rigidAlignment
+%
+% Output
+%   dMean
+%       The Karcher mean
+%   info
+%       Struct with information about minimization.
 function [dMean, info] = karcherMeanManopt(dList, splineData, varargin)
 
 options = [];

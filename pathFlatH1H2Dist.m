@@ -1,6 +1,25 @@
-function [ dist, comp ] = pathFlatH1H2dist( d1,splineData1,d2,splineData2)
-% Computes the H1H2 distance between two spline paths, defined on (possibly)
-% two different knot sequences. 
+%% pathFlatH1H2Dist
+%
+% Computes the distance \| d_1 - d_2 \|_{H1H2} between two path with
+% possibly different sets of splineData.
+%
+% Input
+%   d1, d2
+%       The two paths
+%   splineData1, splineData2
+%       The two sets of splineData
+%
+% Output
+%   dist
+%       The norm of the difference
+%   comp
+%       The six components of the norm separately
+%           [ L2L2, L2H1, L2H2, H1L2, H1H1, H1H2 ]
+%       We have the identity
+%           dist = sqrt( sum( comp.^2 ) )
+%
+function [dist, comp] = pathFlatH1H2Dist(d1, splineData1, d2, splineData2)
+
     quadData1 = splineData1.quadData;
     quadData2 = splineData2.quadData;
 
@@ -21,15 +40,9 @@ function [ dist, comp ] = pathFlatH1H2dist( d1,splineData1,d2,splineData2)
         quadWeightsT = quadData2.quadWeightsT;
     end
     
-%     quadPointsS = splineData1.quadPointsS;
-%     quadPointsT = splineData1.quadPointsT;
-    noQuadPointsS = length(quadPointsS);
-    noQuadPointsT = length(quadPointsT);
-    
     quadWeights = reshape(quadWeightsS*quadWeightsT',[],1);
     
     %% First spline
-    
     B1 = createTensorCollocationMatrix(quadPointsS, quadPointsT,1,1,splineData1);
     B1u = createTensorCollocationMatrix(quadPointsS, quadPointsT,2,1,splineData1);
     B1uu = createTensorCollocationMatrix(quadPointsS, quadPointsT,3,1,splineData1);
@@ -60,7 +73,6 @@ function [ dist, comp ] = pathFlatH1H2dist( d1,splineData1,d2,splineData2)
     S2uut = B2uut*d2;
     
     %% Evaluate distance
-    
     L2L2 = sqrt(quadWeights'*sum( (S1 - S2).^2,2));
     L2H1 = sqrt(quadWeights'*sum( (S1u - S2u).^2,2));
     L2H2 = sqrt(quadWeights'*sum( (S1uu - S2uu).^2,2));

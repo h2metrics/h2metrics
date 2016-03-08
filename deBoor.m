@@ -176,6 +176,7 @@ for kk = 1:order
 end
 end
 
+%% Use self-coded version; has some limitations
 function y = useManual( knots, d, evalPoints, order )
 
 if order > 4

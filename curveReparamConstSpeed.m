@@ -1,3 +1,18 @@
+%% curveReparamConstSpeed
+%
+% Computes spline approximation of the constant speed parametrization of a
+% given curve
+%
+% Input
+%   d
+%       Control points of the curve
+%   splineData
+%       General information about the splines used.
+%
+% Output
+%   c
+%       The constant speed parametrization
+%
 function c = curveReparamConstSpeed(d, splineData)
 
 quadData = splineData.quadData;

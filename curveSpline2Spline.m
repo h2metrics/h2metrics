@@ -1,6 +1,5 @@
 %% curveSpline2Spline
 %
-%
 % Computes spline representation of a given spline curve in with respect to
 % a different set of splineData. For interpolation it uses midpoints 
 % between knots or the knot points depending on the degree of the spline.

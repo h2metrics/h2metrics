@@ -1,3 +1,17 @@
+%% plotCurve
+%
+% Helper function to plot a curve
+%
+% Input
+%   d0
+%       The curve
+%   splineData
+%       General information about the splines used.
+%
+% Optional inputs
+%   lineStyle = 'k-' (default)
+%       lineStyle parameter to be passed to plot.
+%
 function plotCurve(d0, splineData, lineStyle)
 
 if nargin < 3
@@ -21,3 +35,5 @@ axis equal;
 %% Do plotting
 plot(c0(:, 1), c0(:, 2), lineStyle, 'LineWidth', 1);
 plot(pt0(1), pt0(2), 'ko', 'LineWidth', 1);
+
+hold off;

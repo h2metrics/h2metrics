@@ -1,10 +1,23 @@
-function [ dist, comp ] = pathFlatH1H2Norm( d,splineData)
-% Computes the H1H2 norm of a spline path
+%% pathFlatH1H2Dist
 %
-% d:            Coefficient matrix of spline
-% splineData:   SplineData for spline
-% quadData:     quadrature data for spline
-
+% Computes the norm \| d \|_{H1H2} of a spline path.
+%
+% Input
+%   d
+%       The spline path
+%   splineData
+%       General information about the splines used.
+%
+% Output
+%   dist
+%       The norm of d
+%   comp
+%       The six components of the norm separately
+%           [ L2L2, L2H1, L2H2, H1L2, H1H1, H1H2 ]
+%       We have the identity
+%           dist = sqrt( sum( comp.^2 ) )
+%
+function [ dist, comp ] = pathFlatH1H2Norm( d, splineData )
     
     %% Get the quadrature data of the spline
     quadData = splineData.quadData;

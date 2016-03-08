@@ -1,3 +1,32 @@
+%% pathRiemH2Length
+%
+% Computes the Riemannian length of a spline path.
+%
+% Input
+%   dPath
+%       The spline path
+%   splineData
+%       General information about the splines used.
+%
+% Optional inputs
+%   a
+%       Coefficients for the inner product
+%
+% Output
+%   G
+%       The energy of the path
+%   comp
+%       The three components of the norm separately
+%           [ L2, H1, H2 ]
+%       We have the identity
+%           G = sqrt( L2^2 + H1^2 + H2^2 )
+%
+% Notes
+%   The order of precedence for the constants are as follows
+%     -) Optional parameter 'a'
+%     -) splineData.a
+%     -) a = [1 0 1]
+%
 function [G, comp] = pathRiemH2Length( dPath, splineData, varargin )
                                    
 % Set constants to be used in metric
