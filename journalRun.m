@@ -9,10 +9,14 @@ plotDir = [prefixDir, 'final_plots/'];
 journalBasic;
 
 %% Fig. 1 - Tool to Fish
+clearvars -except dataDir prefixDir plotDir
+batch('journalConstants');  
 
 %% Fig. 2 - Plotting the shapes
 
 %% Fig. 3 - Convergence of energy
+clearvars -except dataDir prefixDir plotDir
+batch('journalEnergySplineDegreeIndependence');   % Fig 3L 3R
 
 %% Fig. 4 - Convergence of BVP
 
@@ -28,6 +32,8 @@ clearvars -except dataDir prefixDir plotDir
 batch('journalSymmetryDiff'); % Fig 6L, 6R
 
 %% Fig. 7 - Geodesic forward/backward
+clearvars -except dataDir prefixDir plotDir
+batch('journalForwardBackward'); % Fig 7u, 7d
 
 %% Fig. 8 - Compatibiliy IVP/BVP
 clearvars -except dataDir prefixDir plotDir
