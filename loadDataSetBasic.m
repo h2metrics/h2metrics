@@ -4,7 +4,7 @@
 % Optional arguments
 %   'curves' = {'H', 'U'} or an array containing a list of strings.
 %
-function dList = loadDataSetBasic( splineData, ~, varargin )
+function dList = loadDataSetBasic( splineData, varargin )
 
 %% Optional arguments
 constSpeed = false; % Reparametrize to constant speed

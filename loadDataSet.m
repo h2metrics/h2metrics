@@ -44,7 +44,7 @@ switch (lower(setName))
     case 'corpus_callosum_tilak'
         dList = loadDataSetTilak(splineData, dataDir, varargin{:});
     case 'basic'
-        dList = loadDataSetBasic(splineData, dataDir, varargin{:});
+        dList = loadDataSetBasic(splineData, varargin{:});
     otherwise
         error('Invalid dataset: ''%s''.',varargin{ii});
 end
