@@ -15,6 +15,9 @@ resultsFile = [prefixDir, 'basic_shapes.mat'];
 if ~exist(prefixDir, 'dir')
     mkdir(prefixDir);
 end
+if ~exist(plotDir, 'dir')
+    mkdir(plotDir);
+end
 
 %% Circle to wrap
 splineData = constructEmptySplineData;
