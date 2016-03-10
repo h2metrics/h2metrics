@@ -1,40 +1,45 @@
--------------------------------------------------------------------------------
---- Introduction                                                            ---
--------------------------------------------------------------------------------
+h2metrics
+=========
 
-This code provides tools for Riemannian shape analysis with second order 
-Sobolev metrics on closed plane curves. For details see the paper
-  A Numerical Framework for Sobolev Metrics on the Space of Curves
-by
-  Martin Bauer, Martins Bruveris, Philipp Harms and Jakob Møller-Andersen
+What is it?
+-----------
 
--------------------------------------------------------------------------------
---- Dependecies                                                             ---
--------------------------------------------------------------------------------
+This code provides tools for Riemannian shape analysis with second order Sobolev metrics on closed plane curves. It can be used to solve the initial and boundary value problems for geodesics and to compute Karcher means. It is able to factor out reparameterizations, translations, and rotations of the curves. 
 
-To calculate Karcher means one needs the Manopt library, available at
-  www.manopt.org
+For details we refer to the our paper 
 
--------------------------------------------------------------------------------
---- Usage                                                                   ---
--------------------------------------------------------------------------------
+@misc{BBHM2016,
+  author  = {Martin Bauer, Martins Bruveris, Philipp Harms, 
+             Jakob M{\o}ller-Andersen},
+  title   = {A Numerical Framework for {S}obolev Metrics on the Space of 
+             Curves},
+  year    = {2016},
+  note    = {Preprint available soon.}
+}
 
-See the file
-  example.m
-for basic examples regarding the usage of the code.
+Please cite our paper in your work.
 
--------------------------------------------------------------------------------
---- Contact                                                                 ---
--------------------------------------------------------------------------------
+Dependencies
+------------
 
-Martin Bauer (martin dot bauer at tuwien dot ac dot at)
-Martins Bruveris (martins dot bruveris at brunel dot ac dot uk)
-Philipp Harms (philipp dot harms at math dot ethz dot ch)
-Jakob Møller-Andersen (jakmo at dtu dot dk)
+* MATLAB Curve Fitting Toolbox
+* MATLAB Optimization Toolbox
+* Manopt library, available at www.manopt.org. (Only needed to compute Karcher means.)
 
--------------------------------------------------------------------------------
---- Licence                                                                 ---
--------------------------------------------------------------------------------
+The code was tested on MATLAB R2014b with Manopt 2.0. 
+
+Installation
+------------
+
+The Manopt library must be on the Matlab search path. 
+
+Usage
+-----
+
+See the file "example.m" for an example of how to use the code.
+
+Licence
+-------
 
 This program is free software: you can redistribute it and/or modify it under 
 the terms of the GNU General Public License as published by the Free Software 
@@ -47,3 +52,11 @@ FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with 
 this program. If not, see <http://www.gnu.org/licenses/>.
+
+Contacts
+--------
+
+* Martin Bauer (martin dot bauer at tuwien dot ac dot at)
+* Martins Bruveris (martins dot bruveris at brunel dot ac dot uk)
+* Philipp Harms (philipp dot harms at math dot ethz dot ch)
+* Jakob Møller-Andersen (jakmo at dtu dot dk)
