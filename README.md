@@ -8,14 +8,12 @@ This code provides tools for Riemannian shape analysis with second order Sobolev
 
 For details we refer to the our paper 
 
-@misc{BBHM2016,
-  author  = {Martin Bauer, Martins Bruveris, Philipp Harms, 
-             Jakob M{\o}ller-Andersen},
-  title   = {A Numerical Framework for {S}obolev Metrics on the Space of 
-             Curves},
-  year    = {2016},
-  note    = {Preprint available soon.}
-}
+    @misc{BBHM2016,
+      author  = {Martin Bauer, Martins Bruveris, Philipp Harms, Jakob M{\o}ller-Andersen},
+      title   = {A Numerical Framework for {S}obolev Metrics on the Space of Curves},
+      year    = {2016},
+      note    = {Preprint available soon.}
+    }
 
 Please cite our paper in your work.
 
@@ -24,7 +22,7 @@ Dependencies
 
 * MATLAB Curve Fitting Toolbox
 * MATLAB Optimization Toolbox
-* Manopt library, available at www.manopt.org. (Only needed to compute Karcher means.)
+* Manopt library, available at http://www.manopt.org. (Only needed to compute Karcher means.)
 
 The code was tested on MATLAB R2014b with Manopt 2.0. 
 
@@ -51,7 +49,7 @@ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with 
-this program. If not, see <http://www.gnu.org/licenses/>.
+this program. If not, see http://www.gnu.org/licenses/.
 
 Contacts
 --------
