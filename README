@@ -1,0 +1,49 @@
+-------------------------------------------------------------------------------
+--- Introduction                                                            ---
+-------------------------------------------------------------------------------
+
+This code provides tools for Riemannian shape analysis with second order 
+Sobolev metrics on closed plane curves. For details see the paper
+  A Numerical Framework for Sobolev Metrics on the Space of Curves
+by
+  Martin Bauer, Martins Bruveris, Philipp Harms and Jakob Møller-Andersen
+
+-------------------------------------------------------------------------------
+--- Dependecies                                                             ---
+-------------------------------------------------------------------------------
+
+To calculate Karcher means one needs the Manopt library, available at
+  www.manopt.org
+
+-------------------------------------------------------------------------------
+--- Usage                                                                   ---
+-------------------------------------------------------------------------------
+
+See the file
+  example.m
+for basic examples regarding the usage of the code.
+
+-------------------------------------------------------------------------------
+--- Contact                                                                 ---
+-------------------------------------------------------------------------------
+
+Martin Bauer (martin dot bauer at tuwien dot ac dot at)
+Martins Bruveris (martins dot bruveris at brunel dot ac dot uk)
+Philipp Harms (philipp dot harms at math dot ethz dot ch)
+Jakob Møller-Andersen (jakmo at dtu dot dk)
+
+-------------------------------------------------------------------------------
+--- Licence                                                                 ---
+-------------------------------------------------------------------------------
+
+This program is free software: you can redistribute it and/or modify it under 
+the terms of the GNU General Public License as published by the Free Software 
+Foundation, either version 3 of the License, or (at your option) any later 
+version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT 
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with 
+this program. If not, see <http://www.gnu.org/licenses/>.
