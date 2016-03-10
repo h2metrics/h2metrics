@@ -1,8 +1,8 @@
 %% Plot the Karcher mean from the Rohde paper
-dataDir = '../data/';
+% dataDir = '../data/';
+% prefixDir = 'journal/';
+% plotDir = [prefixDir, 'final_plots/'];
 sourceFile = [dataDir, 'source/hela_rohde/hela_rohde_mean.png'];
-prefixDir = 'journal/';
-plotDir = [prefixDir, 'final_plots/'];
 
 % Load image file, use Otsu's method of thresholding, extract boundary
 I = imread(sourceFile);
