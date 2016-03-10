@@ -13,12 +13,16 @@ clearvars -except dataDir prefixDir plotDir
 batch('journalConstants');  
 
 %% Fig. 2 - Plotting the shapes
+clearvars -except dataDir prefixDir plotDir
+batch('journalShapesPlot');
 
 %% Fig. 3 - Convergence of energy
 clearvars -except dataDir prefixDir plotDir
 batch('journalEnergySplineDegreeIndependence');   % Fig 3L 3R
 
 %% Fig. 4 - Convergence of BVP
+clearvars -except dataDir prefixDir plotDir
+batch('journalConvPropellerFinal');
 
 %% Fig. 5 - Continuity of distance function
 clearvars -except dataDir prefixDir plotDir
@@ -43,3 +47,5 @@ clearvars -except dataDir prefixDir plotDir
 batch('journalInitalVelocity');  % Fig 8R
 
 %% Fig. 9 - Karcher mean propellers
+clearvars -except dataDir prefixDir plotDir
+batch('journalKarcherMean');        % Fig 8L
