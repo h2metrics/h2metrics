@@ -28,7 +28,7 @@ d1 = loadDataSet('basic', splineData, '', ...
 %                  'curves', 'prop3', 'noise', 0.1);
 
 %Create some curves with noise
-% noiseLevel = 0.15;
+% noiseLevel = 0.10;
 % d2 = d1 + noiseLevel*d1.*rand( size(d1) );
 % d3 = d1 + noiseLevel*d1.*rand( size(d1) );
 % d4 = d1 + noiseLevel*d1.*rand( size(d1) );
@@ -49,21 +49,16 @@ load([prefixDir, 'karcherMeanProp3.mat']);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 dList = meanSplinesTest1.dList;
 
-%%
+%
 [dMeanProp, info] = karcherMeanManopt( dList, ...
     splineData, 'options', options, 'meanInit', d1 );
 
-% [dMeanProp, info] = karcherMeanManoptRetr( dList, ...
-%     splineData, 'options', options, 'meanInit', d1 );
-
-
-
 % Save
-% splineDataSave = splineData;
-% splineDataSave = rmfield(splineDataSave, 'quadData');
-% splineDataSave = rmfield(splineDataSave, 'quadDataTensor');
-% meanSplinesTestNoise15 = struct('dList',{dListNoise15},'dMean',dMeanProp,'splineData',splineDataSave,'options',options,'info',info)
-% save('karcherMeanProp3_Noise15.mat','meanSplinesTestNoise15');
+splineDataSave = splineData;
+splineDataSave = rmfield(splineDataSave, 'quadData');
+splineDataSave = rmfield(splineDataSave, 'quadDataTensor');
+meanSplinesTest1 = struct('dList',{dListNoise15},'dMean',dMeanProp,'splineData',splineDataSave,'options',options,'info',info)
+save('karcherMeanProp3.mat','meanSplinesTest1');
 
 %% Plot and save some figures
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
