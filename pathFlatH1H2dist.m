@@ -1,9 +1,29 @@
-function [ dist, comp ] = pathFlatH1H2dist( d1,splineData1,d2,splineData2)
+function [ dist, comp ] = pathFlatH1H2dist( d1,splineData1,d2,splineData2,varargin)
 % Computes the H1H2 distance between two spline paths, defined on (possibly)
 % two different knot sequences. 
     quadData1 = splineData1.quadData;
     quadData2 = splineData2.quadData;
-
+    
+    % Set constants to be used in metric
+    a = [1 1 1;1 1 1];
+%     if ~isempty(splineData1.a)
+%         a = [splineData1.a; splineData1.a];
+%     end
+    
+    ii = 1;
+    while ii <= length(varargin)
+        if (isa(varargin{ii},'char'))
+            switch (lower(varargin{ii}))
+                case 'a'
+                    ii = ii + 1;
+                    a = varargin{ii};
+                otherwise
+                    error('Invalid option: ''%s''.',varargin{ii});
+            end
+            ii = ii + 1;
+        end
+    end
+    
     %% Get the quadrature data of the finest spline
     if splineData1.N >= splineData2.N
         quadPointsS = quadData1.quadPointsS;
@@ -68,13 +88,16 @@ function [ dist, comp ] = pathFlatH1H2dist( d1,splineData1,d2,splineData2)
     H1H1 = sqrt(quadWeights'*sum( (S1ut - S2ut).^2,2));
     H1H2 = sqrt(quadWeights'*sum( (S1uut - S2uut).^2,2));
     
-    dist = sqrt(L2L2^2 + L2H1^2 + L2H2^2 + H1L2^2 + H1H1^2 + H1H2^2);
-    comp = zeros(6,1);
-    comp(1) = L2L2;
-    comp(2) = L2H1;
-    comp(3) = L2H2;
-    comp(4) = H1L2;
-    comp(5) = H1H1;
-    comp(6) = H1H2;
+    dist = sqrt( a(1,1)*L2L2^2 + a(1,2)*L2H1^2 + a(1,3)*L2H2^2 ...
+        + a(2,1)*H1L2^2 + a(2,2)*H1H1^2 + a(2,3)*H1H2^2);
+    if nargout > 1 %return individual components
+        comp = zeros(6,1);
+        comp(1) = a(1,1)*L2L2;
+        comp(2) = a(1,2)*L2H1;
+        comp(3) = a(1,3)*L2H2;
+        comp(4) = a(2,1)*H1L2;
+        comp(5) = a(2,2)*H1H1;
+        comp(6) = a(2,3)*H1H2;
+    end
 end
 
