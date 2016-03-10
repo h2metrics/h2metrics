@@ -45,15 +45,16 @@ d1 = loadDataSet('basic', splineData, '', ...
 %% Compute, uncomment to compute
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Remember to have this file!!!!
-load('journal/karcher_mean/karcherMeanProp3.mat');
+load([prefixDir, 'karcherMeanProp3.mat']);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 dList = meanSplinesTest1.dList;
 
-% [dMeanProp, info] = karcherMeanManopt( dList, ...
-%     splineData, 'options', options, 'meanInit', d1 );
-
-[dMeanProp, info] = karcherMeanManoptRetr( dList, ...
+%%
+[dMeanProp, info] = karcherMeanManopt( dList, ...
     splineData, 'options', options, 'meanInit', d1 );
+
+% [dMeanProp, info] = karcherMeanManoptRetr( dList, ...
+%     splineData, 'options', options, 'meanInit', d1 );
 
 
 
@@ -67,7 +68,7 @@ dList = meanSplinesTest1.dList;
 %% Plot and save some figures
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Remember to have this file!!!!
-load('journal/karcher_mean/karcherMeanProp3.mat');
+load([prefixDir, 'karcherMeanProp3.mat']);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 dMeanProp = meanSplinesTest1.dMean;
 info = meanSplinesTest1.info;
@@ -101,7 +102,7 @@ end
 
 %% Big plot.
 % plotDir = 'journal/final_plots/';
-load('journal/karcher_mean/karcherMeanProp3.mat');
+load([prefixDir, 'karcherMeanProp3.mat']);
 
 dMean = meanSplinesTest1.dMean;
 
