@@ -39,8 +39,10 @@ noNoise = length(noise);
 
 E_Riem = zeros(noCurves, noCurves, noNoise, noNoise, 4);
 E_Flat = zeros(noCurves, noCurves, noNoise, noNoise, 4);
+sprev = rng(13);
 perturb1 = rand([splineData.N,splineData.dSpace]);
 perturb2 = rand([splineData.N,splineData.dSpace]);
+rng(sprev);
 
 ind1List = [1, 1, 1];
 ind2List = [1, 2, 2];

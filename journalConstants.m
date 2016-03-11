@@ -1,7 +1,7 @@
 %% Section 1: Setup Circle to wrap
 dataName = 'journalConstants'; %name for the result files
 %% Load curves
-load('kimiaShapesN60');
+load([prefixDir, 'kimiaShapesN60']);
 extractnames = fieldnames((kimiaControlPoints));
 for ii = 1:length(extractnames)
     dShapes{ii} = kimiaControlPoints.(extractnames{ii});

@@ -58,7 +58,7 @@ splineDataSave = splineData;
 splineDataSave = rmfield(splineDataSave, 'quadData');
 splineDataSave = rmfield(splineDataSave, 'quadDataTensor');
 meanSplinesTest1 = struct('dList',{dList},'dMean',dMeanProp,'splineData',splineDataSave,'options',options,'info',info);
-save('karcherMeanProp3.mat','meanSplinesTest1');
+save([prefixDir, 'karcherMeanProp3.mat'],'meanSplinesTest1');
 
 %% Plot and save some figures
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

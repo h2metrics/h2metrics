@@ -123,7 +123,7 @@ for ii = 1:T
     plot(c( 1 + (ii-1)*plotData.noPlotPointsS: (ii-1)*plotData.noPlotPointsS + plotData.noPlotPointsS, 1)+1.1*(T-ii)*(x_max-x_min),...
         c(1 + (ii-1)*plotData.noPlotPointsS: (ii-1)*plotData.noPlotPointsS + plotData.noPlotPointsS, 2),'k');
      plot(c2( 1 + (ii-1)*plotData2.noPlotPointsS: (ii-1)*plotData2.noPlotPointsS + plotData2.noPlotPointsS, 1)+1.1*(T-ii)*(x_max-x_min),...
-        c2(1 + (ii-1)*plotData2.noPlotPointsS: (ii-1)*plotData2.noPlotPointsS + plotData2.noPlotPointsS, 2),'xk','MarkerSize',4);
+        c2(1 + (ii-1)*plotData2.noPlotPointsS: (ii-1)*plotData2.noPlotPointsS + plotData2.noPlotPointsS, 2),'ok','MarkerSize',4);
 end
 hold off;
 export_fig([plotDir,'Backward.pdf'])
