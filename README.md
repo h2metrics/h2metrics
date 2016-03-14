@@ -6,7 +6,7 @@ What is it?
 
 This code provides tools for Riemannian shape analysis with second order Sobolev metrics on closed plane curves. It can be used to solve the initial and boundary value problems for geodesics and to compute Karcher means. It is able to factor out reparameterizations, translations, and rotations of the curves. 
 
-For details we refer to the our paper 
+For details we refer to the paper 
 
     @misc{BBHM2016,
       author  = {Martin Bauer, Martins Bruveris, Philipp Harms, Jakob M{\o}ller-Andersen},
