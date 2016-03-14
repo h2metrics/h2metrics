@@ -12,7 +12,7 @@ For details we refer to the our paper
       author  = {Martin Bauer, Martins Bruveris, Philipp Harms, Jakob M{\o}ller-Andersen},
       title   = {A Numerical Framework for {S}obolev Metrics on the Space of Curves},
       year    = {2016},
-      note    = {Preprint available soon.}
+      note    = {Preprint available at arXiv:1603.03480.}
     }
 
 Please cite our paper in your work.
