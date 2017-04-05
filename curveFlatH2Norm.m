@@ -52,11 +52,16 @@ quadData = splineData.quadData;
 
 c = quadData.B_S * d;
 cu = quadData.Bu_S * d;
-cuu = quadData.Buu_S * d;
 
 L2 = sum(sum(c .* c, 2) .* quadData.quadWeightsS);
 H1 = sum(sum(cu .* cu, 2) .* quadData.quadWeightsS);
-H2 = sum(sum(cuu .* cuu, 2) .* quadData.quadWeightsS);
+
+if splineData.nS >= 2
+    cuu = quadData.Buu_S * d;
+    H2 = sum(sum(cuu .* cuu, 2) .* quadData.quadWeightsS);
+else
+    H2 = 0;
+end
 
 G = sqrt(a(1) * L2 + a(2) * H1 + a(3) * H2);
 
