@@ -111,7 +111,7 @@ semilogy(x, y(:,3), 'k:+', 'MarkerSize', 4);
 hold off;
 set(gca, 'FontSize', 6);
 legend({'Circle to wrap', 'Propeller 3 to 4', 'Corpus callosum'}, ...
-        'FontSize', 6);
+        'FontSize', 6, 'Interpreter', 'latex');
     
-figname = [ plotDir, 'geodesicForwardCompatible.eps' ];
+figname = [ plotDir, 'geodesicForwardCompatible.pdf' ];
 export_fig(figname);
