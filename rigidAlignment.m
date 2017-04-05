@@ -22,6 +22,12 @@
 %   gaOpt
 %       List of gamma structures to attain alignment
 %
+% Notes
+%   The order of precedence for the constants are as follows
+%     -) Optional parameter 'a'
+%     -) splineData.a
+%     -) a = [1 0 1]
+%
 function [dAligned, gaOpt] = rigidAlignment( dList, splineData, varargin) 
 
 optTra = true;
@@ -32,6 +38,9 @@ maxIter = [];
 display = 'off';
 globalRot = false;
 a = [1 0 1];
+if ~isempty(splineData.a)
+    a = splineData.a;
+end
 
 options = struct;
 
@@ -119,7 +128,7 @@ init_coefs = zeros([(2+dSpace)*(noCurves-1), 1]);
 
 % Deal with global rotations
 if optRot && globalRot
-    gaInit = findInitRot( dList, splineData, options);
+    gaInit = findInitRot( dList, splineData, a, options);
     if optShift
         init_coefs(1) = gaInit.alpha;
     end
@@ -210,7 +219,7 @@ end
 
 end
 
-function gaInit = findInitRot( dList, splineData, options )
+function gaInit = findInitRot( dList, splineData, a, options )
     d0 = dList{1};
     d1 = dList{2};
     
@@ -236,7 +245,7 @@ function gaInit = findInitRot( dList, splineData, options )
             'options', options2);
         
         distList(jj) = curveFlatH2Norm( dTmpList{1} - dTmpList{2}, ...
-                                        splineData );
+                                        splineData, 'a', a );
     end
     
     [~, ind] = min(distList);
