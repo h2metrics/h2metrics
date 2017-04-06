@@ -19,7 +19,6 @@
 %   options
 %       Struct containing optimization options. Will be passed on to
 %       subroutines. Contains the following fields:
-%           useAmpl = {true, false (default)}
 %           optTra = {true, false (default)}
 %           optRot = {true, false (default)}
 %           optDiff = {true, false (default)}
@@ -29,6 +28,7 @@
 %               'off' for no output
 %               '' for default of optimization routine
 %               Any other string will be passed on
+%           usePrecond = {true, false (default)}
 %   initPath
 %       Guess for initial path.
 %   gaInit
@@ -47,12 +47,9 @@
 function [optE, optPath, optGa, info] = geodesicBvp(d0, d1, ...
     splineData, varargin)
 
-options = struct( 'optDiff', false, ...
-                  'optTra', false, ...
-                  'optRot', false, ...
-                  'optShift', false ); % Default options
+options = struct( 'optDiff', false );
 
-% Some code for handling optional inputs
+% Check options for optDiff
 ii = 1;
 while ii <= length(varargin)
     if strcmpi(varargin{ii}, 'options')
@@ -68,8 +65,16 @@ end
 % else
 %   call geodesicBvpParam
 
-if isfield(options, 'optDiff') && options.optDiff
+doDiff = isfield(options, 'optDiff') && options.optDiff;
+doTra = isfield(options, 'optTra') && options.optTra;
+doRot = isfield(options, 'optRot') && options.optRot;
+doShift = isfield(options, 'optShift') && options.optShift;
+
+if doDiff
     [optE, optPath, optGa, info] = geodesicBvpDiff(d0, d1, ...
+        splineData, varargin{:});
+elseif ~doDiff && ~doTra && ~doRot && ~doShift
+    [optE, optPath, optGa, info] = geodesicBvpNoGroups(d0, d1, ...
         splineData, varargin{:});
 else
     [optE, optPath, optGa, info] = geodesicBvpParam(d0, d1, ...
