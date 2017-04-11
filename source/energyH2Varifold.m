@@ -90,29 +90,32 @@ energyIntegrand = Ct_L2H1H2;
 E = quadDataTensor.quadWeights' * energyIntegrand;
 
 %% Compute Varifold energy
-noEvalPoints = 100;
+% noEvalPoints = 100;
+% 
+% % End point curve
+% d1 = dPath(end-N+1:end,:);
+% 
+% % Parameters for varifold code
+% objfun.kernel_geom='gaussian';
+% objfun.kernel_size_geom=splineData.varifoldKernelSize;
+% objfun.kernel_grass='binet';
+% 
+% % Evaluate the curve
+% evalS = linspace(0,2*pi,noEvalPoints+1)'; 
+% evalS = evalS(1:end-1); % Remove the last repeated point
+% evald1 = evalCurve(evalS,d1,splineData);
+% evalC = evalCurve(evalS,d,splineData); %Matching curve
+% 
+% % Create connectivity matrix
+% G = [(1:length( evalS ))', circshift( (1:length( evalS ))' , -1)];
+% 
+% d1vari = struct( 'x', evald1, 'G', G );
+% Cvari = struct( 'x', evalC, 'G', G );
+% 
+% distVar = varifoldnorm(d1vari,Cvari,objfun);
 
-% End point curve
 d1 = dPath(end-N+1:end,:);
-
-% Parameters for varifold code
-objfun.kernel_geom='gaussian';
-objfun.kernel_size_geom=splineData.varifoldKernelSize;
-objfun.kernel_grass='binet';
-
-% Evaluate the curve
-evalS = linspace(0,2*pi,noEvalPoints+1)'; 
-evalS = evalS(1:end-1); % Remove the last repeated point
-evald1 = evalCurve(evalS,d1,splineData);
-evalC = evalCurve(evalS,d,splineData); %Matching curve
-
-% Create connectivity matrix
-G = [(1:length( evalS ))', circshift( (1:length( evalS ))' , -1)];
-
-d1vari = struct( 'x', evald1, 'G', G );
-Cvari = struct( 'x', evalC, 'G', G );
-
-distVar = varifoldnorm(d1vari,Cvari,objfun);
+distVar = varifoldDistanceSquared(d1, d, splineData);
 
 %% Compute the final energy
 E = E + lambda*distVar;
@@ -155,12 +158,14 @@ if nargout > 1
     dE = dE(splineData.N+1:end-splineData.N,:);
     
     % Compute Varifold Gradient
-    distVarGradPts = dvarifoldnorm(d1vari,Cvari,objfun);
+%     distVarGradPts = dvarifoldnorm(d1vari,Cvari,objfun);
+%     
+%     % dist: d -Ev-> B*d -varNorm-> distVar
+%     % grad(dist) = (varNorm'*B)
+%     
+%     distVarGrad = (distVarGradPts'*splineData.quadData.B_interpolS)';
     
-    % dist: d -Ev-> B*d -varNorm-> distVar
-    % grad(dist) = (varNorm'*B)
-    
-    distVarGrad = (distVarGradPts'*splineData.quadData.B_interpolS)';
+    [~, distVarGrad] = varifoldDistanceSquared(d1, d, splineData);
     
     %Collect all dE terms
     dE = [dE; Edc1 + lambda*distVarGrad];
