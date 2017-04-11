@@ -266,7 +266,7 @@ function [dAligned, gaOpt] = shiftOnlyTwoCurves(dList, splineData, a)
                         splineData, 'a', a);
     end
     [~, optShift] = min(dist);
-    alpha = optShift * 2*pi / splineData.N;
+    alpha = (optShift-1) * 2*pi / splineData.N;
     
     dAligned = {d0, circshift(d1, optShift-1, 1)};
     gaOpt = { struct( 'phi', [], 'beta', [], 'v', [], 'alpha', []), ...
