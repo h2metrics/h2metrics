@@ -19,7 +19,7 @@ quadData = struct('quadPointsS', [], 'quadPointsT', [], ...
     'B_S', [], 'Bu_S', [], 'Buu_S', [] ,'Buuu_S', [], ...
     'B_T', [], 'Bt_T', [],...
     'B_phi', [], 'Bu_phi', [], 'Buu_phi', [], 'Buuu_phi', [], ...
-    'B_interpolS', [], 'B_interpolPhi', []);
+    'B_interpolS', [], 'B_interpolPhi', [], 'B_varS', []);
 
 quadDegree = splineData.quadDegree;
 
@@ -31,6 +31,7 @@ doPhi = ~isempty(splineData.nPhi) && ~isempty(splineData.Nphi);
 doInterpolS = ~isempty(splineData.nS) && ~isempty(splineData.N) && ...
     ~isempty(splineData.interpolS);
 doInterpolPhi = doPhi && ~isempty(splineData.interpolS);
+doVar = ~isempty(splineData.varData) && ~isempty(splineData.varData.pts);
 
 if doS
     N = splineData.N;
@@ -188,6 +189,16 @@ if doPhi && doT
         quadDataTensor.Buuu_phi = createTensorCollocationMatrix( ...
             quadPointsS, quadPointsT, 4, 1, splineDataPhi );
     end
+end
+
+if doVar
+    noPts = splineData.varData.noPts;
+    pts = splineData.varData.pts;
+    B_varS = spcol( splineData.knotsS, splineData.nS+1, ...
+                    brk2knt(pts, 1), 'sparse');
+    B_varS = [ B_varS(:,1:noPts) + B_varS(:,end-noPts+1:end), ...
+               B_varS(:,noPts+1:end-noPts) ];
+    quadData.B_varS = B_varS;
 end
 
 %% Save quadData as field in splineData

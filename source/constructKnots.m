@@ -50,5 +50,25 @@ if ~isempty(splineData.Nphi) && ~isempty(splineData.nPhi)
     splineData.innerKnotsPhi = splineData.knotsPhi(nPhi+1:end-nPhi);
 end
 
+% varData exists, but noPts is not set
+if ~isempty(splineData.varData) && ~isempty(splineData.N) ...
+        && isempty(splineData.varData.noPts)
+    splineData.varData.noPts = splineData.N;
+end
+
+% varData exists, but pts is not set
+if ~isempty(splineData.varData) && ~isempty(splineData.varData.noPts) ...
+        && isempty(splineData.varData.pts)
+    varData = splineData.varData;
+    
+    varData.pts = linspace(0, 2*pi, varData.noPts+1);
+    varData.pts = varData.pts(1:end-1); % Remove the last repeated point
+
+    % Connectivity matrix
+    varData.G = [(1:varData.noPts)', circshift((1:varData.noPts)', -1)];
+    
+    splineData.varData = varData;
+end
+
 end
 
