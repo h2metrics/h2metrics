@@ -45,6 +45,8 @@ switch (lower(setName))
         dList = loadDataSetTilak(splineData, dataDir, varargin{:});
     case 'basic'
         dList = loadDataSetBasic(splineData, varargin{:});
+    case 'mosquito_wings'
+        dList = loadDataSetWings(splineData, dataDir, varargin{:});
     otherwise
         error('Invalid dataset: ''%s''.',varargin{ii});
 end
