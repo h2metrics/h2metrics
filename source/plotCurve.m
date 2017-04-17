@@ -36,8 +36,8 @@ if isa(d,'cell')
         axis equal;
         
         %% Do plotting
-        plot(c0(:, 1), c0(:, 2), lS, 'LineWidth', 1);
-        plot(pt0(1), pt0(2), 'ko', 'LineWidth', 1);
+        plot(c0(:, 1), c0(:, 2), lS);
+        plot(pt0(1), pt0(2), 'ko');
         
         hold off; 
     end    
@@ -58,8 +58,8 @@ else
     axis equal;
     
     %% Do plotting
-    plot(c0(:, 1), c0(:, 2), lS, 'LineWidth', 1);
-    plot(pt0(1), pt0(2), 'ko', 'LineWidth', 1);
+    plot(c0(:, 1), c0(:, 2), lS);
+    plot(pt0(1), pt0(2), 'ko');
     
     hold off;
 end   
