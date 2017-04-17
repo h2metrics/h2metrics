@@ -14,52 +14,35 @@
 %
 function plotCurve(d, splineData, lineStyle)
 
-if nargin < 3
-    lS = 'k-';
-end
+% Plot parameters
+noPlotPtsS = 500;
+plotPtsS = linspace(0, 2*pi, noPlotPtsS+1);
+nS = splineData.nS;
+knotsS = splineData.knotsS;
 
-if isa(d,'cell')
-    noCurves = length(d);
-    for ii=1:noCurves;
-        nS = splineData.nS;
-        knotsS = splineData.knotsS;
-        lS = lineStyle{ii};
-        % Plot parameters
-        noPlotPtsS = 500;
-        plotPtsS = linspace(0, 2*pi, noPlotPtsS+1);
-        
+if ~isa(d,'cell')
+   d={d}; 
+   if nargin > 2
+   lineStyle={lineStyle};
+   end   
+end        
+noCurves = length(d);
+for ii=1:noCurves
+        if nargin < 3
+            lS = 'k-';
+        else
+            lS = lineStyle{ii}; 
+        end
         c0 = deBoor(knotsS, nS, d{ii}, plotPtsS, 1, 'periodic', true);
         pt0 = deBoor(knotsS, nS, d{ii}, 0, 1, 'periodic', true);
-        
         %% Setup plotting
         hold on;
-        axis equal;
-        
+        axis equal;        
         %% Do plotting
         plot(c0(:, 1), c0(:, 2), lS);
-        plot(pt0(1), pt0(2), 'ko');
-        
+        plot(pt0(1), pt0(2), 'ko');      
         hold off; 
-    end    
-else    
+end
+end
 
-    nS = splineData.nS;
-    knotsS = splineData.knotsS;
-    
-    % Plot parameters
-    noPlotPtsS = 500;
-    plotPtsS = linspace(0, 2*pi, noPlotPtsS+1);
-    
-    c0 = deBoor(knotsS, nS, d, plotPtsS, 1, 'periodic', true);
-    pt0 = deBoor(knotsS, nS, d, 0, 1, 'periodic', true);
-    
-    %% Setup plotting
-    hold on;
-    axis equal;
-    
-    %% Do plotting
-    plot(c0(:, 1), c0(:, 2), lS);
-    plot(pt0(1), pt0(2), 'ko');
-    
-    hold off;
-end   
+
