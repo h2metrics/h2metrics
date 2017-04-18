@@ -1,5 +1,5 @@
-%% loadDataSetHela
-% Loads the HeLa cell data of
+%% loadDataSetWings
+% Loads the mosquito wings data of
 %   F. James Rohlf, James W. Archie, A Comparison of Fourier Methods for
 %   the Description of Wing Shape in Mosquitoes (Diptera: Culicidae). Syst.
 %   Zool., 33(3):302-317, 1984.
