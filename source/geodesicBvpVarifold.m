@@ -48,12 +48,6 @@ function [optE, optPath,dEnd, info] = geodesicBvpVarifold(d0, d1, ...
 options = [];
 dInitPath = [];
 
-%% Extract parameters
-N = splineData.N;
-Nt = splineData.Nt;
-nS = splineData.nS;
-nT = splineData.Nt;
-dSpace = splineData.dSpace;
 
 %% Some code for handling optional inputs
 ii = 1;
@@ -66,8 +60,29 @@ while ii <= length(varargin)
             case 'initpath'
                 ii = ii + 1;
                 dInitPath = varargin{ii};
+            case 'multigrid'
+                ii = ii+1;
+                splineDataRough = varargin{ii};
+                if splineDataRough.Nt <= splineData.Nt
+                    if splineDataRough.N < splineData.N
+                        d0Rough =  curveSpline2Spline(d0, splineData, splineDataRough);
+                        d1Rough =  curveSpline2Spline(d1, splineData, splineDataRough);
+                    elseif splineDataRough.N == splineData.N
+                        d0Rough = d0;
+                        d1Rough = d1;
+                    else
+                        error('Invalid option: ''%s''(splineDataRough.N should be <= splineData.N).',varargin{ii-1});
+                    end
+                    optionsRough=splineData.options;
+                    optionsRough.tolX= 1e-6;
+                    optionsRough.tolF= 1e-6;
+                    [~, dInitPathRough] = geodesicBvpVarifold(d0Rough,d1Rough,splineDataRough,'options',optionsRough);
+                    dInitPath = pathSpline2Spline(dInitPathRough, splineDataRough,splineData);
+                else
+                    error('Invalid option for: ''%s'' (splineDataRough.Nt should be <= splineData.Nt).' ,varargin{ii-1});
+                end    
             otherwise
-                error('Invalid option: ''%s''.',varargin{ii});
+                error('Invalid option for: ''%s''.',varargin{ii});
         end
     ii = ii + 1;  
     end
@@ -96,10 +111,9 @@ end
 
 %% Create initial guess for path if not provided one
 if isempty(dInitPath)
-    [~, gaTmp] = rigidAlignment({d0, d1}, splineData, 'options', options);
-    initGa = gaTmp{2};
-    
-    d1Ga = curveApplyGamma(d1, initGa, splineData);
+%    [~, gaTmp] = rigidAlignment({d0, d1}, splineData, 'options', options);
+%    initGa = gaTmp{2};    
+%    d1Ga = curveApplyGamma(d1, initGa, splineData);
     dInitPath = linearPath(d0, d1, splineData);
 end
 
