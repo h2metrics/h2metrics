@@ -1,16 +1,25 @@
-%% loadDataSetWings
-% Loads the mosquito wings data of
-%   F. James Rohlf, James W. Archie, ``A Comparison of Fourier Methods for
-%   the Description of Wing Shape in Mosquitoes (Diptera: Culicidae)''. 
-%   Syst. Zool., 33(3):302-317, 1984.
+%% loadDataSetFish
 %
+% Loads the surrey fish database. Database contains 1100 fish contours each
+% contour consisting of 400 to 1600 points. Details can be found in
+%
+%   Mokhtarian, F. Abbasi S. and Kittler J. ``Robust and Efficient Shape 
+%   Indexing through Curvature Scale Space '' in Proceedings of the sixth 
+%   British Machine Vision Conference, BMVC'96. Edinburgh, 10-12 September 
+%   1996, pp 53-62.
+%
+%   Mokhtarian, F. Abbasi S. and Kittler J. ``Efficient and Robust 
+%   Retrieval by Shape Content through Curvature Scale Space '' in 
+%   Proceedings of the First International Workshop on Image Database 
+%   and Multimedia Search, Amsterdam, The Netherlands Aug 1996, pp 35-42. 
+% 
 % For allowed parameters see documentation of loadDataSet.
-function dList = loadDataSetWings( splineData, dataDir, varargin )
+function dList = loadDataSetFish( splineData, dataDir, varargin )
 
 %% Optional arguments
 constSpeed = false;
 reloadData = false;
-plotCurve = true;
+doPlot = true;
 ind = []; % We want only these curves
 
 ii = 1;
@@ -22,7 +31,7 @@ while ii <= length(varargin)
             case 'reloaddata'
                 reloadData = true;
             case 'noplot'
-                plotCurve = false;
+                doPlot = false;
             case 'ind'
                 ii = ii + 1;
                 ind = varargin{ii};
@@ -44,60 +53,31 @@ else
     constSpeedSuffix = '';
 end
 
-splineDir = [ dataDir, 'splines/mosquito_wings/n', ...
+splineDir = [ dataDir, 'splines/surrey_fish/n', ...
               num2str(splineData.nS), '_N', ...
               num2str(splineData.N), constSpeedSuffix, '/'];
 if ~exist(splineDir, 'dir')
     mkdir(splineDir);
 end          
+          
+loadDir = [ dataDir, 'source/surrey_fish/' ];
 
-%% Load data
-dataFile = [dataDir, 'source/mosquito_wings/RohlfArchieWingOutlines.nts'];
+noCurves = 1100; % Fish with index kk has filename
+                 % 'kk' + num2str(kk) + '.c'
 
-dataFileId = fopen(dataFile);
-
-textscan(dataFileId, '%s', 5, 'Delimiter','\n');
-
-noRows = 2537 - 5;
-noCols = 10;
-
-dataPts = zeros(noRows * noCols, 1);
-for kk = 1:noRows
-    if kk == 6
-        disp('a');
-    end
-    C = textscan(dataFileId, '%8c', 10, 'Delimiter', '', 'Whitespace', '');
-    pts = C{1};
-    for jj = 1:noCols
-        dataPts(noCols*(kk-1) + jj) = str2double(pts(jj,:));
-    end
-end
-
-noCurves = 127 - 1; % Last one seems to be incomplete
-dSpace = 2;
-noPts = 100;
-
-dataPts = reshape(dataPts(1:dSpace*noPts*noCurves), ...
-                  dSpace, noPts, noCurves);
-dataPts = permute(dataPts, [2, 1, 3]);
-
-%% Create splines as necessary
 if isempty(ind)
     ind = 1:noCurves;
-else
-    if min(ind(:)) < 1 || max(ind(:)) > noCurves
-        error('Invalid index passed to loadDataSetWings.');
-    end
 end
 
 dList = {};
 for kk = length(ind):-1:1
-    splineFile = ['wing_', num2str(ind(kk), '%03u')];
+    sourceFile = ['kk', num2str(ind(kk)), '.c'];
+    splineFile = ['fish_', num2str(ind(kk), '%04u')];
     
     if reloadData || ~exist([splineDir, splineFile, '.mat'], 'file')
-        wingFindCurve( dataPts(:, :, ind(kk)), ...
-                       [splineDir, splineFile], splineData, ...
-                       constSpeed, plotCurve );
+        findCurve( [loadDir, sourceFile], ...
+                   [splineDir, splineFile], splineData, ...
+                   constSpeed, doPlot );
     end
     
     [d, ~] = loadCurve(splineFile, 'workdir', splineDir);
@@ -106,11 +86,15 @@ end
           
 end
 
-function wingFindCurve( curvePts, splineFile, splineData, ...
-                        constSpeed, doPlot )
+function findCurve( sourceFile, splineFile, splineData, ...
+                    constSpeed, doPlot )
 
-% Find spline approximation
-d0 = constructSplineApproximation(curvePts, splineData);
+%% Load curve
+C = dlmread(sourceFile, ' ', 1, 0); % delimiter=' '
+                                    % row offset=1, column offset=0
+C = fliplr(C); 
+C = -C;        % Make fish lie horizontally
+d0 = constructSplineApproximation(C, splineData);
 [d0, center] = curveCenter(d0, splineData);
 
 % Reparametrize to constant speed
@@ -127,11 +111,11 @@ if ~doPlot
 end
 
 handle = figure(2);
-handle.Visible = 'off';
+handle.Visible = 'on';
 set(handle, 'defaultLineLineWidth', 2);
 
 % Original curve and spline
-plot( curvePts(:,1)-center(1), curvePts(:,2)-center(2) , 'b');  
+plot( C(:,1)-center(1), C(:,2)-center(2) , 'b');  
 plotCurve(d0, splineData, 'r');
 
 % Start point of spline
@@ -145,5 +129,4 @@ hold off;
 % Save figure
 figname = [splineFile, '.jpg'];
 export_fig(figname);
-
 end

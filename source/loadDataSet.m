@@ -47,8 +47,10 @@ switch (lower(setName))
         dList = loadDataSetBasic(splineData, varargin{:});
     case 'mosquito_wings'
         dList = loadDataSetWings(splineData, dataDir, varargin{:});
+    case 'surrey_fish'
+        dList = loadDataSetFish(splineData, dataDir, varargin{:});
     otherwise
-        error('Invalid dataset: ''%s''.',varargin{ii});
+        error('Invalid dataset: ''%s''.', setName);
 end
     
 end
