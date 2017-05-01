@@ -41,13 +41,19 @@
 %   info
 %       Structure containing information about the minimization process
 %
-function [optE, optPath,dEnd, info] = geodesicBvpVarifold(d0, d1, ...
+function [optE, optPath,dEnd,optBeta,optV,info] = geodesicBvpVarifold(d0, d1, ...
     splineData, varargin)
 
 %% Default parameters
 options = [];
 dInitPath = [];
+initBeta = [];
+initV = [];
 
+% Default options
+optRot = false;
+optTra = false;
+options = [];
 
 %% Some code for handling optional inputs
 ii = 1;
@@ -60,6 +66,12 @@ while ii <= length(varargin)
             case 'initpath'
                 ii = ii + 1;
                 dInitPath = varargin{ii};
+            case 'initbeta'
+                ii = ii + 1;
+                initBeta = varargin{ii};
+            case 'initv'
+                ii = ii + 1;
+                initV = varargin{ii};
             case 'multigrid'
                 ii = ii+1;
                 splineDataRough = varargin{ii};
@@ -76,8 +88,10 @@ while ii <= length(varargin)
                     optionsRough=splineData.options;
                     optionsRough.tolX= 1e-6;
                     optionsRough.tolF= 1e-6;
-                    [~, dInitPathRough] = geodesicBvpVarifold(d0Rough,d1Rough,splineDataRough,'options',optionsRough);
+                    [~, dInitPathRough,dEndRough,optBetaRough,optVRough] = geodesicBvpVarifold(d0Rough,d1Rough,splineDataRough,'options',optionsRough);
                     dInitPath = pathSpline2Spline(dInitPathRough, splineDataRough,splineData);
+                    initBeta = optBetaRough;
+                    initV = optVRough;
                 else
                     error('Invalid option for: ''%s'' (splineDataRough.Nt should be <= splineData.Nt).' ,varargin{ii-1});
                 end    
@@ -86,6 +100,14 @@ while ii <= length(varargin)
         end
     ii = ii + 1;  
     end
+end
+
+% Set options
+if isfield( options, 'optRot' )
+    optRot = options.optRot;
+end
+if isfield( options, 'optTra' )
+    optTra = options.optTra;
 end
 
 %% Set options  
@@ -116,12 +138,19 @@ if isempty(dInitPath)
 %    d1Ga = curveApplyGamma(d1, initGa, splineData);
     dInitPath = linearPath(d0, d1, splineData);
 end
+if isempty(initBeta)
+    initBeta = 0;
+end
+if isempty(initV)
+    initV = [0;0];
+end
 
-coeffInit = dInitPath(splineData.N+1:end,:);
+coeffInit = [reshape(dInitPath(splineData.N+1:end,:),[],1); initBeta; initV];
 
 %% Setup optimization
 Fopt = @(coeff) energyH2Varifold( ...
-    [d0; coeff],d1, splineData);
+    [d0; reshape(coeff(1:end-3), [],2)],d1,coeff(end-2),coeff(end-1:end),...
+    splineData,'optRot',optRot,'optTra',optTra);
 
 problem = struct( 'objective', Fopt, 'x0', coeffInit, ...
                   'options', minOptions, 'solver', 'fminunc' );
@@ -135,8 +164,11 @@ problem = struct( 'objective', Fopt, 'x0', coeffInit, ...
 % Create transformation struct
 dEnd = coeffOptimal(end-splineData.N+1:end , : );
 
-optPath = [ d0; coeffOptimal ];
-      
+optPath = [ d0; reshape( coeffOptimal(1:end-3), [], 2) ];
+
+optBeta = coeffOptimal(end-2);
+optV = coeffOptimal( end-1:end);
+
 info = struct( 'exitFlag', exitflag, ...
                'noIter', output.iterations );
 

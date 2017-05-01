@@ -19,13 +19,31 @@
 %   H
 %       Hessian of the energy
 %
-function [E,dE] = energyH2Varifold( dPath, d, splineData, varargin)
+function [E,dE] = energyH2Varifold( dPath, d, beta, v, splineData, varargin)
+
+% Default parameters
+optTra = false;
+optRot = false;
 
 %% Optional parameters
 ii = 1;
 while ii <= length(varargin)
     if (isa(varargin{ii},'char'))
         switch (lower(varargin{ii}))
+            case 'opttra'
+                ii = ii + 1;
+                if isnumeric(varargin{ii}) || islogical(varargin{ii})
+                    optTra = logical(varargin{ii});
+                else
+                    error('Invalid value for option ''optTra''.');
+                end
+            case 'optrot'
+                ii = ii + 1;
+                if isnumeric(varargin{ii}) || islogical(varargin{ii})
+                    optRot = logical(varargin{ii});
+                else
+                    error('Invalid value for option ''optRot''.');
+                end
             otherwise
                 error('Invalid option: ''%s''.',varargin{ii});
         end
@@ -114,8 +132,24 @@ E = quadDataTensor.quadWeights' * energyIntegrand;
 % 
 % distVar = varifoldnorm(d1vari,Cvari,objfun);
 
+% Appply R_beta and v to d
+% if ~optRot
+%     beta = 0;
+% end
+% if ~optTra
+%     v = zeros(dSpace, 1);
+% end
+% if optRot
+    rotation = [ cos(beta), sin(beta); ...
+                 -sin(beta), cos(beta) ];
+    d2 = d * rotation;
+% end
+% if optTra
+    d2 = d2 + ones([N, 1]) * v(:)';
+% end
+
 d1 = dPath(end-N+1:end,:);
-distVar = varifoldDistanceSquared(d1, d, splineData);
+distVar = varifoldDistanceSquared(d1, d2, splineData);
 
 %% Compute the final energy
 E = E + lambda*distVar;
@@ -153,7 +187,7 @@ if nargout > 1
         dE(:,kk) = term1test + term2test + term3test + term4test + term5test;
     end
     
-    Edc1 = dE(end-splineData.N+1:end,:);
+    dEdc1 = dE(end-splineData.N+1:end,:);
 
     dE = dE(splineData.N+1:end-splineData.N,:);
     
@@ -165,11 +199,34 @@ if nargout > 1
 %     
 %     distVarGrad = (distVarGradPts'*splineData.quadData.B_interpolS)';
     
-    [~, distVarGrad] = varifoldDistanceSquared(d1, d, splineData);
+%     [~, distVarGrad] = varifoldDistanceSquared(d1, d, splineData);
     
-    %Collect all dE terms
-    dE = [dE; Edc1 + lambda*distVarGrad];
+    [~, distGradd1] = varifoldNormSpline(d1, d2, splineData);
+    if optRot || optTra
+        [~, distGradd2] = varifoldNormSpline(d2, d1, splineData);
+    end
+    % Compute gradient w.r.t beta and v
+    % Observe: 
+    % F(beta,v) = || d0 - (R_beta(d1) + v)  || = || R_{-beta}(d0 - v) - d1 ||
+    % dFdBeta = 
     
+    if optRot
+        rotationDer = [ -sin(beta), cos(beta); -cos(beta), -sin(beta) ]; 
+        distVarGradBeta = sum(sum(distGradd2 .*(d*rotationDer)));
+    else
+        distVarGradBeta = 0; 
+    end
+    if optTra
+        distVarGradV = sum( distGradd2,1 )'; 
+    else
+        distVarGradV = [ 0;0 ];
+    end
+    % Update the end point part witht the derivatives of the varifold
+    % distance
+    dE = [ dE; dEdc1 + lambda*distGradd1];
+  
+    % Attach gradients wrt beta and v
+    dE = [ dE(:); lambda*distVarGradBeta; lambda*distVarGradV ]; 
 end
 
 % %% Compute Hessian
@@ -317,127 +374,130 @@ end
 %     Hess = Hess + Hess2;
 %     
 %     
-%     %Compute Hessian terms w.r.t. phi, translation, rotation and shift
-%     c1Hess = zeros(Nphi+dSpace+2,...
-%             Nphi+dSpace+2, ...
-%             N*dSpace);    
-% %
-% %     d1PhiInterpolMat = sparse( [1:noInterpolPoints,(1:noInterpolPoints)+noInterpolPoints],...
-% %         repmat(1:noInterpolPoints,1,dSpace),d1PhiInterpol(:)  );
-% %     d1PhiDotPhiInterpol = d1PhiInterpolMat*quadData.B_interpolPhi;
-% %     d1PhiDotPhiInterpol = reshape( d1PhiDotPhiInterpol, [], dSpace*splineData.Nphi );
-% %     %     temp1 = [temp, - d1_0];
-%     
-%     %c1 dphidphi
-%     if optDiff
-%         d1uuPhiInterpolMat = sparse( [1:noInterpolPoints,(1:noInterpolPoints)+noInterpolPoints],...
-%         repmat(1:noInterpolPoints,1,dSpace),d1uuPhiInterpol(:)  );
-%         d1uuPhiDotPhiInterpol = d1uuPhiInterpolMat*quadData.B_interpolPhi;
-%         
-%         for ii = 1:splineData.Nphi %TODO: Change for-loop to something faster
-%             for jj = ii:splineData.Nphi
-% %                 Phi_jj_Mat = sparse(1:dSpace*noInterpolPoints,1:dSpace*noInterpolPoints,...
-% %                     repmat(quadData.B_interpolPhi(:,jj),dSpace,1));
-% %                 d1uuPhiDotPhiPhiInterpol = Phi_jj_Mat*d1uuPhiDotPhiInterpol;
-% %                 d1uuPhiDotPhiPhiInterpol = reshape( d1uuPhiDotPhiPhiInterpol, [], dSpace*splineData.Nphi );
-% %                 d1uuPhiDotPhiPhi = quadData.B_interpolS \ d1uuPhiDotPhiPhiInterpol;
-% %                 d1uuPhiDotPhiPhi = reshape( d1uuPhiDotPhiPhi, splineData.dSpace*splineData.N, [] ); %|[]|=Nphi
+% %     %Compute Hessian terms w.r.t. phi, translation, rotation and shift
+% %     c1Hess = zeros(Nphi+dSpace+2,...
+% %             Nphi+dSpace+2, ...
+% %             N*dSpace);    
+% % %
+% % %     d1PhiInterpolMat = sparse( [1:noInterpolPoints,(1:noInterpolPoints)+noInterpolPoints],...
+% % %         repmat(1:noInterpolPoints,1,dSpace),d1PhiInterpol(:)  );
+% % %     d1PhiDotPhiInterpol = d1PhiInterpolMat*quadData.B_interpolPhi;
+% % %     d1PhiDotPhiInterpol = reshape( d1PhiDotPhiInterpol, [], dSpace*splineData.Nphi );
+% % %     %     temp1 = [temp, - d1_0];
+% %     
+% %     %c1 dphidphi
+% %     if optDiff
+% %         d1uuPhiInterpolMat = sparse( [1:noInterpolPoints,(1:noInterpolPoints)+noInterpolPoints],...
+% %         repmat(1:noInterpolPoints,1,dSpace),d1uuPhiInterpol(:)  );
+% %         d1uuPhiDotPhiInterpol = d1uuPhiInterpolMat*quadData.B_interpolPhi;
+% %         
+% %         for ii = 1:splineData.Nphi %TODO: Change for-loop to something faster
+% %             for jj = ii:splineData.Nphi
+% % %                 Phi_jj_Mat = sparse(1:dSpace*noInterpolPoints,1:dSpace*noInterpolPoints,...
+% % %                     repmat(quadData.B_interpolPhi(:,jj),dSpace,1));
+% % %                 d1uuPhiDotPhiPhiInterpol = Phi_jj_Mat*d1uuPhiDotPhiInterpol;
+% % %                 d1uuPhiDotPhiPhiInterpol = reshape( d1uuPhiDotPhiPhiInterpol, [], dSpace*splineData.Nphi );
+% % %                 d1uuPhiDotPhiPhi = quadData.B_interpolS \ d1uuPhiDotPhiPhiInterpol;
+% % %                 d1uuPhiDotPhiPhi = reshape( d1uuPhiDotPhiPhi, splineData.dSpace*splineData.N, [] ); %|[]|=Nphi
+% % %                 
+% % %                 c1Hess(ii,jj,:) = d1uuPhiDotPhiPhi(:,jj);
 % %                 
-% %                 c1Hess(ii,jj,:) = d1uuPhiDotPhiPhi(:,jj);
-%                 
-%                 BijTemp = quadData.B_interpolPhi(:,ii).*quadData.B_interpolPhi(:,jj);
-%                 BijTempMat = sparse(1:noInterpolPoints,1:noInterpolPoints,BijTemp);
-%                 d1uuPhiDotPhiPhiInterpolTemp = BijTempMat*d1uuPhiInterpol;
-%                 d1uuPhiDotPhiPhiTemp = quadData.B_interpolS \ d1uuPhiDotPhiPhiInterpolTemp;
-%                 d1uuPhiDotPhiPhiTemp = reshape( d1uuPhiDotPhiPhiTemp, dSpace*N, [] ); %|[]|=Nphi
-%                 
-%                 c1Hess(ii,jj,:) = d1uuPhiDotPhiPhiTemp;
-%                 
-%                 c1Hess(jj,ii,:) = c1Hess(ii,jj,:);
-%             end
-%         end
-%         
-%         %c1 dphidalpha and dphidbeta
-%         d1uuPhiDotPhiInterpol = reshape( d1uuPhiDotPhiInterpol, [], dSpace*Nphi );
-%         d1uuPhiDotPhi = quadData.B_interpolS \ d1uuPhiDotPhiInterpol;
-%         d1uuPhiDotPhi = reshape( d1uuPhiDotPhi, splineData.dSpace*splineData.N, [] );
-%         
-%         d1uPhiRot90Interpol = d1uPhiInterpol*rotation90;
-%         d1uPhiRot90InterpolMat = sparse( [1:noInterpolPoints,(1:noInterpolPoints)+noInterpolPoints],...
-%             repmat(1:noInterpolPoints,1,dSpace),d1uPhiRot90Interpol(:)  );
-%         d1uPhiRot90DotPhiInterpol = d1uPhiRot90InterpolMat*quadData.B_interpolPhi;
-%         d1uPhiRot90DotPhiInterpol = reshape( d1uPhiRot90DotPhiInterpol, [], dSpace*Nphi );
-%         d1uPhiRot90DotPhi = quadData.B_interpolS \ d1uPhiRot90DotPhiInterpol;
-%         d1uPhiRot90DotPhi = reshape( d1uPhiRot90DotPhi, dSpace*N, [] ); %|[]|=Nphi
-%         
-%         if optShift
-%             for ii = 1:Nphi
-%                 %dphidalpha
-%                 c1Hess(ii,end,:) = -d1uuPhiDotPhi(:,ii);
-%                 c1Hess(end,ii,:) = c1Hess(ii,end,:);
-%             end
-%         end
-%         if optRot
-%             for ii = 1:Nphi
-%                 %dphidbeta
-%                 c1Hess(ii,end-1,:) = d1uPhiRot90DotPhi(:,ii);
-%                 c1Hess(end-1,ii,:) = c1Hess(ii,end-1,:);
-%             end
-%         end
-%     end %dphi terms
-%     
-%     
-%     %c1 dbetadalpha
-%     if optRot && optShift
-%         c1Hess(end,end-1,:) = reshape(d1uPhiDotAlpha*rotation90,[],1);
-%         c1Hess(end-1,end,:) = c1Hess(end,end-1,:);
-%     end
-%     
-%     %c1 dbetadbeta
-%     if optRot
-% %         d1Phi = quadData.B_interpolS \ d1PhiInterpol;
-% %         d1Phi = reshape( d1Phi, splineData.dSpace*splineData.N, [] ); %|[]|=Nphi
-%         c1Hess(end-1,end-1,:) = -reshape(d1,dSpace*N,[]);
-%     end
-%     
-%     %c1 dalphadalpha
-%     if optShift
-%         d1uuPhi = quadData.B_interpolS \ d1uuPhiInterpol;
-%         c1Hess(end,end,:) = d1uuPhi(:);
-%     end
-%     
-%     %c1 dvdbeta
-%     if optRot && optTra 
-%         c1Hess(end-3,end-1,:) = reshape([ones(N,1),zeros(N,1)]*rotation90*rotation,...
-%             splineData.dSpace*splineData.N,[]);
-%         c1Hess(end-2,end-1,:) = reshape([zeros(N,1),ones(N,1)]*rotation90*rotation,...
-%             splineData.dSpace*splineData.N,[]);
-%         
-%         
-%         c1Hess(end-1,end-3,:) = c1Hess(end-3,end-1,:);
-%         c1Hess(end-1,end-2,:) = c1Hess(end-2,end-1,:);
-%     end
+% %                 BijTemp = quadData.B_interpolPhi(:,ii).*quadData.B_interpolPhi(:,jj);
+% %                 BijTempMat = sparse(1:noInterpolPoints,1:noInterpolPoints,BijTemp);
+% %                 d1uuPhiDotPhiPhiInterpolTemp = BijTempMat*d1uuPhiInterpol;
+% %                 d1uuPhiDotPhiPhiTemp = quadData.B_interpolS \ d1uuPhiDotPhiPhiInterpolTemp;
+% %                 d1uuPhiDotPhiPhiTemp = reshape( d1uuPhiDotPhiPhiTemp, dSpace*N, [] ); %|[]|=Nphi
+% %                 
+% %                 c1Hess(ii,jj,:) = d1uuPhiDotPhiPhiTemp;
+% %                 
+% %                 c1Hess(jj,ii,:) = c1Hess(ii,jj,:);
+% %             end
+% %         end
+% %         
+% %         %c1 dphidalpha and dphidbeta
+% %         d1uuPhiDotPhiInterpol = reshape( d1uuPhiDotPhiInterpol, [], dSpace*Nphi );
+% %         d1uuPhiDotPhi = quadData.B_interpolS \ d1uuPhiDotPhiInterpol;
+% %         d1uuPhiDotPhi = reshape( d1uuPhiDotPhi, splineData.dSpace*splineData.N, [] );
+% %         
+% %         d1uPhiRot90Interpol = d1uPhiInterpol*rotation90;
+% %         d1uPhiRot90InterpolMat = sparse( [1:noInterpolPoints,(1:noInterpolPoints)+noInterpolPoints],...
+% %             repmat(1:noInterpolPoints,1,dSpace),d1uPhiRot90Interpol(:)  );
+% %         d1uPhiRot90DotPhiInterpol = d1uPhiRot90InterpolMat*quadData.B_interpolPhi;
+% %         d1uPhiRot90DotPhiInterpol = reshape( d1uPhiRot90DotPhiInterpol, [], dSpace*Nphi );
+% %         d1uPhiRot90DotPhi = quadData.B_interpolS \ d1uPhiRot90DotPhiInterpol;
+% %         d1uPhiRot90DotPhi = reshape( d1uPhiRot90DotPhi, dSpace*N, [] ); %|[]|=Nphi
+% %         
+% %         if optShift
+% %             for ii = 1:Nphi
+% %                 %dphidalpha
+% %                 c1Hess(ii,end,:) = -d1uuPhiDotPhi(:,ii);
+% %                 c1Hess(end,ii,:) = c1Hess(ii,end,:);
+% %             end
+% %         end
+% %         if optRot
+% %             for ii = 1:Nphi
+% %                 %dphidbeta
+% %                 c1Hess(ii,end-1,:) = d1uPhiRot90DotPhi(:,ii);
+% %                 c1Hess(end-1,ii,:) = c1Hess(ii,end-1,:);
+% %             end
+% %         end
+% %     end %dphi terms
+% %     
+% %     
+% %     %c1 dbetadalpha
+% %     if optRot && optShift
+% %         c1Hess(end,end-1,:) = reshape(d1uPhiDotAlpha*rotation90,[],1);
+% %         c1Hess(end-1,end,:) = c1Hess(end,end-1,:);
+% %     end
+% %     
+% %     %c1 dbetadbeta
+% %     if optRot
+% % %         d1Phi = quadData.B_interpolS \ d1PhiInterpol;
+% % %         d1Phi = reshape( d1Phi, splineData.dSpace*splineData.N, [] ); %|[]|=Nphi
+% %         c1Hess(end-1,end-1,:) = -reshape(d1,dSpace*N,[]);
+% %     end
+% %     
+% %     %c1 dalphadalpha
+% %     if optShift
+% %         d1uuPhi = quadData.B_interpolS \ d1uuPhiInterpol;
+% %         c1Hess(end,end,:) = d1uuPhi(:);
+% %     end
+% %     
+% %     %c1 dvdbeta
+% %     if optRot && optTra 
+% %         c1Hess(end-3,end-1,:) = reshape([ones(N,1),zeros(N,1)]*rotation90*rotation,...
+% %             splineData.dSpace*splineData.N,[]);
+% %         c1Hess(end-2,end-1,:) = reshape([zeros(N,1),ones(N,1)]*rotation90*rotation,...
+% %             splineData.dSpace*splineData.N,[]);
+% %         
+% %         
+% %         c1Hess(end-1,end-3,:) = c1Hess(end-3,end-1,:);
+% %         c1Hess(end-1,end-2,:) = c1Hess(end-2,end-1,:);
+% %     end
 %     
 %     %Extract indices for d1 controls in H
 %     %Harcoded for dSpace = 2
 %     %TODO: For any dSpace.
-%     d1Indices  = (noControlPoints-N+1:noControlPoints)';
-%     d1Indices = [d1Indices,d1Indices+noControlPoints];
-%     d1Indices = d1Indices(:);
+% %     d1Indices  = (noControlPoints-N+1:noControlPoints)';
+% %     d1Indices = [d1Indices,d1Indices+noControlPoints];
+% %     d1Indices = d1Indices(:);
+% %     
+% %     %Extract dEdc1 parts of control points Hessian
+% %     dEc1Hess = Hess(d1Indices,d1Indices);
+% %     
+% %     %Compute dEdGamma part of Hessian
+% %     HessGamma = c1dGamma'*dEc1Hess*c1dGamma; %+ ...
+% %     
+% %     HessGamma = c1dGamma'*dEc1Hess*c1dGamma; % + nothing. No second derivatives of E_v
 %     
-%     %Extract dEdc1 parts of control points Hessian
-%     dEc1Hess = Hess(d1Indices,d1Indices);
 %     
-%     %Compute dEdGamma part of Hessian
-%     HessGamma = c1dGamma'*dEc1Hess*c1dGamma; %+ ...
-%     
-% %     Edc1Mat = sparse(1:noInterpolPoints,1:noInterpolPoints,Edc1);
-%     c1Hess = permute( c1Hess, [3 1 2]);
-%     HessGamma2 = zeros(1,noGamma,noGamma);
-%     for ii = 1:noGamma;
-%         HessGamma2(:,:,ii) = Edc1*c1Hess(:,:,ii);
-%     end
-%     HessGamma2 = squeeze(HessGamma2); %Remove singleton dimension
+% % %     Edc1Mat = sparse(1:noInterpolPoints,1:noInterpolPoints,Edc1);
+% %     c1Hess = permute( c1Hess, [3 1 2]);
+% %     HessGamma2 = zeros(1,noGamma,noGamma);
+% %     for ii = 1:noGamma;
+% %         HessGamma2(:,:,ii) = Edc1*c1Hess(:,:,ii);
+% %     end
+% %     HessGamma2 = squeeze(HessGamma2); %Remove singleton dimension
 %     
 % %     c1Hess = permute( c1Hess,[2 3 1]) ;
 % %     HessGamma3 = zeros(noGamma,noGamma);
@@ -448,32 +508,51 @@ end
 % %         end
 % %     end
 %     
-%     %Extract indices for interior controls in H, upper left block
-%     intIndices  = zeros( 1,noVariables );
-%     for kk = 1:splineData.dSpace
-%         intIndices( (kk-1)*noVariables+1:kk*noVariables) = ...
-%             (kk-1)*noControlPoints+[splineData.N+1:noControlPoints-splineData.N];
-%     end
-%         
-%     HessInt = Hess( intIndices, intIndices);
+% %     %Extract indices for interior controls in H, upper left block
+% %     intIndices  = zeros( 1,noVariables );
+% %     for kk = 1:splineData.dSpace
+% %         intIndices( (kk-1)*noVariables+1:kk*noVariables) = ...
+% %             (kk-1)*noControlPoints+[splineData.N+1:noControlPoints-splineData.N];
+% %     end
+% %         
+% %     HessInt = Hess( intIndices, intIndices);
+% %     
+% %     HessIntd1 = Hess( intIndices, d1Indices);
+% %     
+% %     HessIntGamma = HessIntd1*c1dGamma;
+% %     
+% %     HessFull = [HessInt,HessIntGamma;HessIntGamma',HessGamma + HessGamma2];
+% % 
+% %     H = HessFull;
 %     
-%     HessIntd1 = Hess( intIndices, d1Indices);
+%     % Extract indicies for all entries not involving d0.
+%     activeIndicies = [ [splineData.N + 1: noControlPoints], ...
+%         [(noControlPoints + splineData.N +1): 2*noControlPoints] ];
 %     
-%     HessIntGamma = HessIntd1*c1dGamma;
+%     activeHess = Hess( activeIndicies, activeIndicies );
 %     
-%     HessFull = [HessInt,HessIntGamma;HessIntGamma',HessGamma + HessGamma2];
-% 
-%     H = HessFull;
+%     % Compute hessian of varifold distance
+%     [~, ~, distVarHess] = varifoldNormSpline(d1, d, splineData);
 %     
-% %     E = d1;
-% %     dE = dEc1Hess;
-% %     dE = c1dGamma;
-% %     H = permute( c1Hess,[2 3 1]) ;
-% %     H = HessGamma + HessGamma2;
-% %     H = dEc1Hess;
-% %     H = Hess;
-% 
-% end
+%     % Add varifold hessian to d1 entries
+%     noActiveControlPoints = noControlPoints - N;
+%     d1Indices = [ [noActiveControlPoints - N+1:noActiveControlPoints],...
+%         [2*noActiveControlPoints - N+1:2*noActiveControlPoints] ];
+%     
+%     activeHess( d1Indices, d1Indices) = ...
+%         activeHess( d1Indices, d1Indices ) + lambda*distVarHess;
+%     
+%     H = activeHess;
+%     
+% % %     E = d1;
+% % %     dE = dEc1Hess;
+% % %     dE = c1dGamma;
+% % %     H = permute( c1Hess,[2 3 1]) ;
+% % %     H = HessGamma + HessGamma2;
+% % %     H = dEc1Hess;
+% % %     H = Hess;
+% % 
+% % end
 
 
 
