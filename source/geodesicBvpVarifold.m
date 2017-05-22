@@ -1,12 +1,12 @@
 %% geodesicBvp
 %
-% Calculates the minimal geodesic betweeen 
-%     d0 and d1 o G
-% where d0, d1 are curves and G is a group of transformations. This
+% Minimizes the varifold--H^2 inexact boundary value problem
+% between d0, d1\circ G are curves and G is a group of transformations using 
+% the HANSO LM-BFGS method This
 % function supports G to be any combination of
 %   - Translations
 %   - Rotations
-%   - Rigid shifts of the parametrization
+%
 % 
 % Input
 %   d0, d1
@@ -19,17 +19,18 @@
 %       Struct containing optimization options. Uses the following fields:
 %           optTra = {true, false (default)}
 %           optRot = {true, false (default)}
-%           optDiff = false
-%           optShift = {true, false (default)}
 %           maxIter = integer ([] for default value)
 %           display = string
 %               'off' for no output
 %               '' for default of optimization routine
 %               Any other string will be passed on
 %   initPath
-%       Guess for initial path.
+%       Guess for initial path. path needs to have the same splineData as splineData. 
+%       Default initial path: constant path d0
 %   gaInit
 %       Guess for initial transformation of d1.
+%   multigrid
+%       Uses a lower resolution splineData for a preComputation
 %
 % Output
 %   optE
@@ -41,7 +42,7 @@
 %   info
 %       Structure containing information about the minimization process
 %
-function [optE, optPath,dEnd,optBeta,optV,info] = geodesicBvpVarifold(d0, d1, ...
+function [optE, optPath, optGa, info] = geodesicBvpVarifold(d0, d1, ...
     splineData, varargin)
 
 %% Default parameters
@@ -75,6 +76,7 @@ while ii <= length(varargin)
             case 'multigrid'
                 ii = ii+1;
                 splineDataRough = varargin{ii};
+                
                 if splineDataRough.Nt <= splineData.Nt
                     if splineDataRough.N < splineData.N
                         d0Rough =  curveSpline2Spline(d0, splineData, splineDataRough);
@@ -88,10 +90,13 @@ while ii <= length(varargin)
                     optionsRough=splineData.options;
                     optionsRough.tolX= 1e-6;
                     optionsRough.tolF= 1e-6;
-                    [~, dInitPathRough,dEndRough,optBetaRough,optVRough] = geodesicBvpVarifold(d0Rough,d1Rough,splineDataRough,'options',optionsRough);
-                    dInitPath = pathSpline2Spline(dInitPathRough, splineDataRough,splineData);
-                    initBeta = optBetaRough;
-                    initV = optVRough;
+                        if ~isempty(dInitPath) 
+                            dInitPath = pathSpline2Spline(dInitPath,splineData,splineDataRough);
+                        end    
+                        [~, dInitPathRough,optGa,~] = geodesicBvpVarifold(d0Rough,d1Rough,splineDataRough,'options',optionsRough,'initPath',dInitPath);
+                        dInitPath = pathSpline2Spline(dInitPathRough, splineDataRough,splineData);
+                        initBeta = optGa.beta;
+                        initV = optGa.v;
                 else
                     error('Invalid option for: ''%s'' (splineDataRough.Nt should be <= splineData.Nt).' ,varargin{ii-1});
                 end    
@@ -109,6 +114,8 @@ end
 if isfield( options, 'optTra' )
     optTra = options.optTra;
 end
+
+dSpace = splineData.dSpace;
 
 %% Set options  
 minOptions = optimoptions('fminunc');
@@ -133,10 +140,7 @@ end
 
 %% Create initial guess for path if not provided one
 if isempty(dInitPath)
-%    [~, gaTmp] = rigidAlignment({d0, d1}, splineData, 'options', options);
-%    initGa = gaTmp{2};    
-%    d1Ga = curveApplyGamma(d1, initGa, splineData);
-    dInitPath = linearPath(d0, d1, splineData);
+    dInitPath = linearPath(d0, d0, splineData);
 end
 if isempty(initBeta)
     initBeta = 0;
@@ -154,22 +158,53 @@ Fopt = @(coeff) energyH2Varifold( ...
 
 problem = struct( 'objective', Fopt, 'x0', coeffInit, ...
                   'options', minOptions, 'solver', 'fminunc' );
-                  
+                            
 %% Optimize
 % tic
-[coeffOptimal, optE, exitflag, output] = fminunc( problem );
+% [coeffOptimal, optE, exitflag, output] = fminunc( problem );
 % toc
 
-%% Save results
-% Create transformation struct
-dEnd = coeffOptimal(end-splineData.N+1:end , : );
+%% Setup HANSO
 
-optPath = [ d0; reshape( coeffOptimal(1:end-3), [], 2) ];
+% FoptHANSO = @(coeff,pars) Fopt(coeff);
 
-optBeta = coeffOptimal(end-2);
-optV = coeffOptimal( end-1:end);
+pars = struct(); optionsHANSO = struct();
+pars.nvar = length(coeffInit);
+pars.fgname = @energyH2VarifoldHANSO; %[f,g] = fgtest(x,pars)
+pars.splineData = splineData;
+pars.optRot = optRot;
+pars.optTra = optTra;
+pars.d0 = d0;
+pars.d1 = d1;
 
-info = struct( 'exitFlag', exitflag, ...
-               'noIter', output.iterations );
+
+optionsHANSO.x0 = coeffInit;
+optionsHANSO.normtol = 1e-3;
+optionsHANSO.maxit = 1000;
+optionsHANSO.nvec = 500; %0 is full bfgs
+optionsHANSO.fvalquit = 0;
+optionsHANSO.prtlevel = 1; % also 0,2 
+
+%% Optimize HANSO
+
+[coeffOptimal, optE, infoHanso] = hanso(pars, optionsHANSO);
+
+output.iterations = 1000; % ?????
+
+%% Create output
+% Transformation struct
+optGa = struct( 'beta', [], 'v', [] );
+
+if optTra
+    optGa.v = coeffOptimal(end-dSpace+1:end);
+end
+if optRot
+    optGa.beta = coeffOptimal(end-dSpace);
+end
+
+optPath = [ d0; reshape( coeffOptimal(1:end-dSpace-1), [], 2) ];
+           
+info = struct( 'infoHanso', infoHanso, ...
+               'noIter', output.iterations ); 
 
 end

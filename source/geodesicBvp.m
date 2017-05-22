@@ -49,7 +49,7 @@ function [optE, optPath, optGa, info] = geodesicBvp(d0, d1, ...
 
 options = struct( 'optDiff', false );
 
-% Check options for optDiff
+% Check options for optDiff, useVarifold and other group actions
 ii = 1;
 while ii <= length(varargin)
     if strcmpi(varargin{ii}, 'options')
@@ -60,17 +60,25 @@ while ii <= length(varargin)
 end
 
 % Decision tree
-% if optDiff
+% if optDiff && useVarifold
+%   call geodesicBvpVarifold
+% elseif optDiff
 %   call geodesicBvpDiff
+% elseif noGroupsAtAll
+%   call geodesicBvpNoGroups
 % else
 %   call geodesicBvpParam
 
+useVarifold = isfield(options, 'useVarifold') && options.useVarifold;
 doDiff = isfield(options, 'optDiff') && options.optDiff;
 doTra = isfield(options, 'optTra') && options.optTra;
 doRot = isfield(options, 'optRot') && options.optRot;
 doShift = isfield(options, 'optShift') && options.optShift;
 
-if doDiff
+if doDiff && useVarifold
+    [optE, optPath, optGa, info] = geodesicBvpVarifold(d0, d1, ...
+        splineData, varargin{:});
+elseif doDiff
     [optE, optPath, optGa, info] = geodesicBvpDiff(d0, d1, ...
         splineData, varargin{:});
 elseif ~doDiff && ~doTra && ~doRot && ~doShift
