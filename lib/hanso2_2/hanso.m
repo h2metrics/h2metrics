@@ -16,6 +16,8 @@ function [x, f, loc, X, G, w, H] = hanso(pars, options)
 %      pars.fgname: string giving the name of m-file (in single quotes) 
 %         that returns the function and its gradient at a given input x, 
 %         with call   [f,g] = fgtest(x,pars)  if pars.fgname is 'fgtest'.
+%         Can also be a function handle, since it is always evaluated
+%         via feval(fgname, x, pars).
 %         Any data required to compute the function and gradient may be
 %         encoded in other fields of pars. The user does not have to worry
 %         about the nondifferentiable case or identify subgradients. 
@@ -99,6 +101,9 @@ function [x, f, loc, X, G, w, H] = hanso(pars, options)
 %%  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% 22/5/2017, Martins Bruveris
+%   Minor modification to allow pars.fgname accept function handles.
+
 % Version note: the main change from version 2.02 to version 2.1 is that in
 % version 2.02, the options.nvec default was 0 ONLY if pars.nvar <= 100, 
 % otherwise it was 10. However, this can be very confusing for a user
@@ -129,8 +134,13 @@ evaldist = options.evaldist;
 fvalquit = options.fvalquit;
 prtlevel = options.prtlevel;
 if prtlevel > 0  
+    if isa(pars.fgname, 'function_handle')
+        fgdisp = func2str(pars.fgname);
+    else
+        fgdisp = pars.fgname;
+    end
     fprintf('HANSO Version 2.2, optimizing objective %s over %d variables with options\n', ...
-        pars.fgname, pars.nvar')
+        fgdisp, pars.nvar')
     disp(options)
 end
 % BFGS phase with possibly multiple starting points (10 if not provided by user)
