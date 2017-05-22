@@ -75,7 +75,7 @@ for kk = length(ind):-1:1
     splineFile = ['fish_', num2str(ind(kk), '%04u')];
     
     if reloadData || ~exist([splineDir, splineFile, '.mat'], 'file')
-        findCurve( [loadDir, sourceFile], ...
+        findCurve( ind(kk), [loadDir, sourceFile], ...
                    [splineDir, splineFile], splineData, ...
                    constSpeed, doPlot );
     end
@@ -86,16 +86,43 @@ end
           
 end
 
-function findCurve( sourceFile, splineFile, splineData, ...
+function findCurve( fishInd, sourceFile, splineFile, splineData, ...
                     constSpeed, doPlot )
-
+                
+flipLR = [  1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12, ...
+           13,  15,  16,  17,  18,  19,  22,  23,  24,  25,  27,  28, ...
+           29,  30,  31,  32,  33,  46, 51,  53,  55,  57,  59,  60,  61, ...
+           62,  65,  69,  70,  71,  73,  75,  81,  83,  85,  87,  89, ...
+           91,  93,  96,  98, 100, 101, 104, 106, 108, 110, 111, 113, ...
+          115, 119, 121, 123, 124, 125, 126, 128, 130, 133, 134, 135, ...
+          140, 141, 142, 143, 145, 146, 147, 150, 151, 152, 153, 154, ...
+          155, 157, 158, 159, 160, 162, 166, 167, 171, 172, 180, 185, ...
+          186, 187, 188, 189, 190, 192, 193, 194, 195, 196, 197, 198, ...
+          199 ];
+                
 %% Load curve
 C = dlmread(sourceFile, ' ', 1, 0); % delimiter=' '
                                     % row offset=1, column offset=0
-C = fliplr(C); 
-C = -C;        % Make fish lie horizontally
+                                   
+xLen = max(C(:,1)) - min(C(:,1));   % Make fish lie horizontally
+yLen = max(C(:,2)) - min(C(:,2));
+if yLen > xLen
+    C = [C(:,2), -C(:,1)];
+end
+
+if ismember(fishInd, flipLR) % Flip horizontally, if necessary
+   C(:,1) = -C(:,1); 
+end
+
+[~, I] = min(C(:,1));
+C = circshift(C, -(I(1)-1), 1); % Start curve at left tip of the fish
+
 d0 = constructSplineApproximation(C, splineData);
 [d0, center] = curveCenter(d0, splineData);
+
+if curveArea(d0, splineData) < 0    % Make fish positively oriented
+    d0 = flipud(d0);
+end
 
 % Reparametrize to constant speed
 if constSpeed
