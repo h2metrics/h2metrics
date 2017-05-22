@@ -74,10 +74,10 @@ while ii <= length(varargin)
     end
 end
 
-applyDiff = applyDiff && ~isempty(gamma.phi);
-applyTra = applyTra && ~isempty(gamma.v);
-applyRot = applyRot && ~isempty(gamma.beta);
-applyShift = applyShift && ~isempty(gamma.alpha);
+applyDiff = applyDiff && isfield(gamma,'phi') && ~isempty(gamma.phi);
+applyTra = applyTra && isfield(gamma,'v') && ~isempty(gamma.v);
+applyRot = applyRot && isfield(gamma,'beta') && ~isempty(gamma.beta);
+applyShift = applyShift && isfield(gamma,'alpha') && ~isempty(gamma.alpha);
 
 if applyDiff && applyShift
     phi = gamma.phi - gamma.alpha;
