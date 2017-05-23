@@ -16,7 +16,7 @@
 %       Optimal reparametrization of d1
 %
 function [optE, dPath, optGa, info] = geodesicBvpDiff(d0, d1, ...
-    splineData, varargin)
+    splineData, options, varargin)
 
 % Default values
 optDiff = true;
@@ -24,8 +24,6 @@ optShift = true; % Constant shifts of the parametrization -- always used,
                  % if optDiff = true;
 optTra = false;
 optRot = false; 
-
-options = [];
 
 dInitPath = [];
 initGa = [];
@@ -45,9 +43,6 @@ ii = 1;
 while ii <= length(varargin)
     if (isa(varargin{ii},'char'))
         switch (lower(varargin{ii}))
-            case 'options'
-                ii = ii + 1;
-                options = varargin{ii};
             case 'initpath'
                 ii = ii + 1;
                 dInitPath = varargin{ii};

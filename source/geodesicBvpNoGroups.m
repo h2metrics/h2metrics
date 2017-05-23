@@ -43,12 +43,11 @@
 %       Structure containing information about the minimization process
 %
 function [optE, optPath, optGa, info] = geodesicBvpNoGroups(d0, d1, ...
-    splineData, varargin)
+    splineData, options, varargin)
 
 %% Default parameters
 usePrecond = false;
 
-options = [];
 dInitPath = [];
 
 %% Extract parameters
@@ -61,9 +60,6 @@ ii = 1;
 while ii <= length(varargin)
     if (isa(varargin{ii},'char'))
         switch (lower(varargin{ii}))
-            case 'options'
-                ii = ii + 1;
-                options = varargin{ii};
             case 'initpath'
                 ii = ii + 1;
                 dInitPath = varargin{ii};

@@ -11,11 +11,9 @@
 % 
 % Input
 %   d0, d1
-%       Initial and final curves. Matrix of dimensions [N, dSpace].
+%       Initial and final curves. Matrices of dimension [N, dSpace].
 %   splineData
 %       General information about the splines used.
-%
-% Optional parameters
 %   options
 %       Struct containing optimization options. Will be passed on to
 %       subroutines. Contains the following fields:
@@ -28,7 +26,8 @@
 %               'off' for no output
 %               '' for default of optimization routine
 %               Any other string will be passed on
-%           usePrecond = {true, false (default)}
+%
+% Optional parameters
 %   initPath
 %       Guess for initial path.
 %   gaInit
@@ -36,28 +35,17 @@
 %
 % Output
 %   optE
-%       Energy of the optimal path
+%       Final value of optimization routine; usually corresponds to the
+%       energy of the path.
 %   optPath
-%       Optimal path between d0 and d1 o optGa
+%       Optimal path between d0 and d1 o G
 %   optGa
-%       Transformation between d0 and endpoint of optPath
+%       Transformation between d1 and endpoint of optPath
 %   info
 %       Structure containing information about the minimization process
 %
 function [optE, optPath, optGa, info] = geodesicBvp(d0, d1, ...
-    splineData, varargin)
-
-options = struct( 'optDiff', false );
-
-% Check options for optDiff, useVarifold and other group actions
-ii = 1;
-while ii <= length(varargin)
-    if strcmpi(varargin{ii}, 'options')
-        ii = ii + 1;
-        options = varargin{ii};
-    end
-    ii = ii + 1;  
-end
+    splineData, options, varargin)
 
 % Decision tree
 % if optDiff && useVarifold
@@ -77,16 +65,16 @@ doShift = isfield(options, 'optShift') && options.optShift;
 
 if doDiff && useVarifold
     [optE, optPath, optGa, info] = geodesicBvpVarifold(d0, d1, ...
-        splineData, varargin{:});
+        splineData, options, varargin{:});
 elseif doDiff
     [optE, optPath, optGa, info] = geodesicBvpDiff(d0, d1, ...
-        splineData, varargin{:});
+        splineData, options, varargin{:});
 elseif ~doDiff && ~doTra && ~doRot && ~doShift
     [optE, optPath, optGa, info] = geodesicBvpNoGroups(d0, d1, ...
-        splineData, varargin{:});
+        splineData, options, varargin{:});
 else
     [optE, optPath, optGa, info] = geodesicBvpParam(d0, d1, ...
-        splineData, varargin{:});
+        splineData, options, varargin{:});
 end
 
 end

@@ -42,14 +42,13 @@
 %       Structure containing information about the minimization process
 %
 function [optE, optPath, optGa, info] = geodesicBvpParam(d0, d1, ...
-    splineData, varargin)
+    splineData, options, varargin)
 
 %% Default parameters
 optTra = true;
 optRot = true;
 optShift = false; % Constant shifts of the parametrization
 
-options = [];
 dInitPath = [];
 initGa = [];
 
@@ -65,9 +64,6 @@ ii = 1;
 while ii <= length(varargin)
     if (isa(varargin{ii},'char'))
         switch (lower(varargin{ii}))
-            case 'options'
-                ii = ii + 1;
-                options = varargin{ii};
             case 'initpath'
                 ii = ii + 1;
                 dInitPath = varargin{ii};

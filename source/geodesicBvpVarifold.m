@@ -43,10 +43,9 @@
 %       Structure containing information about the minimization process
 %
 function [optE, optPath, optGa, info] = geodesicBvpVarifold(d0, d1, ...
-    splineData, varargin)
+    splineData, options, varargin)
 
 %% Default parameters
-options = [];
 dInitPath = [];
 initBeta = [];
 initV = [];
@@ -54,16 +53,12 @@ initV = [];
 % Default options
 optRot = false;
 optTra = false;
-options = [];
 
 %% Some code for handling optional inputs
 ii = 1;
 while ii <= length(varargin)
     if (isa(varargin{ii},'char'))
         switch (lower(varargin{ii}))
-            case 'options'
-                ii = ii + 1;
-                options = varargin{ii};
             case 'initpath'
                 ii = ii + 1;
                 dInitPath = varargin{ii};
@@ -93,7 +88,7 @@ while ii <= length(varargin)
                         if ~isempty(dInitPath) 
                             dInitPath = pathSpline2Spline(dInitPath,splineData,splineDataRough);
                         end    
-                        [~, dInitPathRough,optGa,~] = geodesicBvpVarifold(d0Rough,d1Rough,splineDataRough,'options',optionsRough,'initPath',dInitPath);
+                        [~, dInitPathRough,optGa,~] = geodesicBvpVarifold(d0Rough,d1Rough,splineDataRough,optionsRough,'initPath',dInitPath);
                         dInitPath = pathSpline2Spline(dInitPathRough, splineDataRough,splineData);
                         initBeta = optGa.beta;
                         initV = optGa.v;
