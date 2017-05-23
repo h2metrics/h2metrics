@@ -71,7 +71,7 @@ end
 %% Multigrid optimization and recursive call
 if isfield(options, 'useMultigrid') && options.useMultigrid
     % Create roughSplineData and roughOptions if not provided
-    if isfield(options, 'mgSplineData')
+    if isfield(options, 'mgSplineData') && ~isempty(options.mgSplineData)
         roughSplineData = options.mgSplineData;
     else
         roughSplineData = splineData;
@@ -79,7 +79,7 @@ if isfield(options, 'useMultigrid') && options.useMultigrid
         roughSplineData = constructKnots(roughSplineData);
         roughSplineData = setupQuadData(roughSplineData);
     end
-    if isfield(options, 'mgOptions')
+    if isfield(options, 'mgOptions') && ~isempty(options.mgOptions)
         roughOptions = options.mgOptions;
     else
         roughOptions = options;
