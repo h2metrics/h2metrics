@@ -47,14 +47,13 @@ function [optE, optPath, optGa, info] = geodesicBvpVarifold(d0, d1, ...
 
 %% Default parameters
 dInitPath = [];
-initBeta = [];
-initV = [];
+initGa = struct('beta', [], 'v', []);
 
 % Default options
 optRot = false;
 optTra = false;
 
-%% Some code for handling optional inputs
+%% Read initial data
 ii = 1;
 while ii <= length(varargin)
     if (isa(varargin{ii},'char'))
@@ -62,44 +61,14 @@ while ii <= length(varargin)
             case 'initpath'
                 ii = ii + 1;
                 dInitPath = varargin{ii};
-            case 'initbeta'
+            case 'initga'
                 ii = ii + 1;
-                initBeta = varargin{ii};
-            case 'initv'
-                ii = ii + 1;
-                initV = varargin{ii};
-            case 'multigrid'
-                ii = ii+1;
-                splineDataRough = varargin{ii};
-                
-                if splineDataRough.Nt <= splineData.Nt
-                    if splineDataRough.N < splineData.N
-                        d0Rough =  curveSpline2Spline(d0, splineData, splineDataRough);
-                        d1Rough =  curveSpline2Spline(d1, splineData, splineDataRough);
-                    elseif splineDataRough.N == splineData.N
-                        d0Rough = d0;
-                        d1Rough = d1;
-                    else
-                        error('Invalid option: ''%s''(splineDataRough.N should be <= splineData.N).',varargin{ii-1});
-                    end
-                    optionsRough=splineData.options;
-                    optionsRough.tolX= 1e-6;
-                    optionsRough.tolF= 1e-6;
-                        if ~isempty(dInitPath) 
-                            dInitPath = pathSpline2Spline(dInitPath,splineData,splineDataRough);
-                        end    
-                        [~, dInitPathRough,optGa,~] = geodesicBvpVarifold(d0Rough,d1Rough,splineDataRough,optionsRough,'initPath',dInitPath);
-                        dInitPath = pathSpline2Spline(dInitPathRough, splineDataRough,splineData);
-                        initBeta = optGa.beta;
-                        initV = optGa.v;
-                else
-                    error('Invalid option for: ''%s'' (splineDataRough.Nt should be <= splineData.Nt).' ,varargin{ii-1});
-                end    
+                initGa = varargin{ii};
             otherwise
-                error('Invalid option for: ''%s''.',varargin{ii});
-        end
-    ii = ii + 1;  
+                error('Invalid option: ''%s''.',varargin{ii});
+        end  
     end
+    ii = ii + 1;
 end
 
 % Set options
@@ -133,15 +102,19 @@ if isfield(options, 'maxIter')
     minOptions = optimoptions(minOptions, 'maxIter', options.maxIter);
 end
 
-%% Create initial guess for path if not provided one
+%% Create initial guess for path and gamma if not provided one
 if isempty(dInitPath)
     dInitPath = linearPath(d0, d0, splineData);
 end
-if isempty(initBeta)
+if isfield(initGa, 'beta') && ~isempty(initGa.beta)
+    initBeta = initGa.beta;
+else
     initBeta = 0;
 end
-if isempty(initV)
-    initV = [0;0];
+if isfield(initGa, 'v') && ~isempty(initGa.v)
+    initV = initGa.v;
+else
+    initV = [0; 0];
 end
 
 coeffInit = [reshape(dInitPath(splineData.N+1:end,:),[],1); initBeta; initV];

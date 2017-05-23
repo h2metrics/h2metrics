@@ -47,7 +47,70 @@
 function [optE, optPath, optGa, info] = geodesicBvp(d0, d1, ...
     splineData, options, varargin)
 
-% Decision tree
+initPath = [];
+initGa = [];
+
+%% Read initial data
+ii = 1;
+while ii <= length(varargin)
+    if (isa(varargin{ii},'char'))
+        switch (lower(varargin{ii}))
+            case 'initpath'
+                ii = ii + 1;
+                initPath = varargin{ii};
+            case 'initga'
+                ii = ii + 1;
+                initGa = varargin{ii};
+            otherwise
+                error('Invalid option: ''%s''.',varargin{ii});
+        end  
+    end
+    ii = ii + 1;
+end
+
+%% Multigrid optimization and recursive call
+if isfield(options, 'useMultigrid') && options.useMultigrid
+    % Create roughSplineData and roughOptions if not provided
+    if isfield(options, 'mgSplineData')
+        roughSplineData = options.mgSplineData;
+    else
+        roughSplineData = splineData;
+        roughSplineData.Nt = min(3, splineData.Nt);
+        roughSplineData = constructKnots(roughSplineData);
+        roughSplineData = setupQuadData(roughSplineData);
+    end
+    if isfield(options, 'mgOptions')
+        roughOptions = options.mgOptions;
+    else
+        roughOptions = options;
+        roughOptions.useMultigrid = false;
+        roughOptions.mgSplineData = [];
+    end
+    
+    % Resample curves and initial data
+    d0R = curveSpline2Spline(d0, splineData, roughSplineData);
+    d1R = curveSpline2Spline(d1, splineData, roughSplineData);
+    if ~isempty(initPath)
+        initPathR = pathSpline2Spline(initPath, splineData, ...
+                                      roughSplineData);
+    else
+        initPathR = [];
+    end
+    initGaR = initGa;
+    
+    % Call geodesicBvp
+    [~, optPathR, optGaR, ~] = geodesicBvp(d0R, d1R, roughSplineData, ...
+        roughOptions, 'initPath', initPathR, 'initGa', initGaR);
+    
+    % Set varargin for function calls below
+    initPath = pathSpline2Spline(optPathR, roughSplineData, splineData);
+    initGa = optGaR;
+    
+    varargin = {'initPath', initPath, 'initGa', initGa};                 
+end
+
+%% Decision tree
+
 % if optDiff && useVarifold
 %   call geodesicBvpVarifold
 % elseif optDiff
