@@ -1,13 +1,13 @@
-%% geodesicBvp
+%% geodesicBvpVarifold
 %
-% Minimizes the varifold--H^2 inexact boundary value problem
-% between d0, d1\circ G are curves and G is a group of transformations using 
-% the HANSO LM-BFGS method This
-% function supports G to be any combination of
+% Minimizes the H^2 inexact boundary value problem with varifold data
+% attachment term using the HANSO limited-memory BFGS method. Finds the
+% geodesic between
+%     d0 and d1 \circ G
+% where G is a group of transformations. This can be any combination of
 %   - Translations
 %   - Rotations
 %
-% 
 % Input
 %   d0, d1
 %       Initial and final curves. Matrix of dimensions [N, dSpace].
@@ -19,22 +19,20 @@
 %       Struct containing optimization options. Uses the following fields:
 %           optTra = {true, false (default)}
 %           optRot = {true, false (default)}
-%           maxIter = integer ([] for default value)
-%           display = string
-%               'off' for no output
-%               '' for default of optimization routine
-%               Any other string will be passed on
+%           varLambda
+%           hansNormTol = 1e-3 (default)
+%           hansoMaxIt = 1000 (default)
+%           hansoNvec = 500 (default)
+%           hansoPrtLevel = {0, 1 (default), 2}
 %   initPath
-%       Guess for initial path. path needs to have the same splineData as splineData. 
-%       Default initial path: constant path d0
+%       Guess for initial path. Path needs to have the same splineData as 
+%       splineData Default initial path is constant path d0.
 %   gaInit
 %       Guess for initial transformation of d1.
-%   multigrid
-%       Uses a lower resolution splineData for a preComputation
 %
 % Output
 %   optE
-%       Energy of the optimal path
+%       Final value of optimization routine
 %   optPath
 %       Optimal path between d0 and d1 o optGa
 %   optGa
