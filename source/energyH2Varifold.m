@@ -29,7 +29,6 @@ dSpace = splineData.dSpace;
 N = splineData.N;
 Nt = splineData.Nt;
 
-lambda = splineData.lambda; %Weight of Varifold term in the energy functional
 quadDataTensor = splineData.quadDataTensor;
 a = splineData.a; a0 = a(1); a1 = a(2); a2 = a(3);
 
@@ -38,6 +37,7 @@ d0 = params.d0;
 dEnd = params.dEnd;
 optTra = params.optTra;
 optRot = params.optRot;
+lambda = params.lambda; %Weight of Varifold term in the energy functional
 
 dPath = [ d0;
           reshape(coeffs(1:N*(Nt-1)*dSpace), [N*(Nt-1), dSpace]) ];

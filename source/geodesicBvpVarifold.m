@@ -111,6 +111,7 @@ pars.optRot = optRot;
 pars.optTra = optTra;
 pars.d0 = d0;
 pars.dEnd = d1;
+pars.lambda = options.varLambda;
 
 optionsHANSO = struct();
 optionsHANSO.x0 = coeffInit;
