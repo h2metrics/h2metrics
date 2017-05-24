@@ -101,10 +101,7 @@ coeffInit = [ reshape(initPath(splineData.N+1:end, :), [], 1); ...
               initV ];
 
 %% Setup HANSO
-Fopt = @(coeff, pars) energyH2Varifold( ...
-    [pars.d0; reshape(coeff(1:end-3), [],2)], pars.d1, ...
-    coeff(end-dSpace), coeff(end-dSpace+1:end), ...
-    pars.splineData, 'optRot', pars.optRot, 'optTra', pars.optTra);
+Fopt = @(coeff, pars) energyH2Varifold(coeff, pars, pars.splineData);
 
 pars = struct();
 pars.nvar = length(coeffInit);
@@ -113,7 +110,7 @@ pars.splineData = splineData;
 pars.optRot = optRot;
 pars.optTra = optTra;
 pars.d0 = d0;
-pars.d1 = d1;
+pars.dEnd = d1;
 
 optionsHANSO = struct();
 optionsHANSO.x0 = coeffInit;

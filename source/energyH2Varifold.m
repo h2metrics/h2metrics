@@ -1,70 +1,48 @@
-%% energyH2DiffVarifold
+%% energyH2Varifold
 %
-% Computes the energy of dPath after some reparametrizations.
+% Computes the sum
+%   E(dPath) + lambda * dist(dPath(1), gamma.dEnd)^2
+% with E(dPath) the Riemannian path energy and dist(.,.) the varifold
+% distance between the endpoint of the path and the target curve
+% transformed by gamma.
 %
 % Input
-%   dPath
-%       Path of curves; matrix of dimension [N*Nt, dSpace]
-%
-%   d
-%       Curve that end points is compared to by the varifold distance
+%   coeffs
+%       Path of curves, rotation and translation vector
+%       Vector of length N*(Nt-1)*dSpace+dSpace+1
+%   params
+%       Start point of path, target curve, toggles for translation and
+%       rotation
 %   splineData
 %       General information about the splines used.
 %
 % Output
-%   E1
+%   E
 %       Energy of the path.
 %   dE
 %       Derivative of the energy
-%   H
-%       Hessian of the energy
 %
-function [E,dE] = energyH2Varifold( dPath, d, beta, v, splineData, varargin)
+function [E, dE] = energyH2Varifold(coeffs, params, splineData)
 
-% Default parameters
-optTra = false;
-optRot = false;
-
-%% Optional parameters
-ii = 1;
-while ii <= length(varargin)
-    if (isa(varargin{ii},'char'))
-        switch (lower(varargin{ii}))
-            case 'opttra'
-                ii = ii + 1;
-                if isnumeric(varargin{ii}) || islogical(varargin{ii})
-                    optTra = logical(varargin{ii});
-                else
-                    error('Invalid value for option ''optTra''.');
-                end
-            case 'optrot'
-                ii = ii + 1;
-                if isnumeric(varargin{ii}) || islogical(varargin{ii})
-                    optRot = logical(varargin{ii});
-                else
-                    error('Invalid value for option ''optRot''.');
-                end
-            otherwise
-                error('Invalid option: ''%s''.',varargin{ii});
-        end
-    ii = ii + 1; 
-    end
-end
-
-%% Extract parameters
-lambda = splineData.lambda; %Weight of Varifold term in the energy functional
+%% Extract parameters from splineData
 dSpace = splineData.dSpace;
 N = splineData.N;
-quadData = splineData.quadData;
+Nt = splineData.Nt;
+
+lambda = splineData.lambda; %Weight of Varifold term in the energy functional
 quadDataTensor = splineData.quadDataTensor;
-
 a = splineData.a; a0 = a(1); a1 = a(2); a2 = a(3);
-noInterpolPoints = size(quadData.B_interpolPhi,1);
 
-noControlPoints = splineData.N*splineData.Nt;
-noControls = noControlPoints*splineData.dSpace;
-noVariables = splineData.N*(splineData.Nt-1); %BVP
-noQuadSites = length( quadDataTensor.quadWeights );
+%% Decode coeffs and params
+d0 = params.d0;
+dEnd = params.dEnd;
+optTra = params.optTra;
+optRot = params.optRot;
+
+dPath = [ d0;
+          reshape(coeffs(1:N*(Nt-1)*dSpace), [N*(Nt-1), dSpace]) ];
+beta = coeffs(end-dSpace);
+v = coeffs(end-dSpace+1:end);
 
 %% Evaluate path at quadrature sites
 Cu = quadDataTensor.Bu*dPath;
@@ -108,45 +86,11 @@ energyIntegrand = Ct_L2H1H2;
 E = quadDataTensor.quadWeights' * energyIntegrand;
 
 %% Compute Varifold energy
-% noEvalPoints = 100;
-% 
-% % End point curve
-% d1 = dPath(end-N+1:end,:);
-% 
-% % Parameters for varifold code
-% objfun.kernel_geom='gaussian';
-% objfun.kernel_size_geom=splineData.varifoldKernelSize;
-% objfun.kernel_grass='binet';
-% 
-% % Evaluate the curve
-% evalS = linspace(0,2*pi,noEvalPoints+1)'; 
-% evalS = evalS(1:end-1); % Remove the last repeated point
-% evald1 = evalCurve(evalS,d1,splineData);
-% evalC = evalCurve(evalS,d,splineData); %Matching curve
-% 
-% % Create connectivity matrix
-% G = [(1:length( evalS ))', circshift( (1:length( evalS ))' , -1)];
-% 
-% d1vari = struct( 'x', evald1, 'G', G );
-% Cvari = struct( 'x', evalC, 'G', G );
-% 
-% distVar = varifoldnorm(d1vari,Cvari,objfun);
+rotation = [ cos(beta), sin(beta); ...
+             -sin(beta), cos(beta) ];
+d2 = dEnd * rotation;
 
-% Appply R_beta and v to d
-% if ~optRot
-%     beta = 0;
-% end
-% if ~optTra
-%     v = zeros(dSpace, 1);
-% end
-% if optRot
-    rotation = [ cos(beta), sin(beta); ...
-                 -sin(beta), cos(beta) ];
-    d2 = d * rotation;
-% end
-% if optTra
-    d2 = d2 + ones([N, 1]) * v(:)';
-% end
+d2 = d2 + ones([N, 1]) * v(:)';
 
 d1 = dPath(end-N+1:end,:);
 distVar = varifoldDistanceSquared(d1, d2, splineData);
@@ -192,369 +136,32 @@ if nargout > 1
     dE = dE(splineData.N+1:end-splineData.N,:);
     
     % Compute Varifold Gradient
-%     distVarGradPts = dvarifoldnorm(d1vari,Cvari,objfun);
-%     
-%     % dist: d -Ev-> B*d -varNorm-> distVar
-%     % grad(dist) = (varNorm'*B)
-%     
-%     distVarGrad = (distVarGradPts'*splineData.quadData.B_interpolS)';
-    
-%     [~, distVarGrad] = varifoldDistanceSquared(d1, d, splineData);
-    
-    [~, distGradd1] = varifoldNormSpline(d1, d2, splineData);
+    [~, distGradd1] = varifoldDistanceSquared(d1, d2, splineData);
     if optRot || optTra
-        [~, distGradd2] = varifoldNormSpline(d2, d1, splineData);
+        [~, distGradd2] = varifoldDistanceSquared(d2, d1, splineData);
     end
-    % Compute gradient w.r.t beta and v
-    % Observe: 
-    % F(beta,v) = || d0 - (R_beta(d1) + v)  || = || R_{-beta}(d0 - v) - d1 ||
-    % dFdBeta = 
     
+    % Compute gradient w.r.t beta and v
+    % Observe that F(beta,v) = || d0 - (R_beta(d1) + v) ||^2 
+    %                        = || R_{-beta}(d0 - v) - d1 ||^2  
     if optRot
         rotationDer = [ -sin(beta), cos(beta); -cos(beta), -sin(beta) ]; 
-        distVarGradBeta = sum(sum(distGradd2 .*(d*rotationDer)));
+        distVarGradBeta = sum(sum(distGradd2 .*(dEnd*rotationDer)));
     else
         distVarGradBeta = 0; 
     end
     if optTra
         distVarGradV = sum( distGradd2,1 )'; 
     else
-        distVarGradV = [ 0;0 ];
+        distVarGradV = [0; 0];
     end
-    % Update the end point part witht the derivatives of the varifold
-    % distance
+    
+    % Update the endpoint part with the derivatives of varifold distance
     dE = [ dE; dEdc1 + lambda*distGradd1];
   
     % Attach gradients wrt beta and v
     dE = [ dE(:); lambda*distVarGradBeta; lambda*distVarGradV ]; 
 end
-
-% %% Compute Hessian
-% if nargout > 2
-%     CspeedInv11 = CspeedInv9.*CspeedInv2;
-%     
-%     weight1 = -a0*CspeedInv3.*CtCt + 3*a1*CspeedInv5.*CutCut ...
-%         + 63*a2*CspeedInv11.*CuCuu2.*CutCut ...
-%         - 70*a2*CspeedInv9.*CuCuu.*CutCuut ...
-%         + 15*a2*CspeedInv7.*CuutCuut;
-%     weight2 = -14*a2*CspeedInv9.*CuCuu.*CutCut + 10*a2*CspeedInv7.*CutCuut;
-%     weight3 = 2*a2*CspeedInv7.*CutCut;
-%     weight4 = 2*a0*CspeedInv;
-%     weight5 = -2*a1*CspeedInv3-14*a2*CspeedInv9.*CuCuu2;
-%     weight6 = 10*a2*CspeedInv7.*CuCuu;   
-%     weight7 = 4*a2*CspeedInv7.*CuCuu; 
-%     weight8 = -2*a2*CspeedInv5;
-%     weight9 = -6*a2*CspeedInv5;
-%    
-%     weight1 = weight1.*quadDataTensor.quadWeights;
-%     weight2 = weight2.*quadDataTensor.quadWeights;
-%     weight3 = weight3.*quadDataTensor.quadWeights;
-%     weight4 = weight4.*quadDataTensor.quadWeights;
-%     weight5 = weight5.*quadDataTensor.quadWeights;
-%     weight6 = weight6.*quadDataTensor.quadWeights;
-%     weight7 = weight7.*quadDataTensor.quadWeights;
-%     weight8 = weight8.*quadDataTensor.quadWeights;
-%     weight9 = weight9.*quadDataTensor.quadWeights;
-%     
-%     %Allocate sparse Hessian
-%     nnzHess = quadDataTensor.nnz;% nnz( quadDataTensor.B'*quadDataTensor.B ); %TODO: Cheaper 
-%     Hess = spalloc( noControls,noControls, nnzHess*splineData.dSpace^2);
-%     Hess2 = spalloc( noControls,noControls, nnzHess*splineData.dSpace);
-%     
-%     for kk_h = 1:splineData.dSpace
-%        for kk_u = 1:splineData.dSpace
-%            %Symmetric
-%            %Hu'*(...)*Uu
-%            weightHuUu = weight1.*Cu(:,kk_h).*Cu(:,kk_u) + ...
-%                weight2.*Cuu(:,kk_h).*Cu(:,kk_u) + ...
-%                weight2.*Cu(:,kk_h).*Cuu(:,kk_u) + ...
-%                weight3.*Cuu(:,kk_h).*Cuu(:,kk_u);
-%            sparseWHuUu = sparse(1:noQuadSites,1:noQuadSites,...
-%                weightHuUu );
-% 
-% %            termHuUu = quadDataTensor.BuTr*sparseWHuUu*quadDataTensor.Bu;
-%          
-%            %Huu'*(...)*Uuu
-%            weightHuuUuu = weight3.*Cu(:,kk_h).*Cu(:,kk_u);
-%            sparseWHuuUuu = sparse(1:noQuadSites,1:noQuadSites,...
-%                weightHuuUuu );
-% %            termHuuUuu = quadDataTensor.BuuTr*sparseWHuuUuu*quadDataTensor.Buu;
-%          
-%            %Mixed
-%            %Huu'*(...)*Uu
-%            weightHuuUu = weight2.*Cu(:,kk_h).*Cu(:,kk_u) + ...
-%                weight3.*Cu(:,kk_h).*Cuu(:,kk_u);
-%            sparseWHuuUu = sparse(1:noQuadSites,1:noQuadSites,...
-%                weightHuuUu );
-% %            termHuuUu = quadDataTensor.BuuTr*sparseWHuuUu*quadDataTensor.Bu;
-%            
-%            %Ht'*(...)*Uu
-%            weightHtUu = weight4.*Ct(:,kk_h).*Cu(:,kk_u);
-%            sparseWHtUu = sparse(1:noQuadSites,1:noQuadSites,...
-%                weightHtUu );
-% %            termHtUu = quadDataTensor.BtTr*sparseWHtUu*quadDataTensor.Bu;
-%            
-%            %Hut'*(...)*Uu
-%            weightHutUu = weight5.*Cut(:,kk_h).*Cu(:,kk_u) + ...
-%                weight6.*Cuut(:,kk_h).*Cu(:,kk_u) + ...
-%                weight7.*Cut(:,kk_h).*Cuu(:,kk_u) + ...
-%                weight8.*Cuut(:,kk_h).*Cuu(:,kk_u);
-%            sparseWHutUu = sparse(1:noQuadSites,1:noQuadSites,...
-%                weightHutUu );
-% %            termHutUu = quadDataTensor.ButTr*sparseWHutUu*quadDataTensor.Bu;
-%            
-%            %Huut'*(...)*Uu
-%            weightHuutUu = weight6.*Cut(:,kk_h).*Cu(:,kk_u) + ...
-%                weight9.*Cuut(:,kk_h).*Cu(:,kk_u) + ...
-%                weight8.*Cut(:,kk_h).*Cuu(:,kk_u);
-%            sparseWHuutUu = sparse(1:noQuadSites,1:noQuadSites,...
-%                weightHuutUu );
-% %            termHuutUu = quadDataTensor.BuutTr*sparseWHuutUu*quadDataTensor.Bu;
-%            
-%            %Hut'*(...)*Uuu
-%            weightHutUuu = weight7.*Cut(:,kk_h).*Cu(:,kk_u) + ...
-%                weight8.*Cuut(:,kk_h).*Cu(:,kk_u);
-%            sparseWHutUuu = sparse(1:noQuadSites,1:noQuadSites,...
-%                weightHutUuu );
-% %            termHutUuu = quadDataTensor.ButTr*sparseWHutUuu*quadDataTensor.Buu;
-%            
-%            %Huut'*(...)*Uuu
-%            weightHuutUuu = weight8.*Cut(:,kk_h).*Cu(:,kk_u);
-%            sparseWHuutUuu = sparse(1:noQuadSites,1:noQuadSites,...
-%                weightHuutUuu );
-% %            termHuutUuu = quadDataTensor.BuutTr*sparseWHuutUuu*quadDataTensor.Buu;
-%                
-%            totalterms = (1/2*quadDataTensor.BuTr*sparseWHuUu + ...
-%                quadDataTensor.BuuTr*sparseWHuuUu + ...
-%                quadDataTensor.BtTr*sparseWHtUu + ...
-%                quadDataTensor.ButTr*sparseWHutUu + ...
-%                quadDataTensor.BuutTr*sparseWHuutUu)*quadDataTensor.Bu + ...
-%                (1/2*quadDataTensor.BuuTr*sparseWHuuUuu + ...
-%                quadDataTensor.ButTr*sparseWHutUuu + ...
-%                quadDataTensor.BuutTr*sparseWHuutUuu)*quadDataTensor.Buu;
-%            
-%            Hess( (kk_h-1)*noControlPoints+1:kk_h*noControlPoints,...
-%                (kk_u-1)*noControlPoints+1:kk_u*noControlPoints) = totalterms;
-% %            temp = termHuuUu + termHtUu + termHutUu + termHuutUu + ...
-% %                termHutUuu + termHuutUuu;
-% %            Hess( (kk_h-1)*noControlPoints+1:kk_h*noControlPoints,...
-% %                (kk_u-1)*noControlPoints+1:kk_u*noControlPoints) ...
-% %                = 1/2*(termHuUu + termHuuUuu) + temp;
-%        end
-%     end
-%     Hess = Hess + Hess';
-%     
-%     %Symmetric
-%     sparseWHuUu = sparse(1:noQuadSites,1:noQuadSites, term1 );
-%     termHuUu = quadDataTensor.BuTr*sparseWHuUu*quadDataTensor.Bu;
-%         
-%     sparseWHtUt = sparse(1:noQuadSites,1:noQuadSites, term3 );
-%     termHtUt = quadDataTensor.BtTr*sparseWHtUt*quadDataTensor.Bt;
-%     
-%     sparseWHutUut = sparse(1:noQuadSites,1:noQuadSites, term4 );
-%     termHutUut = quadDataTensor.ButTr*sparseWHutUut*quadDataTensor.But;
-%     
-%     sparseWHuutUuut = sparse(1:noQuadSites,1:noQuadSites, term6 );
-%     termHuutUuut = quadDataTensor.BuutTr*sparseWHuutUuut*quadDataTensor.Buut;
-%     
-%     %Mixed
-%     sparseWHuuUu = sparse(1:noQuadSites,1:noQuadSites, term2 );
-%     termHuuUu = quadDataTensor.BuuTr*sparseWHuuUu*quadDataTensor.Bu;
-%     
-%     sparseWHuutUut = sparse(1:noQuadSites,1:noQuadSites, term5 );
-%     termHuutUut = quadDataTensor.BuutTr*sparseWHuutUut*quadDataTensor.But;
-%     
-%     temp = termHuuUu + termHuutUut;
-%     temp2 = termHuUu + termHtUt + termHutUut + termHuutUuut + temp + temp';
-%     for kk = 1:splineData.dSpace
-%         Hess2( (kk-1)*noControlPoints+1:kk*noControlPoints,...
-%                (kk-1)*noControlPoints+1:kk*noControlPoints) ...
-%                = temp2;
-%     end
-%     Hess = Hess + Hess2;
-%     
-%     
-% %     %Compute Hessian terms w.r.t. phi, translation, rotation and shift
-% %     c1Hess = zeros(Nphi+dSpace+2,...
-% %             Nphi+dSpace+2, ...
-% %             N*dSpace);    
-% % %
-% % %     d1PhiInterpolMat = sparse( [1:noInterpolPoints,(1:noInterpolPoints)+noInterpolPoints],...
-% % %         repmat(1:noInterpolPoints,1,dSpace),d1PhiInterpol(:)  );
-% % %     d1PhiDotPhiInterpol = d1PhiInterpolMat*quadData.B_interpolPhi;
-% % %     d1PhiDotPhiInterpol = reshape( d1PhiDotPhiInterpol, [], dSpace*splineData.Nphi );
-% % %     %     temp1 = [temp, - d1_0];
-% %     
-% %     %c1 dphidphi
-% %     if optDiff
-% %         d1uuPhiInterpolMat = sparse( [1:noInterpolPoints,(1:noInterpolPoints)+noInterpolPoints],...
-% %         repmat(1:noInterpolPoints,1,dSpace),d1uuPhiInterpol(:)  );
-% %         d1uuPhiDotPhiInterpol = d1uuPhiInterpolMat*quadData.B_interpolPhi;
-% %         
-% %         for ii = 1:splineData.Nphi %TODO: Change for-loop to something faster
-% %             for jj = ii:splineData.Nphi
-% % %                 Phi_jj_Mat = sparse(1:dSpace*noInterpolPoints,1:dSpace*noInterpolPoints,...
-% % %                     repmat(quadData.B_interpolPhi(:,jj),dSpace,1));
-% % %                 d1uuPhiDotPhiPhiInterpol = Phi_jj_Mat*d1uuPhiDotPhiInterpol;
-% % %                 d1uuPhiDotPhiPhiInterpol = reshape( d1uuPhiDotPhiPhiInterpol, [], dSpace*splineData.Nphi );
-% % %                 d1uuPhiDotPhiPhi = quadData.B_interpolS \ d1uuPhiDotPhiPhiInterpol;
-% % %                 d1uuPhiDotPhiPhi = reshape( d1uuPhiDotPhiPhi, splineData.dSpace*splineData.N, [] ); %|[]|=Nphi
-% % %                 
-% % %                 c1Hess(ii,jj,:) = d1uuPhiDotPhiPhi(:,jj);
-% %                 
-% %                 BijTemp = quadData.B_interpolPhi(:,ii).*quadData.B_interpolPhi(:,jj);
-% %                 BijTempMat = sparse(1:noInterpolPoints,1:noInterpolPoints,BijTemp);
-% %                 d1uuPhiDotPhiPhiInterpolTemp = BijTempMat*d1uuPhiInterpol;
-% %                 d1uuPhiDotPhiPhiTemp = quadData.B_interpolS \ d1uuPhiDotPhiPhiInterpolTemp;
-% %                 d1uuPhiDotPhiPhiTemp = reshape( d1uuPhiDotPhiPhiTemp, dSpace*N, [] ); %|[]|=Nphi
-% %                 
-% %                 c1Hess(ii,jj,:) = d1uuPhiDotPhiPhiTemp;
-% %                 
-% %                 c1Hess(jj,ii,:) = c1Hess(ii,jj,:);
-% %             end
-% %         end
-% %         
-% %         %c1 dphidalpha and dphidbeta
-% %         d1uuPhiDotPhiInterpol = reshape( d1uuPhiDotPhiInterpol, [], dSpace*Nphi );
-% %         d1uuPhiDotPhi = quadData.B_interpolS \ d1uuPhiDotPhiInterpol;
-% %         d1uuPhiDotPhi = reshape( d1uuPhiDotPhi, splineData.dSpace*splineData.N, [] );
-% %         
-% %         d1uPhiRot90Interpol = d1uPhiInterpol*rotation90;
-% %         d1uPhiRot90InterpolMat = sparse( [1:noInterpolPoints,(1:noInterpolPoints)+noInterpolPoints],...
-% %             repmat(1:noInterpolPoints,1,dSpace),d1uPhiRot90Interpol(:)  );
-% %         d1uPhiRot90DotPhiInterpol = d1uPhiRot90InterpolMat*quadData.B_interpolPhi;
-% %         d1uPhiRot90DotPhiInterpol = reshape( d1uPhiRot90DotPhiInterpol, [], dSpace*Nphi );
-% %         d1uPhiRot90DotPhi = quadData.B_interpolS \ d1uPhiRot90DotPhiInterpol;
-% %         d1uPhiRot90DotPhi = reshape( d1uPhiRot90DotPhi, dSpace*N, [] ); %|[]|=Nphi
-% %         
-% %         if optShift
-% %             for ii = 1:Nphi
-% %                 %dphidalpha
-% %                 c1Hess(ii,end,:) = -d1uuPhiDotPhi(:,ii);
-% %                 c1Hess(end,ii,:) = c1Hess(ii,end,:);
-% %             end
-% %         end
-% %         if optRot
-% %             for ii = 1:Nphi
-% %                 %dphidbeta
-% %                 c1Hess(ii,end-1,:) = d1uPhiRot90DotPhi(:,ii);
-% %                 c1Hess(end-1,ii,:) = c1Hess(ii,end-1,:);
-% %             end
-% %         end
-% %     end %dphi terms
-% %     
-% %     
-% %     %c1 dbetadalpha
-% %     if optRot && optShift
-% %         c1Hess(end,end-1,:) = reshape(d1uPhiDotAlpha*rotation90,[],1);
-% %         c1Hess(end-1,end,:) = c1Hess(end,end-1,:);
-% %     end
-% %     
-% %     %c1 dbetadbeta
-% %     if optRot
-% % %         d1Phi = quadData.B_interpolS \ d1PhiInterpol;
-% % %         d1Phi = reshape( d1Phi, splineData.dSpace*splineData.N, [] ); %|[]|=Nphi
-% %         c1Hess(end-1,end-1,:) = -reshape(d1,dSpace*N,[]);
-% %     end
-% %     
-% %     %c1 dalphadalpha
-% %     if optShift
-% %         d1uuPhi = quadData.B_interpolS \ d1uuPhiInterpol;
-% %         c1Hess(end,end,:) = d1uuPhi(:);
-% %     end
-% %     
-% %     %c1 dvdbeta
-% %     if optRot && optTra 
-% %         c1Hess(end-3,end-1,:) = reshape([ones(N,1),zeros(N,1)]*rotation90*rotation,...
-% %             splineData.dSpace*splineData.N,[]);
-% %         c1Hess(end-2,end-1,:) = reshape([zeros(N,1),ones(N,1)]*rotation90*rotation,...
-% %             splineData.dSpace*splineData.N,[]);
-% %         
-% %         
-% %         c1Hess(end-1,end-3,:) = c1Hess(end-3,end-1,:);
-% %         c1Hess(end-1,end-2,:) = c1Hess(end-2,end-1,:);
-% %     end
-%     
-%     %Extract indices for d1 controls in H
-%     %Harcoded for dSpace = 2
-%     %TODO: For any dSpace.
-% %     d1Indices  = (noControlPoints-N+1:noControlPoints)';
-% %     d1Indices = [d1Indices,d1Indices+noControlPoints];
-% %     d1Indices = d1Indices(:);
-% %     
-% %     %Extract dEdc1 parts of control points Hessian
-% %     dEc1Hess = Hess(d1Indices,d1Indices);
-% %     
-% %     %Compute dEdGamma part of Hessian
-% %     HessGamma = c1dGamma'*dEc1Hess*c1dGamma; %+ ...
-% %     
-% %     HessGamma = c1dGamma'*dEc1Hess*c1dGamma; % + nothing. No second derivatives of E_v
-%     
-%     
-% % %     Edc1Mat = sparse(1:noInterpolPoints,1:noInterpolPoints,Edc1);
-% %     c1Hess = permute( c1Hess, [3 1 2]);
-% %     HessGamma2 = zeros(1,noGamma,noGamma);
-% %     for ii = 1:noGamma;
-% %         HessGamma2(:,:,ii) = Edc1*c1Hess(:,:,ii);
-% %     end
-% %     HessGamma2 = squeeze(HessGamma2); %Remove singleton dimension
-%     
-% %     c1Hess = permute( c1Hess,[2 3 1]) ;
-% %     HessGamma3 = zeros(noGamma,noGamma);
-% %     for ii = 1:noGamma
-% %         for jj = ii:noGamma
-% %             HessGamma3(ii,jj) = Edc1*squeeze(c1Hess(ii,jj,:));
-% %             HessGamma3(jj,ii) = HessGamma3(ii,jj);
-% %         end
-% %     end
-%     
-% %     %Extract indices for interior controls in H, upper left block
-% %     intIndices  = zeros( 1,noVariables );
-% %     for kk = 1:splineData.dSpace
-% %         intIndices( (kk-1)*noVariables+1:kk*noVariables) = ...
-% %             (kk-1)*noControlPoints+[splineData.N+1:noControlPoints-splineData.N];
-% %     end
-% %         
-% %     HessInt = Hess( intIndices, intIndices);
-% %     
-% %     HessIntd1 = Hess( intIndices, d1Indices);
-% %     
-% %     HessIntGamma = HessIntd1*c1dGamma;
-% %     
-% %     HessFull = [HessInt,HessIntGamma;HessIntGamma',HessGamma + HessGamma2];
-% % 
-% %     H = HessFull;
-%     
-%     % Extract indicies for all entries not involving d0.
-%     activeIndicies = [ [splineData.N + 1: noControlPoints], ...
-%         [(noControlPoints + splineData.N +1): 2*noControlPoints] ];
-%     
-%     activeHess = Hess( activeIndicies, activeIndicies );
-%     
-%     % Compute hessian of varifold distance
-%     [~, ~, distVarHess] = varifoldNormSpline(d1, d, splineData);
-%     
-%     % Add varifold hessian to d1 entries
-%     noActiveControlPoints = noControlPoints - N;
-%     d1Indices = [ [noActiveControlPoints - N+1:noActiveControlPoints],...
-%         [2*noActiveControlPoints - N+1:2*noActiveControlPoints] ];
-%     
-%     activeHess( d1Indices, d1Indices) = ...
-%         activeHess( d1Indices, d1Indices ) + lambda*distVarHess;
-%     
-%     H = activeHess;
-%     
-% % %     E = d1;
-% % %     dE = dEc1Hess;
-% % %     dE = c1dGamma;
-% % %     H = permute( c1Hess,[2 3 1]) ;
-% % %     H = HessGamma + HessGamma2;
-% % %     H = dEc1Hess;
-% % %     H = Hess;
-% % 
-% % end
-
-
 
 end
 
