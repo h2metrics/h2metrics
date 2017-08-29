@@ -25,8 +25,8 @@ if isa(f, 'function_handle') %f is a handle
     data = f(interpolS);
     
     % Create collocation matrices
-    B_interpol = spcol( splineData.knotsS, splineData.nS+1, ...
-                            brk2knt( interpolS, 1 ), 'sparse');
+    B_interpol = spcol( splineData.knotsS, nS+1, ...
+                        brk2knt( interpolS, 1 ), 'sparse');
     if splineData.curveClosed
         B_interpol = ...
             [ B_interpol(:, 1:nS) + B_interpol(:, end-nS+1:end), ...
@@ -37,20 +37,31 @@ if isa(f, 'function_handle') %f is a handle
     d = B_interpol \ data;
     
 elseif isa(f, 'numeric') % f is a list of points
-    noInterpolPoints = size(f,1);
-    interpolS = linspace( 0, 2*pi, noInterpolPoints+1)';
-    interpolS = interpolS(1:end-1); %remove last point, correponds to first point
-    B_interpol = spcol( splineData.knotsS, splineData.nS+1, brk2knt( interpolS, 1 ),'sparse');
-    B_interpol_p = [B_interpol(:,1:splineData.nS) + B_interpol(:,end-splineData.nS+1:end), B_interpol(:,splineData.nS+1:end-splineData.nS)];
+    noInterpolPoints = size(f, 1);
     
-    d = B_interpol_p\f;
+    if splineData.curveClosed
+        interpolS = linspace(0, 2*pi, noInterpolPoints+1)';
+        interpolS = interpolS(1:end-1); % Last point correponds to first
+        
+        B_interpol = spcol( splineData.knotsS, nS+1, ...
+                            brk2knt( interpolS, 1 ), 'sparse');
+        B_interpol = ...
+            [ B_interpol(:,1:nS) + B_interpol(:,end-nS+1:end), ...
+              B_interpol(:,nS+1:end-nS) ];
+    else
+        interpolS = linspace(0, 2*pi, noInterpolPoints)';
+        
+        B_interpol = spcol( splineData.knotsS, nS+1, ...
+                            brk2knt( interpolS, 1 ), 'sparse');
+    end
+    
+    % Solve the linear interpolation problem
+    d = B_interpol \ f;
+    
 else
     error('Unknown f');
+    
 end
-
-
-
-
 
 end
 
