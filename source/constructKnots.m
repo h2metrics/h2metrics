@@ -17,21 +17,34 @@
 %
 function [ splineData ] = constructKnots( splineData )
 
+curveClosed = splineData.curveClosed;
+
 if ~isempty(splineData.N) && ~isempty(splineData.nS)
     N = splineData.N;
     nS = splineData.nS;
-    % Normalize, domain of definition is [0,2*pi]
-    splineData.knotsS =  [(-nS):(N+nS)]/N*2*pi; 
-    splineData.innerKnotsS = splineData.knotsS(nS+1:end-nS);
-    
-    splineData.noInterpolS = splineData.N;
-    innerKnotsS = splineData.innerKnotsS;
-    if mod(splineData.nS, 2) == 0 % See deBoor for reasons for this.
-        splineData.interpolS = innerKnotsS(1:end-1)' + ...
-                                0.5*diff(innerKnotsS)';
+
+    if curveClosed
+        % Normalize, domain of definition is [0,2*pi]
+        splineData.knotsS = [(-nS):(N+nS)]/N*2*pi; 
+        splineData.innerKnotsS = splineData.knotsS(nS+1:end-nS);
+
+        splineData.noInterpolS = splineData.N;
+        innerKnotsS = splineData.innerKnotsS;
+        if mod(splineData.nS, 2) == 0 % See deBoor (p.287) for reasons.
+            splineData.interpolS = innerKnotsS(1:end-1)' + ...
+                                    0.5*diff(innerKnotsS)';
+        else
+            splineData.interpolS = innerKnotsS(1:end-1)';
+        end
     else
-        splineData.interpolS = innerKnotsS(1:end-1)';
-    end
+        % Normalize, domain of definition is [0,2*pi]
+        splineData.knotsS = [ zeros(1,nS), linspace(0,2*pi,N-nS+1), ...
+                              2*pi*ones(1,nS) ];
+        splineData.innerKnotsS = splineData.knotsS(nS+1:end-nS);
+
+        splineData.noInterpolS = splineData.N;
+        splineData.interpolS = aveknt(splineData.knotsS, nS+1)';
+    end 
 end
 
 if ~isempty(splineData.Nt) && ~isempty(splineData.nT)

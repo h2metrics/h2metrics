@@ -23,8 +23,10 @@ if nargin < 4
     deriv = 1;
 end
 
+per = splineData.curveClosed;
+
 c = deBoor( splineData.knotsS, splineData.nS, d, pts, ...
-                    deriv, 'periodic', true );
+                    deriv, 'periodic', per );
 c = c(deriv:deriv:end, :);
 
 end
