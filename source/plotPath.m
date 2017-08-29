@@ -12,9 +12,7 @@ function plotPath(dPath, splineData)
 
 N = splineData.N;
 Nt = splineData.Nt;
-nS = splineData.nS;
 nT = splineData.nT;
-knotsS = splineData.knotsS;
 knotsT = splineData.knotsT;
 
 % Plot parameters
@@ -33,8 +31,8 @@ snapshotPtsT = snapshotPtsT(2:end-1);
 d0 = dPath(1:N, :);
 d1 = dPath(end-N+1:end, :);
 
-c0 = deBoor(knotsS, nS, d0, plotPtsS, 1, 'periodic', true);
-c1 = deBoor(knotsS, nS, d1, plotPtsS, 1, 'periodic', true);
+c0 = evalCurve(plotPtsS, d0, splineData);
+c1 = evalCurve(plotPtsS, d1, splineData);
 
 %% Setup plotting
 hold on;
@@ -49,9 +47,8 @@ plot(c1(:, 1), c1(:, 2), 'k-', 'LineWidth', 1);
 % Particle paths across time
 for ii = 1:noLinesS
     for ll = Nt:-1:1
-        lineT(ll, :) = deBoor(knotsS, nS, ...
-            dPath((ll-1)*N+1:ll*N,:), linePtsS(ii), 1, ...
-            'periodic', true);
+        lineT(ll, :) = evalCurve(linePtsS(ii), ...
+                                 dPath((ll-1)*N+1:ll*N,:), splineData);
     end
     b = deBoor(knotsT, nT, lineT, ...
                plotPtsT, 1, 'periodic', false);
@@ -66,7 +63,7 @@ for ii = 1:noSnapshotsT
             dPath(ll:N:end, :), snapshotPtsT(ii), 1, ...
             'periodic', false);
     end
-    c = deBoor(knotsS, nS, curveS, plotPtsS, 1, 'periodic', true);
+    c = evalCurve(plotPtsS, curveS, splineData);
     plot(c(:, 1), c(:, 2), 'k:', 'LineWidth', 1);
 end
 

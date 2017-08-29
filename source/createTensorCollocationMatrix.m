@@ -24,6 +24,7 @@ N = splineData.N;
 nS = splineData.nS;
 Nt = splineData.Nt; 
 nT = splineData.nT;
+curveClosed = splineData.curveClosed;
 
 noEvalSitesS = length(evalSitesS);
 noEvalSitesT = length(evalSitesT);
@@ -33,8 +34,10 @@ knotsT = splineData.knotsT;
     
 B_S = spcol( knotsS, nS+1, ...
               brk2knt( evalSitesS, derS ), 'sparse');
-B_S = [ B_S(:,1:nS) + B_S(:,end-nS+1:end), ... % For periodic spline
-        B_S(:,nS+1:end-nS) ];
+if curveClosed
+    B_S = [ B_S(:,1:nS) + B_S(:,end-nS+1:end), ... % For periodic spline
+            B_S(:,nS+1:end-nS) ];
+end
 B_S = B_S(derS:derS:end,:); % Take only the derivative we want
 
 B_T = spcol( knotsT, nT+1, ...
