@@ -21,6 +21,7 @@ quadData = struct('quadPointsS', [], 'quadPointsT', [], ...
     'B_phi', [], 'Bu_phi', [], 'Buu_phi', [], 'Buuu_phi', [], ...
     'B_interpolS', [], 'B_interpolPhi', [], 'B_varS', []);
 
+curveClosed = splineData.curveClosed;
 quadDegree = splineData.quadDegree;
 
 doS = ~isempty(splineData.nS) && ~isempty(splineData.N) && ...
@@ -51,16 +52,18 @@ if doS
     
     B_S_quad = spcol( knotsS, nS+1, ...
                       brk2knt( quadPointsS, noSder ), 'sparse');
-    B_S_quad_per = [ B_S_quad(:,1:nS) + B_S_quad(:,end-nS+1:end), ...
+    if curveClosed
+        B_S_quad = [ B_S_quad(:,1:nS) + B_S_quad(:,end-nS+1:end), ...
                      B_S_quad(:,nS+1:end-nS) ];
+    end
     
-    quadData.B_S = B_S_quad_per(1:noSder:end, :);
-    quadData.Bu_S = B_S_quad_per(2:noSder:end, :);
+    quadData.B_S = B_S_quad(1:noSder:end, :);
+    quadData.Bu_S = B_S_quad(2:noSder:end, :);
     if nS >= 2
-        quadData.Buu_S = B_S_quad_per(3:noSder:end, :);
+        quadData.Buu_S = B_S_quad(3:noSder:end, :);
     end
     if nS >= 3
-        quadData.Buuu_S = B_S_quad_per(4:noSder:end, :);
+        quadData.Buuu_S = B_S_quad(4:noSder:end, :);
     end
 end
 
@@ -112,8 +115,10 @@ if doInterpolS
     interpolS = splineData.interpolS;
     B_interpolS = spcol( splineData.knotsS, nS+1, ...
                          brk2knt(interpolS, 1), 'sparse');
-    B_interpolS = [ B_interpolS(:,1:nS) + B_interpolS(:,end-nS+1:end), ...
-                    B_interpolS(:,nS+1:end-nS) ];
+    if curveClosed
+        B_interpolS = [ B_interpolS(:,1:nS) + B_interpolS(:,end-nS+1:end), ...
+                        B_interpolS(:,nS+1:end-nS) ];
+    end
     quadData.B_interpolS = B_interpolS;
 end
 

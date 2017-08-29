@@ -22,8 +22,7 @@ function dNew = curveSpline2Spline( d, splineData, splineDataNew )
 interpolS = splineDataNew.interpolS;
 
 % Evaluate d at said sites
-pts = deBoor( splineData.knotsS, splineData.nS, d, interpolS, 1, ...
-              'periodic', true );
+pts = evalCurve(interpolS, d, splineData);
 
 % Find control points of new spline
 quadDataNew = splineDataNew.quadData;

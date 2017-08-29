@@ -5,6 +5,8 @@
 %
 % NOTE: Only works if all roots of characteristic polynomial are distinct
 %
+% NOTE: Only works for closed curves
+%
 % Input
 %   a
 %       Coefficient vector [L2 H1 H2 ... Hn]

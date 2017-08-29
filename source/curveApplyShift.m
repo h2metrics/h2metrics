@@ -2,6 +2,7 @@
 %
 % Applies a shift by -alpha to the curve. The formula is
 %   c(th) = d( th - alpha )
+% Makes sense only for closed curves.
 %
 % Input
 %   d

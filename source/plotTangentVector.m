@@ -12,16 +12,13 @@
 %
 function plotTangentVector(d, v, splineData)
 
-nS = splineData.nS;
-knotsS = splineData.knotsS;
-
 % Plot parameters
 noPlotPtsS = 100;
 
 plotPtsS = linspace(0, 2*pi, noPlotPtsS+1);
 
-c = deBoor(knotsS, nS, d, plotPtsS, 1, 'periodic', true);
-w = deBoor(knotsS, nS, v, plotPtsS, 1, 'periodic', true);
+c = evalCurve(plotPtsS, d, splineData);
+w = evalCurve(plotPtsS, v, splineData);
 
 %% Setup plotting
 hold on;

@@ -1,6 +1,5 @@
 %% pathSpline2Spline
 %
-%
 % Computes collocation matrix to evaluate a path or its derivatives
 % on a cartesian product of evaluation sites. For interpolation it uses the
 % midpoints between knots in the S-direction and Chebyshev points in the

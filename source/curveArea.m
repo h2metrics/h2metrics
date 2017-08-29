@@ -4,6 +4,7 @@
 % calculate the are. This assumes that the curve is simply connected and
 % positively oriented. The formula is
 %   area(d) = 1/2 * int_0^{2*pi} x*y' - y*x' d\theta
+% This only works for closed curves. Open curves do not enclose an area.
 %
 % Input
 %   d
