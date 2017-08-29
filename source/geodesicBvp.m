@@ -115,6 +115,8 @@ end
 %   call geodesicBvpVarifold
 % elseif optDiff
 %   call geodesicBvpDiff
+% Note that geodesicBvpDiff does not support length weighted or
+% G^a,b-metrics
 % elseif noGroupsAtAll
 %   call geodesicBvpNoGroups
 % else
@@ -122,19 +124,20 @@ end
 
 useVarifold = isfield(options, 'useVarifold') && options.useVarifold;
 doDiff = isfield(options, 'optDiff') && options.optDiff;
-doTra = isfield(options, 'optTra') && options.optTra;
-doRot = isfield(options, 'optRot') && options.optRot;
-doShift = isfield(options, 'optShift') && options.optShift;
+
 
 if doDiff && useVarifold
     [optE, optPath, optGa, info] = geodesicBvpVarifold(d0, d1, ...
         splineData, options, varargin{:});
 elseif doDiff
-    [optE, optPath, optGa, info] = geodesicBvpDiff(d0, d1, ...
-        splineData, options, varargin{:});
-elseif ~doDiff && ~doTra && ~doRot && ~doShift
-    [optE, optPath, optGa, info] = geodesicBvpNoGroups(d0, d1, ...
-        splineData, options, varargin{:});
+    
+    if (scaleInv == 0) && (length(splineData.a)==3 || sum(splineData.a(4:5).^2)==0 )
+     [optE, optPath, optGa, info] = geodesicBvpDiff(d0, d1, ...
+         splineData, options, varargin{:});
+    else
+        disp('energyH2Diff is not supported for scale/elastic metrics anymore')
+    end
+
 else
     [optE, optPath, optGa, info] = geodesicBvpParam(d0, d1, ...
         splineData, options, varargin{:});

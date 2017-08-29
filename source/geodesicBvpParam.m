@@ -1,13 +1,13 @@
-%% geodesicBvp
+%% geodesicBvpVarifold
 %
-% Calculates the minimal geodesic betweeen 
-%     d0 and d1 o G
-% where d0, d1 are curves and G is a group of transformations. This
-% function supports G to be any combination of
+% Minimizes the H^2 exact boundary value problem for parametrized curves
+% using the HANSO limited-memory BFGS method. Finds the
+% geodesic between
+%     d0 and d1 \circ G
+% where G is a group of transformations. This can be any combination of
 %   - Translations
 %   - Rotations
-%   - Rigid shifts of the parametrization
-% 
+%
 % Input
 %   d0, d1
 %       Initial and final curves. Matrix of dimensions [N, dSpace].
@@ -19,21 +19,19 @@
 %       Struct containing optimization options. Uses the following fields:
 %           optTra = {true, false (default)}
 %           optRot = {true, false (default)}
-%           optDiff = false
-%           optShift = {true, false (default)}
-%           maxIter = integer ([] for default value)
-%           display = string
-%               'off' for no output
-%               '' for default of optimization routine
-%               Any other string will be passed on
+%           hansNormTol = 1e-3 (default)
+%           hansoMaxIt = 1000 (default)
+%           hansoNvec = 500 (default)
+%           hansoPrtLevel = {0, 1 (default), 2}
 %   initPath
-%       Guess for initial path.
+%       Guess for initial path. Path needs to have the same splineData as 
+%       splineData Default initial path is constant path d0.
 %   gaInit
 %       Guess for initial transformation of d1.
 %
 % Output
 %   optE
-%       Energy of the optimal path
+%       Final value of optimization routine
 %   optPath
 %       Optimal path between d0 and d1 o optGa
 %   optGa
@@ -45,138 +43,116 @@ function [optE, optPath, optGa, info] = geodesicBvpParam(d0, d1, ...
     splineData, options, varargin)
 
 %% Default parameters
-optTra = true;
-optRot = true;
-optShift = false; % Constant shifts of the parametrization
+initPath = [];
+initGa = struct('beta', [], 'v', []);
 
-dInitPath = [];
-initGa = [];
-
-%% Extract parameters
-N = splineData.N;
-Nt = splineData.Nt;
-nS = splineData.nS;
-nT = splineData.Nt;
 dSpace = splineData.dSpace;
 
-%% Some code for handling optional inputs
+%% Read initial data
 ii = 1;
 while ii <= length(varargin)
     if (isa(varargin{ii},'char'))
         switch (lower(varargin{ii}))
             case 'initpath'
                 ii = ii + 1;
-                dInitPath = varargin{ii};
+                initPath = varargin{ii};
             case 'initga'
                 ii = ii + 1;
                 initGa = varargin{ii};
             otherwise
                 error('Invalid option: ''%s''.',varargin{ii});
-        end
-    ii = ii + 1;  
+        end  
     end
+    ii = ii + 1;
 end
 
-%% Set options
-if isfield(options, 'optTra')
-    optTra = options.optTra;
-end
-if isfield(options, 'optRot')
+% Set options
+if isfield( options, 'optRot' )
     optRot = options.optRot;
+else
+    optRot = false;
 end
-if isfield(options, 'optShift')
-    optShift= options.optShift;
-end
-   
-minOptions = optimoptions('fminunc');
-minOptions = optimoptions(minOptions,'Algorithm', 'trust-region');
-minOptions = optimoptions(minOptions,'DerivativeCheck', 'off');
-% minOptions = optimoptions(minOptions,'PlotFcns', @optimplotfval);
-minOptions = optimoptions(minOptions,'GradObj', 'on');
-minOptions = optimoptions(minOptions,'Hessian', 'on');
-minOptions = optimoptions(minOptions,'MaxFunEvals', 1000000);
-if isfield(options, 'display')
-    minOptions = optimoptions(minOptions, 'Display', options.display);
-end
-if isfield(options, 'tolFun')
-    minOptions = optimoptions(minOptions,'TolFun', options.tolFun);
-end
-if isfield(options, 'tolX')
-    minOptions = optimoptions(minOptions,'TolX', options.tolX);
-end
-if isfield(options, 'maxIter')
-    minOptions = optimoptions(minOptions, 'maxIter', options.maxIter);
+if isfield( options, 'optTra' )
+    optTra = options.optTra;
+else
+    optTra = false;
 end
 
 %% Create initial guess for path if not provided one
-if isempty(initGa)
-    [~, gaTmp] = rigidAlignment({d0, d1}, splineData, 'options', options);
-    initGa = gaTmp{2};
+if isempty(initPath)
+    initPath = linearPath(d0, d1, splineData);
+end
+if isfield(initGa, 'beta') && ~isempty(initGa.beta)
+    initBeta = initGa.beta;
+else
+    initBeta = 0;
+end
+if isfield(initGa, 'v') && ~isempty(initGa.v)
+    initV = initGa.v;
+else
+    initV = zeros(dSpace, 1);
 end
 
-if isempty(dInitPath)
-    d1Ga = curveApplyGamma(d1, initGa, splineData);
-    dInitPath = linearPath(d0, d1Ga, splineData);
+coeffInit = [ reshape(initPath(splineData.N+1:end-splineData.N, :), [], 1); ...
+              initBeta; ...
+              initV ];
+
+%% Setup HANSO
+Fopt = @(coeff, pars) energyH2(coeff, pars, pars.splineData);
+
+pars = struct();
+pars.nvar = length(coeffInit);
+pars.fgname = Fopt; %[f,df] = fgtest(x,pars)
+pars.splineData = splineData;
+pars.optRot = optRot;
+pars.optTra = optTra;
+pars.d0 = d0;
+pars.dEnd = d1;
+
+optionsHANSO = struct();
+optionsHANSO.x0 = coeffInit;
+if isfield(options, 'hansoNormTol')
+    optionsHANSO.normtol = options.hansoNormTol;
+else
+    optionsHANSO.normtol = 1e-3;
+end
+if isfield(options, 'hansoMaxIt')
+    optionsHANSO.maxit = options.hansoMaxIt;
+else
+    optionsHANSO.maxit = 1000;
+end
+if isfield(options, 'hansoNvec')
+    optionsHANSO.nvec = options.hansoNvec;
+else
+    optionsHANSO.nvec = 500; % 0 is full bfgs
+end
+optionsHANSO.fvalquit = 0;
+if isfield(options, 'hansoPrtLevel')
+    optionsHANSO.prtlevel = options.hansoPrtLevel;
+else
+    optionsHANSO.prtlevel = 1; % also 0, 2
 end
 
-%% Setup optimization
-Nphi = 1;
-coeffInit = zeros([ N*(Nt-2)*dSpace + Nphi + dSpace + 2, 1]);
-coeffInit(1:N*(Nt-2)*dSpace) = reshape( dInitPath(N+1:end-N, :), ...
-                                        [N*(Nt-2)*dSpace, 1] );
-coeffInit(end-Nphi-dSpace-2+1:end-dSpace-2) = 0; % phi
-coeffInit(end-dSpace-2+1:end-2) = zeros([ dSpace, 1]); % Translation
-coeffInit(end-1) = 0; % Rotation
-coeffInit(end) = 0; % Shift
+%% Call HANSO
+[optCoeff, optE, infoHanso] = hanso(pars, optionsHANSO);
+
+%% Create output
+% Transformation struct
+optGa = struct( 'beta', [], 'v', [] );
+
 if optTra
-    coeffInit(end-dSpace-2+1:end-2) = initGa.v;
+    optGa.v = optCoeff(end-dSpace+1:end);
+    d1 = d1 + ones([splineData.N, 1]) * optGa.v';
 end
 if optRot
-    coeffInit(end-1) = initGa.beta;
-end
-if optShift
-    coeffInit(end) = initGa.alpha;
-end
-
-Fopt = @(coeff) energyH2Diff( ...
-    [d0; reshape(coeff(1:N*(Nt-2)*dSpace), [N*(Nt-2), dSpace]); d1], ...
-    coeff(end-Nphi-dSpace-2+1:end-dSpace-2), ...
-    coeff(end-dSpace-2+1:end-2), coeff(end-1), coeff(end), ...
-    splineData, 'optDiff', false, 'optTra', optTra, 'optRot', optRot, ...
-    'optShift', optShift );
-
-problem = struct( 'objective', Fopt, 'x0', coeffInit, ...
-                  'options', minOptions, 'solver', 'fminunc' );
-                  
-%% Optimize
-% tic
-[coeffOptimal, optE, exitflag, output] = fminunc( problem );
-% toc
-
-%% Save results
-% Create transformation struct
-optGa = struct( 'phi', [], 'beta', [], 'v', [], 'alpha', []);
-dEnd = d1;
-if optShift
-    optGa.alpha = coeffOptimal(end);
-    dEnd = curveApplyShift(dEnd, optGa.alpha, splineData);
-end
-if optTra
-    optGa.v = coeffOptimal(end-dSpace-2+1:end-2);
-    dEnd = dEnd + ones([N, 1]) * optGa.v';
-end
-if optRot
-    optGa.beta = coeffOptimal(end-1);
+    optGa.beta = optCoeff(end-dSpace);
     rotation = [ cos(optGa.beta), sin(optGa.beta); ...
-                 -sin(optGa.beta), cos(optGa.beta) ];
-    dEnd = dEnd * rotation;
+        -sin(optGa.beta), cos(optGa.beta) ];
+    d1 = d1 * rotation;
 end
 
-optPath = [ d0; ...
-          reshape(coeffOptimal(1:N*(Nt-2)*dSpace), [N*(Nt-2), dSpace]); ...
-          dEnd ];
-      
-info = struct( 'exitFlag', exitflag, ...
-               'noIter', output.iterations );
+optPath = [ d0; reshape( optCoeff(1:end-dSpace-1), [], 2); d1 ];
+           
+info = struct( 'infoHanso', infoHanso ); 
 
 end
