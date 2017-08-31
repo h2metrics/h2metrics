@@ -202,9 +202,11 @@ if doVar
     B_varS = spcol( splineData.knotsS, splineData.nS+1, ...
                     brk2knt(pts, 1), 'sparse');
     % Periodicity
-    nS = splineData.nS;
-    B_varS = [B_varS(:,1:nS) + B_varS(:,end-nS+1:end),...
-        B_varS(:,nS+1:end-nS) ];
+    if curveClosed
+        nS = splineData.nS;
+        B_varS = [B_varS(:,1:nS) + B_varS(:,end-nS+1:end),...
+            B_varS(:,nS+1:end-nS) ];
+    end
            
     quadData.B_varS = B_varS;
 end

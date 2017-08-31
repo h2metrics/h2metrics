@@ -74,11 +74,18 @@ if ~isempty(splineData.varData) && ~isempty(splineData.varData.noPts) ...
         && isempty(splineData.varData.pts)
     varData = splineData.varData;
     
-    varData.pts = linspace(0, 2*pi, varData.noPts+1);
-    varData.pts = varData.pts(1:end-1); % Remove the last repeated point
+    if splineData.curveClosed
+        varData.pts = linspace(0, 2*pi, varData.noPts+1);
+        varData.pts = varData.pts(1:end-1); % Remove the last repeated point
 
-    % Connectivity matrix
-    varData.G = [(1:varData.noPts)', circshift((1:varData.noPts)', -1)];
+        % Connectivity matrix; note, last connected to first
+        varData.G = [(1:varData.noPts)', circshift((1:varData.noPts)', -1)];
+    else
+        varData.pts = linspace(0, 2*pi, varData.noPts);
+        
+        % Connectivity matrix
+        varData.G = [(1:varData.noPts-1)', (2:varData.noPts)'];
+    end
     
     splineData.varData = varData;
 end

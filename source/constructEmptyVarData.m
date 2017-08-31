@@ -27,11 +27,18 @@ varData = struct( ...
 if nargin > 0 && ~isempty(splineData.N)
     varData.noPts = splineData.N;
     
-    varData.pts = linspace(0, 2*pi, varData.noPts+1);
-    varData.pts = varData.pts(1:end-1); % Remove the last repeated point
+    if splineData.curveClosed
+        varData.pts = linspace(0, 2*pi, varData.noPts+1);
+        varData.pts = varData.pts(1:end-1); % Remove the last repeated point
 
-    % Connectivity matrix
-    varData.G = [(1:varData.noPts)', circshift((1:varData.noPts)', -1)];
+        % Connectivity matrix; note, last connected to first
+        varData.G = [(1:varData.noPts)', circshift((1:varData.noPts)', -1)];
+    else
+        varData.pts = linspace(0, 2*pi, varData.noPts);
+        
+        % Connectivity matrix
+        varData.G = [(1:varData.noPts-1)', (2:varData.noPts)'];
+    end
 end
 
 end
