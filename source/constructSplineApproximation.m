@@ -15,28 +15,15 @@
 %
 function d = constructSplineApproximation(f,splineData,varargin)
 
-nS = splineData.nS;
-
-if isa(f, 'function_handle') %f is a handle
-    % Interpolate data from function with splines
+if isa(f, 'function_handle') % f is a function handle
     interpolS = splineData.interpolS;
+    B_interpol = splineData.quadData.B_interpolS;
     
-    %Evaluate function
     data = f(interpolS);
-    
-    % Create collocation matrices
-    B_interpol = spcol( splineData.knotsS, nS+1, ...
-                        brk2knt( interpolS, 1 ), 'sparse');
-    if splineData.curveClosed
-        B_interpol = ...
-            [ B_interpol(:, 1:nS) + B_interpol(:, end-nS+1:end), ...
-              B_interpol(:, nS+1:end-nS) ];
-    end
-        
-    % Solve the linear interpolation problem
     d = B_interpol \ data;
     
 elseif isa(f, 'numeric') % f is a list of points
+    nS = splineData.nS;
     noInterpolPoints = size(f, 1);
     
     if splineData.curveClosed
