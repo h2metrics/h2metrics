@@ -77,6 +77,16 @@ if isfield( options, 'optTra' )
 else
     optTra = false;
 end
+if isfield(options, 'optScal' )
+    optScal = options.optTra;
+    if optScal == true 
+       disp('optScal is not supported for geodesicBvpParam.') 
+       return
+    end   
+end
+
+
+
 
 %% Create initial guess for path if not provided one
 if isempty(initPath)

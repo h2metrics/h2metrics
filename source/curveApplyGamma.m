@@ -21,18 +21,22 @@
 %       If false, we ignore gamma.beta
 %   applyShift = {true (default), false}
 %       If false, we ignore gamma.alpha
+%   applyScal = {true (default), false}
+%       If false, we ignore gamma.alpha
 %
 % Output
 %   c
 %       The transformed curve
 %   dc
 %       Jacobi matrix with respect to non-empty entries of gamma
+% Jacobi is not working for scalings!!!!!!!!
 function [c, dc] = curveApplyGamma(d, gamma, splineData, varargin)
 
 applyDiff = true;
 applyTra = true;
 applyRot = true;
 applyShift = true;
+applyScale = true;
 
 % Some code for handling optional inputs
 ii = 1;
@@ -67,6 +71,15 @@ while ii <= length(varargin)
                 else
                     error('Invalid value for option ''applyShift''.');
                 end
+            case 'applyscale'
+                ii = ii + 1;
+                if isnumeric(varargin{ii}) || islogical(varargin{ii})
+                    applyScale = logical(varargin{ii});
+                else
+                    error('Invalid value for option ''applyScale''.');
+                end   
+                
+                
             otherwise
                 error('Invalid option: ''%s''.',varargin{ii});
         end
@@ -78,6 +91,7 @@ applyDiff = applyDiff && isfield(gamma,'phi') && ~isempty(gamma.phi);
 applyTra = applyTra && isfield(gamma,'v') && ~isempty(gamma.v);
 applyRot = applyRot && isfield(gamma,'beta') && ~isempty(gamma.beta);
 applyShift = applyShift && isfield(gamma,'alpha') && ~isempty(gamma.alpha);
+applyScale = applyScale && isfield(gamma,'rho') && ~isempty(gamma.rho);
 
 if applyDiff && applyShift
     phi = gamma.phi - gamma.alpha;
@@ -99,6 +113,16 @@ else
     rotation = [ 1, 0; 0, 1 ];
 end
 
+if applyScale
+    rho =gamma.rho;
+else
+    rho=1;
+end
+
+
+
+
+
 if applyDiff
     cPhi = curveComposeDiff(d, phi, splineData);
 elseif applyShift
@@ -108,6 +132,7 @@ else
 end
 c = cPhi + ones([splineData.N, 1]) * v';
 c = c * rotation';
+c = c*rho;
 
 %% Compute the Jacobi matrix
 if nargout == 1
@@ -140,6 +165,9 @@ if applyRot
     dbeta = c * rotation90';
     dbeta = reshape(dbeta, [N*dSpace, 1]);
 end
+
+
+
 
 % Shift and Diff preparation
 if applyDiff

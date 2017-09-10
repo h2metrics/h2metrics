@@ -19,6 +19,7 @@
 %       Struct containing optimization options. Uses the following fields:
 %           optTra = {true, false (default)}
 %           optRot = {true, false (default)}
+%           optScal = {true, false (default)}
 %           varLambda
 %           hansNormTol = 1e-3 (default)
 %           hansoMaxIt = 1000 (default)
@@ -36,7 +37,7 @@
 %   optPath
 %       Optimal path between d0 and d1 o optGa
 %   optGa
-%       Transformation between d0 and endpoint of optPath
+%       Transformation between d1 and endpoint of optPath
 %   info
 %       Structure containing information about the minimization process
 %
@@ -79,6 +80,23 @@ else
     optTra = false;
 end
 
+
+if ~isempty(splineData.scaleInv)
+    scaleInv = splineData.scaleInv;
+else
+    scaleInv = false;
+end
+
+if isfield( options, 'optScal' )
+    optScal = options.optScal;
+    if optScal == true && scaleInv == false 
+       disp('optScal is only a valid option for scale invariant metrics.') 
+       return
+    end     
+else
+    optScal = false;
+end
+
 %% Create initial guess for path if not provided one
 if isempty(initPath)
     initPath = linearPath(d0, d0, splineData); % This is constant path
@@ -94,9 +112,14 @@ else
     initV = zeros(dSpace, 1);
 end
 
+if isfield(initGa, 'rho') && ~isempty(initGa.rho)
+    initRho = initGa.rho;
+else
+    initRho = 1;
+end
+
 coeffInit = [ reshape(initPath(splineData.N+1:end, :), [], 1); ...
-              initBeta; ...
-              initV ];
+              initRho;initBeta;initV ];
 
 %% Setup HANSO
 Fopt = @(coeff, pars) energyH2Varifold(coeff, pars, pars.splineData);
@@ -107,6 +130,7 @@ pars.fgname = Fopt; %[f,df] = fgtest(x,pars)
 pars.splineData = splineData;
 pars.optRot = optRot;
 pars.optTra = optTra;
+pars.optScal = optScal;
 pars.d0 = d0;
 pars.dEnd = d1;
 pars.lambda = options.varLambda;
@@ -140,7 +164,7 @@ end
 
 %% Create output
 % Transformation struct
-optGa = struct( 'beta', [], 'v', [] );
+optGa = struct( 'rho',[],'beta', [], 'v', [] );
 
 if optTra
     optGa.v = optCoeff(end-dSpace+1:end);
@@ -149,7 +173,14 @@ if optRot
     optGa.beta = optCoeff(end-dSpace);
 end
 
-optPath = [ d0; reshape( optCoeff(1:end-dSpace-1), [], 2) ];
+if optScal
+    optGa.rho = optCoeff(end-dSpace-1);
+end
+
+
+
+
+optPath = [ d0; reshape( optCoeff(1:end-dSpace-2), [], 2) ];
            
 info = struct( 'infoHanso', infoHanso ); 
 

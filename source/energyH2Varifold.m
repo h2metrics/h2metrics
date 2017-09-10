@@ -55,10 +55,12 @@ d0 = params.d0;
 dEnd = params.dEnd;
 optTra = params.optTra;
 optRot = params.optRot;
+optScal = params.optScal;
 lambda = params.lambda; %Weight of Varifold term in the energy functional
 
 dPath = [ d0;
           reshape(coeffs(1:N*(Nt-1)*dSpace), [N*(Nt-1), dSpace]) ];
+rho = coeffs(end-dSpace-1);
 beta = coeffs(end-dSpace);
 v = coeffs(end-dSpace+1:end);
 
@@ -124,9 +126,11 @@ E = quadDataTensor.quadWeights' * energyIntegrand;
 %% Compute Varifold energy
 rotation = [ cos(beta), sin(beta); ...
              -sin(beta), cos(beta) ];
-d2 = dEnd * rotation;
 
-d2 = d2 + ones([N, 1]) * v(:)';
+d2 = dEnd + ones([N, 1]) * v(:)';         
+d2 = d2 * rotation;
+d2 = rho*d2;
+
 
 d1 = dPath(end-N+1:end,:);
 distVar = varifoldDistanceSquared(d1, d2, splineData);
@@ -230,22 +234,31 @@ if nargout > 1
     
     % Compute Varifold Gradient
     [~, distGradd1] = varifoldDistanceSquared(d1, d2, splineData);
-    if optRot || optTra
+    if optRot || optTra || optScal
         [~, distGradd2] = varifoldDistanceSquared(d2, d1, splineData);
     end
     
     % Compute gradient w.r.t beta and v
-    % Observe that F(beta,v) = || d0 - (R_beta(d1) + v) ||^2 
-    %                        = || R_{-beta}(d0 - v) - d1 ||^2
-%     rotationDer = eye(2);
+    % Observe that F(rho,beta,v) = || d0 - rho R_beta (d1 + v) ||^2 
+
     if optRot
         rotationDer = [ -sin(beta), cos(beta); -cos(beta), -sin(beta) ]; 
-        distVarGradBeta = sum(sum(distGradd2 .*(dEnd*rotationDer)));
+        distVarGradBeta = rho*sum(sum(distGradd2 .*((dEnd+ones([N, 1]) * v(:)')*rotationDer)));
     else
         distVarGradBeta = 0; 
     end
+    
+    if optScal 
+        distVarGradRho = sum(sum(distGradd2 .*((dEnd+ones([N, 1]) * v(:)')*rotation)));
+    else
+        distVarGradRho = 0; 
+    end
+    
+    
+    
+    
     if optTra
-        distVarGradV = sum( distGradd2,1 )'; 
+        distVarGradV = rho*rotation*sum(distGradd2,1 )';%rho.* 
     else
         distVarGradV = [0; 0];
     end
@@ -253,8 +266,8 @@ if nargout > 1
     % Update the endpoint part with the derivatives of varifold distance
     dE = [ dE; dEdc1 + lambda*distGradd1];
   
-    % Attach gradients wrt beta and v
-    dE = [ dE(:); lambda*distVarGradBeta; lambda*distVarGradV ]; 
+    % Attach gradients wrt rho, beta and v
+    dE = [ dE(:);lambda*distVarGradRho; lambda*distVarGradBeta; lambda*distVarGradV ]; 
 end
 
 end

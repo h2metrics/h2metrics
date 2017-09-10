@@ -21,6 +21,7 @@
 %           optRot = {true, false (default)}
 %           optDiff = {true, false (default)}
 %           optShift = {true, false (default)}
+%           optScal = {true, false (default)}
 %           maxIter = integer ([] for default value)
 %           display = string
 %               'off' for no output
@@ -109,6 +110,13 @@ if isfield(options, 'useMultigrid') && options.useMultigrid
     varargin = {'initPath', initPath, 'initGa', initGa};                 
 end
 
+
+if ~isempty(splineData.scaleInv)
+    scaleInv = splineData.scaleInv;
+else
+    scaleInv = false;
+end
+
 %% Decision tree
 
 % if optDiff && useVarifold
@@ -131,7 +139,7 @@ if doDiff && useVarifold
         splineData, options, varargin{:});
 elseif doDiff
     
-    if (scaleInv == 0) && (length(splineData.a)==3 || sum(splineData.a(4:5).^2)==0 )
+    if (scaleInv == false) && (length(splineData.a)==3 || sum(splineData.a(4:5).^2)==0 )
      [optE, optPath, optGa, info] = geodesicBvpDiff(d0, d1, ...
          splineData, options, varargin{:});
     else
