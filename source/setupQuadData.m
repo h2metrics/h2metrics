@@ -173,7 +173,7 @@ end
 % phiPath
 if doPhi && doT
     splineDataPhi = struct('N', Nphi, 'nS', nPhi, 'knotsS', knotsPhi, ...
-                           'Nt', Nt, 'nT', nT, 'knotsT', knotsT);
+                           'Nt', Nt, 'nT', nT, 'knotsT', knotsT,'curveClosed',curveClosed);
     
     quadDataTensor.B_phi = createTensorCollocationMatrix( ...
         quadPointsS, quadPointsT, 1, 1, splineDataPhi );

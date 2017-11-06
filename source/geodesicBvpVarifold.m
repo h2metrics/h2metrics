@@ -19,7 +19,6 @@
 %       Struct containing optimization options. Uses the following fields:
 %           optTra = {true, false (default)}
 %           optRot = {true, false (default)}
-%           optScal = {true, false (default)}
 %           varLambda
 %           hansNormTol = 1e-3 (default)
 %           hansoMaxIt = 1000 (default)
@@ -33,13 +32,21 @@
 %
 % Output
 %   optE
-%       Final value of optimization routine
+%       Final value of geodesic energy (does not include varifold terms)
 %   optPath
 %       Optimal path between d0 and d1 o optGa
 %   optGa
-%       Transformation between d1 and endpoint of optPath
+%       Transformation between d0 and endpoint of optPath
+%   optDistVar
+%       Varifold distance between end point of optimal path and target
+%       curve
 %   info
 %       Structure containing information about the minimization process
+%
+% TODO: Add optimization parameters for Aug. Lag. to splineData or 
+% somewhere appropriate:
+% Change Update rule for etaK? (Now *5)
+%
 %
 function [optE, optPath, optGa, info] = geodesicBvpVarifold(d0, d1, ...
     splineData, options, varargin)
@@ -80,23 +87,6 @@ else
     optTra = false;
 end
 
-
-if ~isempty(splineData.scaleInv)
-    scaleInv = splineData.scaleInv;
-else
-    scaleInv = false;
-end
-
-if isfield( options, 'optScal' )
-    optScal = options.optScal;
-    if optScal == true && scaleInv == false 
-       disp('optScal is only a valid option for scale invariant metrics.') 
-       return
-    end     
-else
-    optScal = false;
-end
-
 %% Create initial guess for path if not provided one
 if isempty(initPath)
     initPath = linearPath(d0, d0, splineData); % This is constant path
@@ -112,14 +102,9 @@ else
     initV = zeros(dSpace, 1);
 end
 
-if isfield(initGa, 'rho') && ~isempty(initGa.rho)
-    initRho = initGa.rho;
-else
-    initRho = 1;
-end
-
 coeffInit = [ reshape(initPath(splineData.N+1:end, :), [], 1); ...
-              initRho;initBeta;initV ];
+              initBeta; ...
+              initV ];
 
 %% Setup HANSO
 Fopt = @(coeff, pars) energyH2Varifold(coeff, pars, pars.splineData);
@@ -130,10 +115,9 @@ pars.fgname = Fopt; %[f,df] = fgtest(x,pars)
 pars.splineData = splineData;
 pars.optRot = optRot;
 pars.optTra = optTra;
-pars.optScal = optScal;
 pars.d0 = d0;
 pars.dEnd = d1;
-pars.lambda = options.varLambda;
+
 
 optionsHANSO = struct();
 optionsHANSO.x0 = coeffInit;
@@ -159,13 +143,89 @@ else
     optionsHANSO.prtlevel = 1; % also 0, 2
 end
 
-%% Call HANSO
-[optCoeff, optE, infoHanso] = hanso(pars, optionsHANSO);
+% %% Call HANSO
+% [optCoeff, optE, infoHanso] = hanso(pars, optionsHANSO);
+
+%% Run Augmented Lagrangian 
+% Setup default parameters. TODO: Add to splineData.varData ? Somewhere
+% appropriate
+maxIter = 50; %Max no. iterations for Aug. Lag.
+% eps_match = 1e-2; %Soft constraint for similarity term
+% tau_final = 1e-3; %Norm gradient criteria
+
+% Get values from splineData instead
+eps_match =  options.eps_match;
+tau_final =  options.tau_final;
+
+lambdaK = zeros(1,maxIter); %Initial value of Lagrangian 
+etaK = zeros(1,maxIter); etaK(1) = 1; 
+tauK = zeros(1,maxIter); tauK(1) = 1e-1;
+
+optEK = zeros(1,maxIter);
+distVarK = zeros(1,maxIter);
+
+for k = 1:maxIter
+    % Call Hanso
+    pars.lambda = lambdaK(k);
+    pars.eta = etaK(k);
+    optionsHANSO.normtol = tauK(k);
+        
+    [optCoeff, optL, infoHanso] = hanso(pars, optionsHANSO);
+    
+    % Extract end curve and compute varifold distance
+    if optTra
+        v = optCoeff(end-dSpace+1:end);
+    end
+    if optRot
+        beta = optCoeff(end-dSpace);
+    end
+    optPath = [ d0; reshape( optCoeff(1:end-dSpace-1), [], 2) ];
+    dPathEnd = optPath(end-splineData.N+1:end,:);
+    rotation = [ cos(beta), sin(beta); ...
+        -sin(beta), cos(beta) ];
+    dEnd = d1 * rotation;
+    dEnd = dEnd + ones([splineData.N, 1]) * v(:)';
+    
+    distVarSqrd = varifoldDistanceSquared(dPathEnd, dEnd, splineData);
+    
+    % Test convergence
+    if distVarSqrd > eps_match %Constraint violated
+        % Update lambda
+        lambdaK(k+1) = lambdaK(k) - etaK(k)*distVarSqrd;
+        etaK(k+1) = 5*etaK(k);
+    else % Constraints are ok
+        if tauK(k) <= tau_final % Converged
+            % Save results
+            optEK(k) = optL + lambdaK(k)*distVarSqrd - etaK(k)/2*distVarSqrd^2;
+            distVarK(k) = distVarSqrd;
+            break
+        else 
+            lambdaK(k+1) =  lambdaK(k);
+            etaK(k+1) = etaK(k);
+        end
+    end
+    if tauK(k) > tau_final
+        tauK(k+1) = tauK(k)/10;
+    else
+        tauK(k+1) = tauK(k);
+    end
+    
+    % Update initial point
+    optionsHANSO.x0 = optCoeff;
+    
+    % Save results
+    optEK(k) = optL + lambdaK(k)*distVarSqrd - etaK(k)/2*distVarSqrd^2;
+    distVarK(k) = distVarSqrd;
+end
+
+if k == maxIter
+    disp('Warning: Max number of iterations in augmented Lagrangian reached')
+end
 
 %% Create output
 % Transformation struct
-optGa = struct( 'rho',[],'beta', [], 'v', [] );
-
+%TODO: the break completely puts us out of the function!
+optGa = struct( 'beta', [], 'v', [] );
 if optTra
     optGa.v = optCoeff(end-dSpace+1:end);
 end
@@ -173,15 +233,31 @@ if optRot
     optGa.beta = optCoeff(end-dSpace);
 end
 
-if optScal
-    optGa.rho = optCoeff(end-dSpace-1);
-end
-
-
-
-
-optPath = [ d0; reshape( optCoeff(1:end-dSpace-2), [], 2) ];
+optPath = [ d0; reshape( optCoeff(1:end-dSpace-1), [], 2) ];
            
-info = struct( 'infoHanso', infoHanso ); 
+info = struct( 'infoHanso', infoHanso); 
+
+% Compute the final squared varifold distance
+% Extract end points, and compute varifold distance.
+rotation = [ cos(optGa.beta), sin(optGa.beta); ...
+    -sin(optGa.beta), cos(optGa.beta) ];
+dEnd = d1 * rotation;
+
+dEnd = dEnd + ones([splineData.N, 1]) * optGa.v(:)';
+
+dPathEnd = optPath(end-splineData.N+1:end,:);
+distVarSqrd = varifoldDistanceSquared(dPathEnd, dEnd, splineData);
+info.optDistVar = distVarSqrd;
+info.dEnd = dEnd;
+info.dPathEnd = dPathEnd;
+% Compute the Riemannian Energy of the optimal path
+optE = optL + lambdaK(k)*distVarSqrd - etaK(k)/2*distVarSqrd^2;
+
+info.lambdaK = lambdaK(1:k);
+info.etaK = etaK(1:k);
+info.tauK = tauK(1:k);
+
+info.optEK = optEK(1:k);
+info.distVarK = distVarK(1:k);
 
 end

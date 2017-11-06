@@ -1,7 +1,8 @@
 %% energyH2Varifold
 %
-% Computes the sum
-%   E(dPath) + lambda * dist(dPath(1), gamma.dEnd)^2
+% Computes the augmented Lagrangian Functional
+%   E(dPath) - lambda * dist(dPath(1), gamma.dEnd)^2 + ...
+%           eta/2*dist(dPath(1), gamma.dEnd)^4
 % with E(dPath) the Riemannian path energy and dist(.,.) the varifold
 % distance between the endpoint of the path and the target curve
 % transformed by gamma.
@@ -55,12 +56,11 @@ d0 = params.d0;
 dEnd = params.dEnd;
 optTra = params.optTra;
 optRot = params.optRot;
-optScal = params.optScal;
 lambda = params.lambda; %Weight of Varifold term in the energy functional
+eta = params.eta;
 
 dPath = [ d0;
           reshape(coeffs(1:N*(Nt-1)*dSpace), [N*(Nt-1), dSpace]) ];
-rho = coeffs(end-dSpace-1);
 beta = coeffs(end-dSpace);
 v = coeffs(end-dSpace+1:end);
 
@@ -126,17 +126,15 @@ E = quadDataTensor.quadWeights' * energyIntegrand;
 %% Compute Varifold energy
 rotation = [ cos(beta), sin(beta); ...
              -sin(beta), cos(beta) ];
+d2 = dEnd * rotation;
 
-d2 = dEnd + ones([N, 1]) * v(:)';         
-d2 = d2 * rotation;
-d2 = rho*d2;
-
+d2 = d2 + ones([N, 1]) * v(:)';
 
 d1 = dPath(end-N+1:end,:);
 distVar = varifoldDistanceSquared(d1, d2, splineData);
 
 %% Compute the final energy
-E = E + lambda*distVar;
+E = E - lambda*distVar + eta/2*distVar^2;
 
 %% Compute Gradient
 if nargout > 1
@@ -234,40 +232,32 @@ if nargout > 1
     
     % Compute Varifold Gradient
     [~, distGradd1] = varifoldDistanceSquared(d1, d2, splineData);
-    if optRot || optTra || optScal
+    if optRot || optTra
         [~, distGradd2] = varifoldDistanceSquared(d2, d1, splineData);
     end
     
     % Compute gradient w.r.t beta and v
-    % Observe that F(rho,beta,v) = || d0 - rho R_beta (d1 + v) ||^2 
-
+    % Observe that F(beta,v) = || d0 - (R_beta(d1) + v) ||^2 
+    %                        = || R_{-beta}(d0 - v) - d1 ||^2
+%     rotationDer = eye(2);
     if optRot
         rotationDer = [ -sin(beta), cos(beta); -cos(beta), -sin(beta) ]; 
-        distVarGradBeta = rho*sum(sum(distGradd2 .*((dEnd+ones([N, 1]) * v(:)')*rotationDer)));
+        distVarGradBeta = sum(sum(distGradd2 .*(dEnd*rotationDer)));
     else
         distVarGradBeta = 0; 
     end
-    
-    if optScal 
-        distVarGradRho = sum(sum(distGradd2 .*((dEnd+ones([N, 1]) * v(:)')*rotation)));
-    else
-        distVarGradRho = 0; 
-    end
-    
-    
-    
-    
     if optTra
-        distVarGradV = rho*rotation*sum(distGradd2,1 )';%rho.* 
+        distVarGradV = sum( distGradd2,1 )'; 
     else
         distVarGradV = [0; 0];
     end
     
     % Update the endpoint part with the derivatives of varifold distance
-    dE = [ dE; dEdc1 + lambda*distGradd1];
+    dE = [ dE; dEdc1 - lambda*distGradd1 + eta*distVar*distGradd1];
   
-    % Attach gradients wrt rho, beta and v
-    dE = [ dE(:);lambda*distVarGradRho; lambda*distVarGradBeta; lambda*distVarGradV ]; 
+    % Attach gradients wrt beta and v
+    dE = [ dE(:); -lambda*distVarGradBeta + eta*distVar*distVarGradBeta;...
+        -lambda*distVarGradV + eta*distVar*distVarGradV ]; 
 end
 
 end
