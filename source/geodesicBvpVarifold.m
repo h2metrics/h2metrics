@@ -53,7 +53,7 @@ function [optE, optPath, optGa, info] = geodesicBvpVarifold(d0, d1, ...
 
 %% Default parameters
 initPath = [];
-initGa = struct('beta', [], 'v', []);
+initGa = struct('beta', [], 'v', [], 'rho',[]);
 
 dSpace = splineData.dSpace;
 
@@ -87,6 +87,22 @@ else
     optTra = false;
 end
 
+if ~isempty(splineData.scaleInv)
+    scaleInv = splineData.scaleInv;
+else
+    scaleInv = false;
+end
+
+if isfield( options, 'optScal' )
+    optScal = options.optScal;
+    if optScal == true && scaleInv == false 
+       disp('optScal is only a valid option for scale invariant metrics.') 
+       return
+    end     
+else
+    optScal = false;
+end
+
 %% Create initial guess for path if not provided one
 if isempty(initPath)
     initPath = linearPath(d0, d0, splineData); % This is constant path
@@ -102,7 +118,14 @@ else
     initV = zeros(dSpace, 1);
 end
 
+if isfield(initGa, 'rho') && ~isempty(initGa.rho)
+    initRho = initGa.rho;
+else
+    initRho = 1;
+end
+
 coeffInit = [ reshape(initPath(splineData.N+1:end, :), [], 1); ...
+              initRho;...
               initBeta; ...
               initV ];
 
@@ -115,6 +138,7 @@ pars.fgname = Fopt; %[f,df] = fgtest(x,pars)
 pars.splineData = splineData;
 pars.optRot = optRot;
 pars.optTra = optTra;
+pars.optScal = optScal;
 pars.d0 = d0;
 pars.dEnd = d1;
 
@@ -173,18 +197,26 @@ for k = 1:maxIter
     [optCoeff, optL, infoHanso] = hanso(pars, optionsHANSO);
     
     % Extract end curve and compute varifold distance
+    v = zeros(2,1);
+    beta = 0;
+    rho = 1;
     if optTra
         v = optCoeff(end-dSpace+1:end);
     end
     if optRot
         beta = optCoeff(end-dSpace);
     end
-    optPath = [ d0; reshape( optCoeff(1:end-dSpace-1), [], 2) ];
+    if optScal
+        rho = optCoeff(end-dSpace-1);
+    end
+    optPath = [ d0; reshape( optCoeff(1:end-dSpace-2), [], 2) ];
     dPathEnd = optPath(end-splineData.N+1:end,:);
     rotation = [ cos(beta), sin(beta); ...
         -sin(beta), cos(beta) ];
-    dEnd = d1 * rotation;
-    dEnd = dEnd + ones([splineData.N, 1]) * v(:)';
+    dEnd = d1 + ones([splineData.N, 1]) * v(:)';
+    dEnd = dEnd * rotation;
+    dEnd = dEnd * rho;
+    
     
     distVarSqrd = varifoldDistanceSquared(dPathEnd, dEnd, splineData);
     
@@ -225,15 +257,23 @@ end
 %% Create output
 % Transformation struct
 %TODO: the break completely puts us out of the function!
-optGa = struct( 'beta', [], 'v', [] );
-if optTra
-    optGa.v = optCoeff(end-dSpace+1:end);
-end
-if optRot
-    optGa.beta = optCoeff(end-dSpace);
-end
+optGa = struct('rho',[], 'beta', [], 'v', [] );
+% if optTra
+%     optGa.v = optCoeff(end-dSpace+1:end);
+% end
+% if optRot
+%     optGa.beta = optCoeff(end-dSpace);
+% end
+% if optScal
+%     optGa.rho = optCoeff(end-dSpace-1);
+% end
 
-optPath = [ d0; reshape( optCoeff(1:end-dSpace-1), [], 2) ];
+%Update the gamma structure
+optGa.v = optCoeff(end-dSpace+1:end);
+optGa.beta = optCoeff(end-dSpace);
+optGa.rho = optCoeff(end-dSpace-1);
+
+optPath = [ d0; reshape( optCoeff(1:end-dSpace-2), [], 2) ];
            
 info = struct( 'infoHanso', infoHanso); 
 
@@ -241,9 +281,9 @@ info = struct( 'infoHanso', infoHanso);
 % Extract end points, and compute varifold distance.
 rotation = [ cos(optGa.beta), sin(optGa.beta); ...
     -sin(optGa.beta), cos(optGa.beta) ];
-dEnd = d1 * rotation;
-
-dEnd = dEnd + ones([splineData.N, 1]) * optGa.v(:)';
+dEnd = d1 + ones([splineData.N, 1]) * optGa.v(:)';
+dEnd = dEnd * rotation;
+dEnd = dEnd * optGa.rho;
 
 dPathEnd = optPath(end-splineData.N+1:end,:);
 distVarSqrd = varifoldDistanceSquared(dPathEnd, dEnd, splineData);

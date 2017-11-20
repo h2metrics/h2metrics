@@ -1,4 +1,4 @@
-%% geodesicBvpVarifoldQuadraticPenalty
+ %% geodesicBvpVarifoldQuadraticPenalty
 %
 % Minimizes the H^2 inexact boundary value problem with varifold data
 % attachment term using the HANSO limited-memory BFGS method. Finds the
@@ -46,7 +46,7 @@ function [optE, optPath, optGa, info] = geodesicBvpVarifoldQuadraticPenalty(d0, 
 
 %% Default parameters
 initPath = [];
-initGa = struct('beta', [], 'v', []);
+initGa = struct('rho', [], 'beta', [], 'v', []);
 
 dSpace = splineData.dSpace;
 

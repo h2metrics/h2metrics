@@ -56,11 +56,13 @@ d0 = params.d0;
 dEnd = params.dEnd;
 optTra = params.optTra;
 optRot = params.optRot;
+optScal = params.optScal;
 lambda = params.lambda; %Weight of Varifold term in the energy functional
 eta = params.eta;
 
 dPath = [ d0;
           reshape(coeffs(1:N*(Nt-1)*dSpace), [N*(Nt-1), dSpace]) ];
+rho = coeffs(end-dSpace-1);
 beta = coeffs(end-dSpace);
 v = coeffs(end-dSpace+1:end);
 
@@ -126,9 +128,10 @@ E = quadDataTensor.quadWeights' * energyIntegrand;
 %% Compute Varifold energy
 rotation = [ cos(beta), sin(beta); ...
              -sin(beta), cos(beta) ];
-d2 = dEnd * rotation;
 
-d2 = d2 + ones([N, 1]) * v(:)';
+d2 = dEnd + ones([N, 1]) * v(:)';         
+d2 = d2 * rotation;
+d2 = rho*d2;
 
 d1 = dPath(end-N+1:end,:);
 distVar = varifoldDistanceSquared(d1, d2, splineData);
@@ -236,7 +239,7 @@ if nargout > 1
         [~, distGradd2] = varifoldDistanceSquared(d2, d1, splineData);
     end
     
-    % Compute gradient w.r.t beta and v
+    % Compute gradient w.r.t rho, beta and v
     % Observe that F(beta,v) = || d0 - (R_beta(d1) + v) ||^2 
     %                        = || R_{-beta}(d0 - v) - d1 ||^2
 %     rotationDer = eye(2);
@@ -246,6 +249,13 @@ if nargout > 1
     else
         distVarGradBeta = 0; 
     end
+    
+    if optScal 
+        distVarGradRho = sum(sum(distGradd2 .*((dEnd+ones([N, 1]) * v(:)')*rotation)));
+    else
+        distVarGradRho = 0; 
+    end
+    
     if optTra
         distVarGradV = sum( distGradd2,1 )'; 
     else
@@ -256,7 +266,8 @@ if nargout > 1
     dE = [ dE; dEdc1 - lambda*distGradd1 + eta*distVar*distGradd1];
   
     % Attach gradients wrt beta and v
-    dE = [ dE(:); -lambda*distVarGradBeta + eta*distVar*distVarGradBeta;...
+    dE = [ dE(:); -lambda*distVarGradRho + eta*distVar*distVarGradRho;...
+        -lambda*distVarGradBeta + eta*distVar*distVarGradBeta;...
         -lambda*distVarGradV + eta*distVar*distVarGradV ]; 
 end
 

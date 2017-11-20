@@ -254,9 +254,6 @@ if nargout > 1
         distVarGradRho = 0; 
     end
     
-    
-    
-    
     if optTra
         distVarGradV = rho*rotation*sum(distGradd2,1 )';%rho.* 
     else
