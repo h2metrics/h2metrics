@@ -181,7 +181,8 @@ function M = constructCurveManifold( splineData )
     %     rhess = M.proj(x, ehess) - (x(:)'*egrad(:))*u;
 	% end
     
-    M.exp = @(c, v, t) exponential(c, v, t, splineData);
+    % M.exp = @(c, v, t) exponential(c, v, t, splineData);
+    M.exp = @(c, v, t) c + t * v;
     
     M.retr = @(c, v, t) M.exp(c, v, t);
 
@@ -219,7 +220,7 @@ function M = constructCurveManifold( splineData )
 
 end
 
-% Exponential on the sphere
+% Proper Riemannian exponential -- NOT used at the moment
 function d = exponential(c, v, t, splineData)
     d = geodesicForward(c, c + t / splineData.stepsT * v, ...
         splineData.stepsT, splineData, 'endpoint');
