@@ -89,12 +89,12 @@ function [sumE, store] = cost(dIter, store)
                                 splineData );
                 
                 [optE, dPath, optGa] = geodesicBvp(dIter, dList{jj},...
-                    splineData, 'options', options, ...
+                    splineData, splineData.options, ...
                     'initPath', dInitPath, 'initGa', gaLastList{jj});
             else
                 [optE, dPath, optGa] = ...
                     geodesicBvp(dIter, dList{jj}, splineData, ...
-                                'options', options);
+                                splineData.options);
             end
             dPathList{jj} = dPath;
             gaList{jj} = optGa;
@@ -142,6 +142,7 @@ end
 
 karcherOptions.statsfun = @statsfun;
 karcherOptions.verbosity = 3;
+karcherOptions.ls_initial_stepsize = 1e-3;
 
 [dMean, ~, info] = conjugategradient(problem, dInit, karcherOptions);
 % [dMean, E, info] = steepestdescent(problem, dInit, opts);
