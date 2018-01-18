@@ -12,7 +12,7 @@ curveSet = {};
 returnCell = true;
 
 allCurves = {'H', 'O', 'T', 'U', 'prop0', 'prop3', 'prop4', ...
-             'circle', 'wrap'};
+             'circle', 'wrap', 'wrap_open'};
 noise = 0;
 
 ii = 1;
@@ -51,6 +51,8 @@ for kk=length(curveSet):-1:1
                                     splineData, constSpeed);
         case {'circle', 'wrap'}
             d0 = loadCurveWrap(curveSet{kk}, splineData, constSpeed);
+        case {'wrap_open'}
+            d0 = loadCurveWrapOpen(splineData, constSpeed);
     end
     
     dList{kk} = d0;
@@ -235,6 +237,34 @@ d = constructSplineApproximation(f, splineData);
 lenCircle = 3*pi;
 
 d = d / lenCircle * 2*pi;
+
+if constSpeed
+    d = curveReparamConstSpeed(d, splineData);
+end
+
+end
+
+function d = loadCurveWrapOpen(splineData, constSpeed)
+
+coefs = [-5.9927, -1.5533; -5.8487, -1.3981; -5.5024, -1.0943; ...
+         -5.0188, -0.7303; -4.5122, -0.3979; -4.0164, -0.1287; ...
+         -3.5013,  0.1130; -3.0229,  0.3091; -2.4752,  0.4510; ...
+         -2.0589,  0.5041; -1.3852,  0.5365; -1.2942, -0.1100; ...
+         -2.0106, -0.3150; -2.4127, -0.5394; -2.9607, -0.7326; ...
+         -3.4515, -0.9488; -3.9364, -1.2342; -4.4921, -1.4958; ...
+         -4.8903, -2.1448; -4.1443, -2.1877; -3.7509, -2.0268;...
+         -3.1930, -1.8175; -2.7194, -1.5820; -2.2027, -1.3426;...
+         -1.7060, -1.0874; -1.2035, -0.8389; -0.7143, -0.5805;...
+         -0.2030, -0.3509;  0.1257, -0.2342;  0.2964, -0.2089 ];
+sdTmp = constructEmptySplineData;
+sdTmp.curveClosed = 0;
+sdTmp.N = 30;
+sdTmp.nS = 3;
+sdTmp.quadDegree = [6 4];
+sdTmp = constructKnots(sdTmp);
+sdTmp = setupQuadData(sdTmp);
+
+d = curveSpline2Spline(coefs, sdTmp, splineData);
 
 if constSpeed
     d = curveReparamConstSpeed(d, splineData);
