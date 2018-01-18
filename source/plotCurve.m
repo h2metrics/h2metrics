@@ -10,13 +10,29 @@
 %
 % Optional inputs
 %   lineStyle = 'k-' (default)
-%       lineStyle parameter to be passed to plot.
+%       lineStyle = 'colour' gives the parametrization plotted along
+%           the curve via a colormap
+%       Other lineStyle parameters are passed to plot.
+%   lineWidth = 1 (default)
+%       Passed to plot. With lineStyle='colour', recommended lineWidth=2.
 %
-function plotCurve(d, splineData, lineStyle)
+function plotCurve(d, splineData, varargin)
+
+% Handle optional inputs
+p = inputParser;
+p.KeepUnmatched = true;
+addParameter(p, 'noPts', 100);
+addParameter(p, 'lineStyle', 'k-');
+addParameter(p, 'lineWidth', 1);
+parse(p, varargin{:});
+
+% Assign optional inputs
+noPts = p.Results.noPts;
+lineStyle = p.Results.lineStyle;
+lineWidth = p.Results.lineWidth;
 
 % Plot parameters
-noPlotPtsS = 500;
-plotPtsS = linspace(0, 2*pi, noPlotPtsS+1);
+plotPtsS = linspace(0, 2*pi, noPts);
 
 % Treat everything as a cell array
 if ~isa(d, 'cell')
@@ -28,8 +44,8 @@ end
 
 noCurves = length(d);
 for ii = 1:noCurves
-    if nargin < 3
-        lS = 'k-';
+    if length(lineStyle) < ii
+        lS = lineStyle{end};
     else
         lS = lineStyle{ii}; 
     end
@@ -37,13 +53,21 @@ for ii = 1:noCurves
     c0 = evalCurve(plotPtsS, d{ii}, splineData);
     pt0 = evalCurve(0, d{ii}, splineData);
     
-    %% Setup plotting
+    % Setup plotting
     hold on;
-    axis equal;
     
-    %% Do plotting
-    plot(c0(:, 1), c0(:, 2), lS);
-    plot(pt0(1), pt0(2), 'ko');      
+    % Do plotting
+    if strcmp(lS, 'colour')
+        cm=hsv(noPts);
+    
+        for jj=1:noPts-1
+            plot(c0(jj:jj+1,1), c0(jj:jj+1,2), ...
+                 'color', cm(jj,:), 'lineWidth', lineWidth);
+        end
+    else
+        plot(c0(:, 1), c0(:, 2), lS);
+        plot(pt0(1), pt0(2), 'ko');      
+    end
     
     hold off; 
 end
