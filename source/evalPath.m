@@ -29,7 +29,7 @@ controlPointWeights = spcol( splineData.knotsT, splineData.nT+1, ...
                          
 for jj = splineData.dSpace:-1:1
     d_x = reshape(dPath(:,jj), splineData.N, splineData.Nt) * ...
-            controlPointWeights(:, deriv);
+            controlPointWeights(:, deriv:deriv:end);
     d(:,:,jj) = d_x;
 end
 

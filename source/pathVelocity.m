@@ -17,16 +17,7 @@
 %
 function [ d ] = pathVelocity(dPath, evalT, splineData)
 
-controlPointWeights = spcol( splineData.knotsT, splineData.nT+1, ...
-                             brk2knt(evalT, 2) )';
-                         
-for jj = splineData.dSpace:-1:1
-    d_x = reshape(dPath(:,jj), splineData.N, splineData.Nt) * ...
-            controlPointWeights(:,2);
-    d(:,:,jj) = d_x;
-end
-
-d = permute(d, [1 3 2]);
+d = evalPath(dPath, evalT, splineData, 2);
 
 end
 
