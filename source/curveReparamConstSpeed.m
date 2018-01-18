@@ -61,6 +61,10 @@ function inverseTheta = arcLengthInverse(evalS, d, splineData)
             h = knotsArclength(knotIndex);
             return
         end
+        if abs(t - knotInterval(2)) < eps
+            h = knotsArclength(knotIndex+1);
+            return
+        end
 
         % Quadrature data for interval [knot, t]
         [quadPts, quadWeights] = ...
