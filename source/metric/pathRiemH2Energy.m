@@ -3,7 +3,7 @@
 % Computes the Riemannian energy of a spline path using the formula
 %   \int_0^{2pi} a(1) * <h, h> + (a(2)+a(5)) * <D_s h, D_s h> + ...
 %                (a(4)-a(5)) * <D_s h, v>^2 + a(3) * <D^2_s h, D^2_s h> ds
-%
+% does not support length weighted!!!!
 % Input
 %   dPath
 %       The spline path
