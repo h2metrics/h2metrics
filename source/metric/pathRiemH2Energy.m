@@ -3,7 +3,7 @@
 % Computes the Riemannian energy of a spline path using the formula
 %   \int_0^{2pi} a(1) * <h, h> + (a(2)+a(5)) * <D_s h, D_s h> + ...
 %                (a(4)-a(5)) * <D_s h, v>^2 + a(3) * <D^2_s h, D^2_s h> ds
-% does not support length weighted!!!!
+%
 % Input
 %   dPath
 %       The spline path
@@ -43,7 +43,6 @@ addParameter(p, 'a', a);
 parse(p, varargin{:});
 a = p.Results.a;
 
-dSpace = splineData.dSpace;
 quadData = splineData.quadData;
 quadDataTensor = splineData.quadDataTensor;
 
@@ -70,41 +69,42 @@ CspeedInv3 = CspeedInv2 .* CspeedInv;
 CspeedInv5 = CspeedInv3 .* CspeedInv2;
 CspeedInv7 = CspeedInv5 .* CspeedInv2;
 
-% L2 and H1 terms
-Ct_L2 = Ct(:,1) .* Ct(:,1);
-Ct_H1 = Cut(:,1) .* Cut(:,1);
-for ii = 2:dSpace
-    Ct_L2 = Ct_L2 + Ct(:,ii) .* Ct(:,ii);
-    Ct_H1 = Ct_H1 + Cut(:,ii) .* Cut(:,ii);
-end
-Ct_L2 = Ct_L2 .* Cspeed;
-Ct_H1 = Ct_H1 .* CspeedInv;
+Ct_L2 = sum( Ct .* Ct, 2) .* Cspeed;
+Ct_H1 = sum( Cut .* Cut, 2) .* CspeedInv;
 Ct_H1v = CutCu2 .* CspeedInv3;
-
-
-
-% Ct_L2 = sum( Ct .* Ct, 2) .* Cspeed;
-% Ct_H1 = sum( Cut .* Cut, 2) .* CspeedInv;
-
-% H2 Energy terms
-% Ct_H2 = CutCut .* CuCuu.^2 ./ Cspeed.^7 ...
-%     - 2 * CutCuut .* CuCuu ./ Cspeed .^ 5 ...
-%     + CuutCuut ./ Cspeed .^ 3;
-
-
 Ct_H2 = CutCut .* CuCuu.^2 .* CspeedInv7 ...
     - 2 * CutCuut .* CuCuu .* CspeedInv5 ...
     + CuutCuut .* CspeedInv3;
 
 %% Now integrate
-L2 = sum(Ct_L2 .* quadDataTensor.quadWeights);
-H1 = sum(Ct_H1 .* quadDataTensor.quadWeights);
-H2 = sum(Ct_H2 .* quadDataTensor.quadWeights);
-H1v = sum(Ct_H1v .* quadDataTensor.quadWeights);
-H1n = H1 - H1v;
+scaleInv = splineData.scaleInv;
+if ~scaleInv
+    L2 = sum(Ct_L2 .* quadDataTensor.quadWeights);
+    H1 = sum(Ct_H1 .* quadDataTensor.quadWeights);
+    H2 = sum(Ct_H2 .* quadDataTensor.quadWeights);
+    H1v = sum(Ct_H1v .* quadDataTensor.quadWeights);
+    H1n = H1 - H1v;
+else
+    noQuadPointsS = splineData.quadData.noQuadPointsS;
+    noQuadPointsT = splineData.quadData.noQuadPointsT;
+    quadWeightsS = quadData.quadWeightsS;
+    
+    ellVec = quadWeightsS' * reshape(Cspeed, noQuadPointsS, noQuadPointsT);
+    ellInvVec = ellVec.^(-1);
+    ellInv3Vec = ellVec.^(-3);
+    
+    ell = reshape( repmat( ellVec , noQuadPointsS, 1), [],1) ;
+    ellInv = reshape( repmat( ellInvVec , noQuadPointsS, 1), [],1);
+    ellInv3 = reshape( repmat( ellInv3Vec , noQuadPointsS, 1), [],1);
+    
+    L2 = sum(ellInv3 .* Ct_L2 .* quadDataTensor.quadWeights);
+    H1 = sum(ellInv .* Ct_H1 .* quadDataTensor.quadWeights);
+    H2 = sum(ell .* Ct_H2 .* quadDataTensor.quadWeights);
+    H1v = sum(ellInv .* Ct_H1v .* quadDataTensor.quadWeights);
+    H1n = H1 - H1v;
+end
 
 E = a(1) * L2 + a(2) * H1 + a(3) * H2 + a(4) * H1v + a(5) * H1n;
+comp = [a(1)*L2, a(2)*H1, a(3)*H2, a(4)*H1v, a(5)*H1n];
 
-if nargout > 1
-    comp = [a(1)*L2, a(2)*H1, a(3)*H2, a(4)*H1v, a(5)*H1n];
 end
