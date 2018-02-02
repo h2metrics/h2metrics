@@ -32,6 +32,11 @@ quadData = splineData.quadData;
 noQuadSites = quadData.noQuadPointsS;
 quadWeights = quadData.quadWeightsS;
 
+scaleInv = 0;
+if ~isempty(splineData.scaleInv)
+    scaleInv = splineData.scaleInv;
+end
+
 %% Evaluate path at quadrature sites
 B = quadData.B_S;
 Bu = quadData.Bu_S;
@@ -77,6 +82,15 @@ Ct_H2 = VuWu .* CuCuu.^2 .* CspeedInv7 ...
     - (VuWuu + VuuWu) .* CuCuu .* CspeedInv5 ...
     + VuuWuu .* CspeedInv3;
 
+if scaleInv
+    ell = quadWeights' * Cspeed; %Length of c
+    %Update coeffecients with the length weights
+    a(1) = a(1)/ell^3;
+    a(2) = a(2)/ell;
+    a(3) = a(3)*ell;
+    a(4) = a(4)/ell;
+    a(5) = a(5)/ell;
+end
 energyIntegrand = a(1) * Ct_L2 + a(2) * Ct_H1 + a(3) * Ct_H2...
     + a(4) * Ct_H1v + a(5) * Ct_H1n;
 
