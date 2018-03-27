@@ -21,13 +21,16 @@ function plotCurve(d, splineData, varargin)
 % Handle optional inputs
 p = inputParser;
 p.KeepUnmatched = true;
-addParameter(p, 'noPts', 100);
+addParameter(p, 'noPts', []);
 addParameter(p, 'lineStyle', 'k-');
 addParameter(p, 'lineWidth', 1);
 parse(p, varargin{:});
 
 % Assign optional inputs
 noPts = p.Results.noPts;
+if isempty(noPts)
+    noPts = 5 * splineData.N;
+end
 lineStyle = p.Results.lineStyle;
 lineWidth = p.Results.lineWidth;
 
@@ -37,10 +40,10 @@ plotPtsS = linspace(0, 2*pi, noPts);
 % Treat everything as a cell array
 if ~isa(d, 'cell')
     d = {d}; 
-    if nargin > 2
-        lineStyle = {lineStyle};
-    end   
 end        
+if ~isa(lineStyle, 'cell')
+    lineStyle = {lineStyle};
+end
 
 noCurves = length(d);
 for ii = 1:noCurves

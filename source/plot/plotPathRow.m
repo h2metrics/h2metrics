@@ -71,7 +71,8 @@ else
 end
 
 fig = figure('Renderer', 'painters', ...
-             'Position', [1, 1, blockWidth * noPtsT, blockHeight]);
+             'Position', [1, 1, blockWidth * noPtsT, blockHeight], ...
+             'Color', 'white');
 
 plot(xmin-1, ymin-1); % Create empty plot
 
