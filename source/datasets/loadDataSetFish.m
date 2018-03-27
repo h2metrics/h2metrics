@@ -143,7 +143,7 @@ set(handle, 'defaultLineLineWidth', 2);
 
 % Original curve and spline
 plot( C(:,1)-center(1), C(:,2)-center(2) , 'b');  
-plotCurve(d0, splineData, 'r');
+plotCurve(d0, splineData, 'lineStyle', 'r');
 
 % Start point of spline
 pt0 = deBoor( splineData.knotsS, splineData.nS, d0, ...
