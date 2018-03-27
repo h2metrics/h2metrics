@@ -135,6 +135,12 @@ pars.d0 = d0;
 pars.dEnd = d1;
 pars.lambda = options.varLambda;
 
+if isfield(options, 'checkTurningNumber')
+    pars.checkTurningNumber =  options.checkTurningNumber;
+else
+    pars.checkTurningNumber = 0;
+end
+
 optionsHANSO = struct();
 optionsHANSO.x0 = coeffInit;
 if isfield(options, 'hansoNormTol')
@@ -147,6 +153,9 @@ if isfield(options, 'hansoMaxIt')
 else
     optionsHANSO.maxit = 1000;
 end
+if isfield(options, 'hansoCpuMax')
+    optionsHANSO.cpumax = options.hansoCpuMax;
+end
 if isfield(options, 'hansoNvec')
     optionsHANSO.nvec = options.hansoNvec;
 else
@@ -158,6 +167,11 @@ if isfield(options, 'hansoPrtLevel')
 else
     optionsHANSO.prtlevel = 1; % also 0, 2
 end
+
+% Ask Hanso to continue even when the line search fails.
+% This is used in conjunction with energy=inf in case of changing turning
+% number.
+optionsHANSO.quitLSfail = 0;
 
 %% Call HANSO
 [optCoeff, optE, infoHanso] = hanso(pars, optionsHANSO);
@@ -180,6 +194,11 @@ end
 optPath = [ d0; reshape( optCoeff(1:end-dSpace-2), [], 2) ];
 dPathEnd = optPath(end-splineData.N+1:end,:);
 dEnd = curveApplyGamma( d1, optGa, splineData);
+
+% Construct derivative path similar to optPath
+grad = infoHanso.grad;
+dOptPath = [zeros(size(d0)); reshape( grad(1:end-dSpace-2), [], 2) ];
+infoHanso.grad = dOptPath;
 
 distVarSqrd = varifoldDistanceSquared(dPathEnd, dEnd, splineData);
     
