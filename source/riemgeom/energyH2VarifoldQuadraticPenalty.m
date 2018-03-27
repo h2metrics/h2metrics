@@ -64,6 +64,18 @@ rho = coeffs(end-dSpace-1);
 beta = coeffs(end-dSpace);
 v = coeffs(end-dSpace+1:end);
 
+%% Check whether path changes turning number
+% This indicates that hanso wants to take a too large step length
+checkTurningNumber = params.checkTurningNumber;
+if checkTurningNumber
+    change = changeTurningNumber(dPath, splineData);
+    if change
+        E =  inf;
+        dE = inf;
+        return;
+    end
+end
+
 %% Evaluate path at quadrature sites
 Cu = quadDataTensor.Bu*dPath;
 Ct = quadDataTensor.Bt*dPath;

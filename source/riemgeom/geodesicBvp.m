@@ -108,41 +108,17 @@ if isfield(options, 'useMultigrid') && options.useMultigrid
     varargin = {'initPath', initPath, 'initGa', initGa};                 
 end
 
-%% Decision tree
-
-% if optDiff && useVarifold
-%   call geodesicBvpVarifold
-% elseif optDiff
-%   call geodesicBvpDiff
-% Note that geodesicBvpDiff does not support length weighted or
-% G^a,b-metrics
-% elseif noGroupsAtAll
-%   call geodesicBvpNoGroups
-% else
-%   call geodesicBvpParam
-
-useVarifold = isfield(options, 'useVarifold') && options.useVarifold;
+%% Choose which geodesicBvp function to call
+useAugmentedLagrangian = isfield(options, 'useAugmentedLagrangia') && ...
+                        options.useAugmentedLagrangian;
 doDiff = isfield(options, 'optDiff') && options.optDiff;
 
-
-if doDiff && useVarifold
-    if options.useAugmentedLagrangian == true
-        [optE, optPath, optGa, info] = geodesicBvpVarifold(d0, d1, ...
+if doDiff && useAugmentedLagrangian
+    [optE, optPath, optGa, info] = geodesicBvpVarifold(d0, d1, ...
             splineData, options, varargin{:});
-    else
-        [optE, optPath, optGa, info] = geodesicBvpVarifoldQuadraticPenalty(d0, d1, ...
+elseif doDiff && ~useAugmentedLagrangian
+    [optE, optPath, optGa, info] = geodesicBvpVarifoldQuadraticPenalty(d0, d1, ...
             splineData, options, varargin{:});
-    end
-    
-elseif doDiff
-    
-    if (scaleInv == 0) && (length(splineData.a)==3 || sum(splineData.a(4:5).^2)==0 )
-     [optE, optPath, optGa, info] = geodesicBvpDiff(d0, d1, ...
-         splineData, options, varargin{:});
-    else
-        disp('energyH2Diff is not supported for scale/elastic metrics anymore')
-    end
-
 else
     [optE, optPath, optGa, info] = geodesicBvpParam(d0, d1, ...
         splineData, options, varargin{:});

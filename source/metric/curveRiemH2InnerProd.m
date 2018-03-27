@@ -20,7 +20,8 @@
 %       The five components of the metric separately
 %           [ L2, H1, H2, H1v, H1n ]
 %       We have the identity
-%           G = L2 + H1 + H2 + H1v + H1n%
+%           G = L2 + H1 + H2 + H1v + H1n
+%
 function [G,comp] = curveRiemH2InnerProd( d, v, w, splineData )
 
 %% Extract parameters
@@ -38,12 +39,8 @@ if ~isempty(splineData.scaleInv)
 end
 
 %% Evaluate path at quadrature sites
-B = quadData.B_S;
-Bu = quadData.Bu_S;
-Buu = quadData.Buu_S;
-
-Cu = Bu * d;
-Cuu = Buu * d;
+Cu = quadData.Bu_S * d;
+Cuu = quadData.Buu_S * d;
 
 V = quadData.B_S * v;
 Vu = quadData.Bu_S * v;
@@ -71,7 +68,6 @@ CspeedInv2 = CspeedInv .* CspeedInv;
 CspeedInv3 = CspeedInv .* CspeedInv2;
 CspeedInv5 = CspeedInv3 .* CspeedInv2;
 CspeedInv7 = CspeedInv5 .* CspeedInv2;
-CspeedInv9 = CspeedInv7 .* CspeedInv2;
 
 %% Building the metric
 Ct_L2 = VW .* Cspeed;
@@ -84,7 +80,7 @@ Ct_H2 = VuWu .* CuCuu.^2 .* CspeedInv7 ...
 
 if scaleInv
     ell = quadWeights' * Cspeed; %Length of c
-    %Update coeffecients with the length weights
+    % Update coeffecients with the length weights
     a(1) = a(1)/ell^3;
     a(2) = a(2)/ell;
     a(3) = a(3)*ell;
@@ -94,7 +90,7 @@ end
 energyIntegrand = a(1) * Ct_L2 + a(2) * Ct_H1 + a(3) * Ct_H2...
     + a(4) * Ct_H1v + a(5) * Ct_H1n;
 
-%Compute final energy
+% Compute final energy
 G = quadWeights' * energyIntegrand;
     if nargout >1
         comp= [quadWeights' * a(1) * Ct_L2, quadWeights' * a(2) * Ct_H1,...

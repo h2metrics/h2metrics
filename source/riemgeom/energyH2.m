@@ -23,7 +23,7 @@
 % Metric: G_c(h,h) = int a0/l^3<h,h> + (a1+a1n)/l<D_s h,D_s h> + ...
 %                       (a1v-a1n)/l<D_s h,v>^2 + a2*l<D^2_s h,D^2_s h> ds
 %
-function [E, dE, H] = energyH2( coeffs, params, splineData)
+function [E, dE] = energyH2( coeffs, params, splineData)
 
 %% Extract parameters
 dSpace = splineData.dSpace;
@@ -265,12 +265,6 @@ if nargout > 1
     %% Add preconditioner
 %     dE = PinvBlock' * dE;
     
-
-
-%% Compute Hessian
-if nargout > 2
-    disp('Hessian in energyH2.m is not supported for (a,b) metrics');
-end
 
 end
 
