@@ -101,6 +101,8 @@ function [x, f, loc, X, G, w, H] = hanso(pars, options)
 %%  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% 16/2/2018, Martins Bruveis
+%   Minor modification, add iter and info to output variable loc.
 % 22/5/2017, Martins Bruveris
 %   Minor modification to allow pars.fgname accept function handles.
 
@@ -128,6 +130,7 @@ end
 options = setdefaultshanso(pars, options); % special fields for HANSO
 options = setdefaults(pars, options); % this routine is called by other codes too
 % the BFGS and line search defaults are set by setdefaultsbfgs, called by bfgs later
+cpubegin = cputime;
 cpufinish = cputime + options.cpumax;
 normtol = options.normtol;
 evaldist = options.evaldist;
@@ -157,6 +160,10 @@ end
 dnorm = norm(d);
 % the 2nd argument will not be used sinc x == X(:,1) after bfgs
 [loc, X, G, w] = postprocess(x, nan, dnorm, X, G, w);
+loc.iter = iter;
+loc.info = info;
+loc.cputime = cputime - cpubegin;
+loc.grad = G(:,1);
 if isnaninf(f)
     if prtlevel > 0
         fprintf('hanso: f is infinite or nan at all starting points\n')
