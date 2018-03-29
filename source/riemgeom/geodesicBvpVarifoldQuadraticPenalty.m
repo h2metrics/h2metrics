@@ -7,6 +7,7 @@
 % where G is a group of transformations. This can be any combination of
 %   - Translations
 %   - Rotations
+%   - Scalings (requires scale invariant metrics)
 %
 % Input
 %   d0, d1

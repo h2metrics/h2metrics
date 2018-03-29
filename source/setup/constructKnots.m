@@ -55,13 +55,6 @@ if ~isempty(splineData.Nt) && ~isempty(splineData.nT)
     splineData.innerKnotsT = splineData.knotsT(nT+1:end-nT);
 end
 
-if ~isempty(splineData.Nphi) && ~isempty(splineData.nPhi)
-    Nphi = splineData.Nphi;
-    nPhi = splineData.nPhi;
-    % Normalize, domain of definition is [0,2*pi]
-    splineData.knotsPhi =  [(-nPhi):(Nphi+nPhi)]/Nphi*2*pi; 
-    splineData.innerKnotsPhi = splineData.knotsPhi(nPhi+1:end-nPhi);
-end
 
 % varData exists, but noPts is not set
 if ~isempty(splineData.varData) && ~isempty(splineData.N) ...

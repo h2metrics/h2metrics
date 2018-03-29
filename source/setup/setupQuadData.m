@@ -18,8 +18,7 @@ quadData = struct('quadPointsS', [], 'quadPointsT', [], ...
     'quadWeightsS', [], 'quadWeightsT', [], ...
     'B_S', [], 'Bu_S', [], 'Buu_S', [] ,'Buuu_S', [], ...
     'B_T', [], 'Bt_T', [],...
-    'B_phi', [], 'Bu_phi', [], 'Buu_phi', [], 'Buuu_phi', [], ...
-    'B_interpolS', [], 'B_interpolPhi', [], 'B_varS', []);
+    'B_interpolS', [], 'B_varS', []);
 
 curveClosed = splineData.curveClosed;
 quadDegree = splineData.quadDegree;
@@ -28,10 +27,8 @@ doS = ~isempty(splineData.nS) && ~isempty(splineData.N) && ...
     ~isempty(splineData.quadDegree);
 doT = ~isempty(splineData.nT) && ~isempty(splineData.Nt) && ...
     ~isempty(splineData.quadDegree) && length(splineData.quadDegree) >= 2;
-doPhi = ~isempty(splineData.nPhi) && ~isempty(splineData.Nphi);
 doInterpolS = ~isempty(splineData.nS) && ~isempty(splineData.N) && ...
     ~isempty(splineData.interpolS);
-doInterpolPhi = doPhi && ~isempty(splineData.interpolS);
 doVar = ~isempty(splineData.varData) && ~isempty(splineData.varData.pts);
 
 if doS
@@ -88,27 +85,7 @@ if doT
     quadData.Bt_T = B_T_quad(2:noTder:end,:);
 end
 
-if doPhi
-    nPhi = splineData.nPhi;
-    Nphi = splineData.Nphi;
-    knotsPhi = splineData.knotsPhi;
 
-    noPhider = min(4, nPhi);
-    B_Phi_quad = spcol( knotsPhi, nPhi+1, ...
-                        brk2knt( quadPointsS, noPhider ), 'sparse');
-    B_Phi_quad_per = [ B_Phi_quad(:,1:nPhi) ...
-                        + B_Phi_quad(:,end-nPhi+1:end), ...
-                       B_Phi_quad(:,nPhi+1:end-nPhi) ];
-
-    quadData.B_phi = B_Phi_quad_per(1:noPhider:end,:);
-    quadData.Bu_phi = B_Phi_quad_per(2:noPhider:end,:);
-    if nPhi >= 2
-        quadData.Buu_phi = B_Phi_quad_per(3:noPhider:end,:);
-    end
-    if nPhi >= 3
-        quadData.Buuu_phi = B_Phi_quad_per(4:noPhider:end,:);
-    end
-end
 
 if doInterpolS
     nS = splineData.nS;
@@ -122,14 +99,7 @@ if doInterpolS
     quadData.B_interpolS = B_interpolS;
 end
 
-if doInterpolPhi
-    B_interpolPhi = spcol( knotsPhi, nPhi+1, ...
-                           brk2knt(interpolS, 1), 'sparse');
-    B_interpolPhi = [ B_interpolPhi(:,1:nPhi) ...
-                        + B_interpolPhi(:,end-nPhi+1:end), ...
-                      B_interpolPhi(:,nPhi+1:end-nPhi) ];
-    quadData.B_interpolPhi = B_interpolPhi;
-end
+
 
 %% Compute outer products for tensor spline
 quadDataTensor = struct('B',[],'Bu',[],'Buu',[],'Bt',[],'But',[],...
@@ -170,31 +140,7 @@ if doS && doT
     end
 end
 
-% phiPath
-if doPhi && doT
-    splineDataPhi = struct('N', Nphi, 'nS', nPhi, 'knotsS', knotsPhi, ...
-                           'Nt', Nt, 'nT', nT, 'knotsT', knotsT,'curveClosed',curveClosed);
-    
-    quadDataTensor.B_phi = createTensorCollocationMatrix( ...
-        quadPointsS, quadPointsT, 1, 1, splineDataPhi );
-    quadDataTensor.Bu_phi = createTensorCollocationMatrix( ...
-        quadPointsS, quadPointsT, 2, 1, splineDataPhi );
-    quadDataTensor.Bt_phi = createTensorCollocationMatrix( ...
-        quadPointsS, quadPointsT, 1, 2, splineDataPhi );
-    quadDataTensor.But_phi = createTensorCollocationMatrix( ...
-        quadPointsS, quadPointsT, 2, 2, splineDataPhi );
-    
-    if nPhi >= 2
-        quadDataTensor.Buu_phi = createTensorCollocationMatrix( ...
-            quadPointsS, quadPointsT, 3, 1, splineDataPhi );
-        quadDataTensor.Buut_phi = createTensorCollocationMatrix( ...
-            quadPointsS, quadPointsT, 3, 2, splineDataPhi );
-    end
-    if nPhi >= 3
-        quadDataTensor.Buuu_phi = createTensorCollocationMatrix( ...
-            quadPointsS, quadPointsT, 4, 1, splineDataPhi );
-    end
-end
+
 
 if doVar
     noPts = splineData.varData.noPts;
