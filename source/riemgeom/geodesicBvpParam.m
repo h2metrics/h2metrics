@@ -7,6 +7,7 @@
 % where G is a group of transformations. This can be any combination of
 %   - Translations
 %   - Rotations
+%   - Scalings (requires scale invariant metrics)
 %
 % Input
 %   d0, d1
@@ -19,6 +20,7 @@
 %       Struct containing optimization options. Uses the following fields:
 %           optTra = {true, false (default)}
 %           optRot = {true, false (default)}
+%           optScal = {true, false (default)}
 %           hansNormTol = 1e-3 (default)
 %           hansoMaxIt = 1000 (default)
 %           hansoNvec = 500 (default)
@@ -77,14 +79,22 @@ if isfield( options, 'optTra' )
 else
     optTra = false;
 end
-if isfield(options, 'optScal' )
-    optScal = options.optTra;
-    if optScal == true 
-       disp('optScal is not supported for geodesicBvpParam.') 
-       return
-    end   
+
+if ~isempty(splineData.scaleInv)
+    scaleInv = splineData.scaleInv;
+else
+    scaleInv = false;
 end
 
+if isfield( options, 'optScal' )
+    optScal = options.optScal;
+    if optScal == true && scaleInv == false 
+       disp('optScal is only a valid option for scale invariant metrics.') 
+       return
+    end     
+else
+    optScal = false;
+end
 
 
 
@@ -103,9 +113,14 @@ else
     initV = zeros(dSpace, 1);
 end
 
+if isfield(initGa, 'rho') && ~isempty(initGa.rho)
+    initRho = initGa.rho;
+else
+    initRho = 1;
+end
+
 coeffInit = [ reshape(initPath(splineData.N+1:end-splineData.N, :), [], 1); ...
-              initBeta; ...
-              initV ];
+              initRho;initBeta;initV ];
 
 %% Setup HANSO
 Fopt = @(coeff, pars) energyH2(coeff, pars, pars.splineData);
@@ -116,8 +131,15 @@ pars.fgname = Fopt; %[f,df] = fgtest(x,pars)
 pars.splineData = splineData;
 pars.optRot = optRot;
 pars.optTra = optTra;
+pars.optScal = optScal;
 pars.d0 = d0;
 pars.dEnd = d1;
+
+if isfield(options, 'checkTurningNumber')
+    pars.checkTurningNumber =  options.checkTurningNumber;
+else
+    pars.checkTurningNumber = 0;
+end
 
 optionsHANSO = struct();
 optionsHANSO.x0 = coeffInit;
@@ -143,12 +165,17 @@ else
     optionsHANSO.prtlevel = 1; % also 0, 2
 end
 
+% Ask Hanso to continue even when the line search fails.
+% This is used in conjunction with energy=inf in case of changing turning
+% number.
+optionsHANSO.quitLSfail = 0;
+
 %% Call HANSO
 [optCoeff, optE, infoHanso] = hanso(pars, optionsHANSO);
 
 %% Create output
 % Transformation struct
-optGa = struct( 'beta', [], 'v', [] );
+optGa = struct( 'rho',[],'beta', [], 'v', [] );
 
 if optTra
     optGa.v = optCoeff(end-dSpace+1:end);
@@ -161,8 +188,17 @@ if optRot
     d1 = d1 * rotation;
 end
 
-optPath = [ d0; reshape( optCoeff(1:end-dSpace-1), [], 2); d1 ];
-           
-info = struct( 'infoHanso', infoHanso ); 
+if optScal
+    optGa.rho = optCoeff(end-dSpace-1);
+    d1 = optGa.rho.*d1;
+end
 
+
+optPath = [ d0; reshape( optCoeff(1:end-dSpace-2), [], 2); d1 ];
+ 
+% Construct derivative path similar to optPath
+grad = infoHanso.grad;
+dOptPath = [zeros(size(d0)); reshape( grad(1:end-dSpace-2), [], 2) ];
+infoHanso.grad = dOptPath;
+info = struct( 'infoHanso', infoHanso); 
 end
