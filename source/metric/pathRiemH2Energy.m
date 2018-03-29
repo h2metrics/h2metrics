@@ -43,6 +43,23 @@ addParameter(p, 'a', a);
 parse(p, varargin{:});
 a = p.Results.a;
 
+%% Scale-invariant metrics
+scaleInv = 0;
+if ~isempty(splineData.scaleInv)
+    scaleInv = splineData.scaleInv;
+end
+
+if scaleInv
+    ell = quadWeights' * Cspeed; % Length of c
+    
+    % Update coeffecients with the length weights
+    a(1) = a(1)/ell^3;
+    a(2) = a(2)/ell;
+    a(3) = a(3)*ell;
+    a(4) = a(4)/ell;
+    a(5) = a(5)/ell;
+end
+
 quadData = splineData.quadData;
 quadDataTensor = splineData.quadDataTensor;
 

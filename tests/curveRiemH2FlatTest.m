@@ -16,7 +16,7 @@ splineData.N = 21; %no. control points, must be bigger than n+1
 splineData.nS = 3; %spacial degree
 splineData.quadDegree = [6, 4];
 splineData.a = [1 2 3 4 5 ];
-splineData.curveClose = 1;
+splineData.curveClosed = 1;
 splineData = constructKnots(splineData);
 splineData = setupQuadData(splineData);
 
