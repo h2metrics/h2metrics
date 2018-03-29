@@ -1,13 +1,13 @@
 %% energyH2Diff
 %
-% Computes the H2 energy of a path; uses preconditioner. Function is used
-% by geodesicBvpNoGroups
+% Computes the H2 energy of a path. Function is used
+% by geodesicBvpParam
 %
 % Input
 %   coeffs
 %       Path of curves; matrix of dimension [N*(Nt-2), dSpace]
 %   params
-%       Start and end point of curve, preconditioner
+%       Start and end point of curve
 %
 % Output
 %   E
@@ -42,25 +42,19 @@ noQuadPointsS = splineData.quadData.noQuadPointsS;
 noQuadPointsT = splineData.quadData.noQuadPointsT;
 quadWeightsS = splineData.quadData.quadWeightsS;
 
-% noControlPoints = splineData.N*splineData.Nt;
-% noControls = noControlPoints*splineData.dSpace;
-% noVariables = splineData.N*(splineData.Nt-2); % BVP
-% noQuadSites = length( quadDataTensor.quadWeights );
 
 %% Decode coeffs and params
 d0 = params.d0;
 d1 = params.dEnd;
-
 optTra = params.optTra;
 optRot = params.optRot;
+optScal = params.optScal;
 
+
+rho = coeffs(end-dSpace-1);
 beta = coeffs(end-dSpace);
 v = coeffs(end-dSpace+1:end);
 
-% We have outcommented the Preconditioner, since this would require more
-% work to allow for factoring out groups. Also, Pinv didn't perform great.
-%     PinvBlock = params.PinvBlock; % Preconditioning
-% coeffs = PinvBlock * coeffs;
 
 %% Apply groups to d1
 rotation = [ cos(beta), sin(beta); ...
@@ -68,14 +62,33 @@ rotation = [ cos(beta), sin(beta); ...
 if optTra
     d1 = d1 + ones([N, 1]) * v';
 end
+
 if optRot
     rotation = [ cos(beta), sin(beta); ...
                  -sin(beta), cos(beta) ];
     d1 = d1 * rotation;
 end
+
+if optScal
+    d1 = rho.*d1;
+end
+
 dPath = [ d0; 
           reshape(coeffs(1:N*(Nt-2)*dSpace), [N*(Nt-2), dSpace]); 
           d1 ];
+      
+%% Check whether path changes turning number
+% This indicates that hanso wants to take a too large step length
+checkTurningNumber = params.checkTurningNumber;
+if checkTurningNumber
+    change = changeTurningNumber(dPath, splineData);
+    if change
+        E =  inf;
+        dE = inf;
+        return;
+    end
+end      
+      
 
 %% Evaluate path at quadrature sites
 Cu = quadDataTensor.Bu*dPath;
@@ -252,18 +265,26 @@ if nargout > 1
         c1dbeta = zeros(splineData.N*splineData.dSpace,1);
     end
     
+    %Scaling
+    if optScal
+        c1drho = [];
+        c1drho = d1(:); 
+    else
+        c1drho = zeros(splineData.N*splineData.dSpace,1);
+    end
+    
+    
     dEdc1 = dEdc1(:)';
     
         %Selection of all toggles for optimiziation
-    c1dGamma = [logical(optRot)*c1dbeta,...
+    c1dGamma = [logical(optScal)*c1drho,logical(optRot)*c1dbeta,...
         logical(optTra)*c1dv ];
 
     dEdgamma = dEdc1*c1dGamma;
      %Collect all dE terms
     dE = [dE(:); dEdgamma'];
     
-    %% Add preconditioner
-%     dE = PinvBlock' * dE;
+
     
 
 end
