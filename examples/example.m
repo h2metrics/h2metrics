@@ -4,10 +4,10 @@
 clear all;
 %% Set paths
 % This should be done in a setup script
-addpath(genpath('./source'));
-addpath('./lib/varifolds');
-addpath('./lib/hanso2_2');
-addpath('./lib/export_fig');
+addpath(genpath('../source'));
+addpath('../lib/varifolds');
+addpath('../lib/hanso2_2');
+addpath('../lib/export_fig');
 %% Setup parameters for curve discretization
 splineData = constructSplineData;
 splineData.N = 40; % Number of spline controll points for spatial discretization 
@@ -51,4 +51,5 @@ disp((optE)^(1/2));
 %% Plot of the minimizing geodesic. The target curve is ploted in red.. 
 clf
 plotPath2(optPath,d2,splineData)
+%%
 

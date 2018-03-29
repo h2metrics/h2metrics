@@ -58,6 +58,9 @@ if doS
     quadData.Bu_S = B_S_quad(2:noSder:end, :);
     if nS >= 2
         quadData.Buu_S = B_S_quad(3:noSder:end, :);
+    else 
+        quadData.Buu_S = zeros(size(B_S_quad(3:noSder:end,:)));
+        quadData.Buu_S = sparse(quadData.Buu_S);
     end
     if nS >= 3
         quadData.Buuu_S = B_S_quad(4:noSder:end, :);
@@ -128,11 +131,21 @@ if doS && doT
     if nS >= 2
         quadDataTensor.Buu = createTensorCollocationMatrix( ...
             quadPointsS, quadPointsT, 3, 1, splineData );
+        
         quadDataTensor.Buut = createTensorCollocationMatrix( ...
             quadPointsS, quadPointsT, 3, 2, splineData );
         
         quadDataTensor.BuuTr = quadDataTensor.Buu';
         quadDataTensor.BuutTr = quadDataTensor.Buut';
+    else 
+        quadDataTensor.Buu = zeros(size(quadDataTensor.Bu));
+        quadDataTensor.Buu = sparse(quadDataTensor.Buu);
+        quadDataTensor.Buut = zeros(size(quadDataTensor.Bu));
+        quadDataTensor.Buut = sparse(quadDataTensor.Buut);
+        quadDataTensor.BuuTr = quadDataTensor.Buu';
+        quadDataTensor.BuuTr = sparse(quadDataTensor.BuuTr);
+        quadDataTensor.BuutTr = quadDataTensor.Buut';
+        quadDataTensor.BuutTr = sparse(quadDataTensor.BuutTr);
     end
     if nS >= 3
         quadDataTensor.Buuu = createTensorCollocationMatrix( ...
