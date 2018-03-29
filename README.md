@@ -4,32 +4,43 @@ h2metrics
 What is it?
 -----------
 
-This code provides tools for Riemannian shape analysis with second order Sobolev metrics on closed plane curves. It can be used to solve the initial and boundary value problems for geodesics and to compute Karcher means. It is able to factor out reparameterizations, translations, and rotations of the curves. 
+This code provides tools for Riemannian shape analysis with second order Sobolev metrics on closed plane curves. It can be used to solve the initial and boundary value problems for geodesics and to compute Karcher means. It is able to factor out reparameterizations, translations, rotations and scalings of the curves. It works for both open and closed planar curves.
 
-For details we refer to the our paper 
+For details we refer to the our papers
 
-    @misc{BBHM2016,
+    @article{BBHM2017,
       author  = {Martin Bauer, Martins Bruveris, Philipp Harms, Jakob M{\o}ller-Andersen},
       title   = {A Numerical Framework for {S}obolev Metrics on the Space of Curves},
-      year    = {2016},
-      note    = {Preprint available at arXiv:1603.03480.}
+      journal = {SIAM J. Imaging Sci.},
+      year    = {2017},
+      volume  = {10},
+      number  = {1},
+      pages   = {47--73}
     }
 
-Please cite our paper in your work.
+    @misc{BBCH2018,
+      author  = {Martin Bauer, Martins Bruveris, Nicolas Charon, Jakob M{\o}ller-Andersen},
+      title   = {A relaxed approach for curve matching with elastic metrics},
+      year    = {2018},
+      note    = {Preprint available at arXiv:1804.xxxxx}
+    }
+
+Please cite our papers in your work.
 
 Dependencies
 ------------
 
 * MATLAB Curve Fitting Toolbox
 * MATLAB Optimization Toolbox
-* Manopt library, available at http://www.manopt.org. (Only needed to compute Karcher means.)
 
-The code was tested on MATLAB R2014b with Manopt 2.0. 
+The code incorporates the following libraries
 
-Installation
-------------
+* Manopt library (www.manopt.org)
+* Hanso (https://cs.nyu.edu/overton/software/hanso/)
+* export_fig (https://github.com/altmany/export_fig)
+* fshapesTk (https://github.com/fshapes/fshapesTk)
 
-The Manopt library must be on the Matlab search path. 
+The code was tested on MATLAB R2016b.
 
 Usage
 -----
@@ -56,5 +67,6 @@ Contacts
 
 * Martin Bauer (martin dot bauer at tuwien dot ac dot at)
 * Martins Bruveris (martins dot bruveris at brunel dot ac dot uk)
-* Philipp Harms (philipp dot harms at math dot ethz dot ch)
+* Nicolas Charon (charon at cis dot jhu dot edu)
+* Philipp Harms (philipp dot harms at stochastik dot uni-freiburg dot de)
 * Jakob Møller-Andersen (jakmo at dtu dot dk)
