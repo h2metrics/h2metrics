@@ -25,16 +25,17 @@ p = inputParser;
 addParameter(p, 'endpoint', 0);
 parse(p, varargin{:});
 
-% Do we return only the endpoints
+% Do we return only the endpoints?
 endpoint = p.Results.endpoint;
 
+% Some useful constants
 N = splineData.N;
 dSpace = splineData.dSpace;
 
 % Here we save the geodesic
-geodesicPoints = zeros(N, dSpace, Nsteps);
-geodesicPoints(:,:,1) = q0;
-geodesicPoints(:,:,2) = q1;
+qAll = zeros(N, dSpace, Nsteps);
+qAll(:,:,1) = q0;
+qAll(:,:,2) = q1;
 
 options = optimset('TolFun', 1e-6, ...
                    'Display', 'off');
@@ -45,20 +46,20 @@ options = optimset('TolFun', 1e-6, ...
 %options = optimoptions(options,'MaxFunEvals',10000);
 
 for ii = 3:Nsteps
-       
-        q_init = 2 * geodesicPoints(:,:,ii-1) - geodesicPoints(:,:,ii-2);
-        
-        F = @(q) LagrangianLeftDer(q, ...
-                                   geodesicPoints(:,:,ii-1),...
-                                   geodesicPoints(:,:,ii-2), ...
-                                   splineData );
-          
-        [ geodesicPoints(:,:,ii), ~, ~ ] = fsolve( F, q_init, options);
+    q0 = qAll(:,:,ii-1);
+    q1 = qAll(:,:,ii-2);
+    q2_init = q1 + (q1 - q0);
+
+    F = @(q) LagrangianLeftDer( q, q1, q0, splineData );
+    [q2, ~, ~] = fsolve( F, q2_init, options);
+    
+    qAll(:,:,ii) = q2;
 end
 
-q = geodesicPoints;
 if endpoint
-    q = geodesicPoints(:,:,end);
+    q = qAll(:,:,end);
+else
+    q = qAll;
 end
 
 end
