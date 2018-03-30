@@ -72,15 +72,15 @@ d=size(fs1.x,2);
         end
         
         % Geometric kernel      
-        Kernel_geomXX = radial_function_geom(distance_center_faceXX,0,objfun);
-        Kernel_geomYY = radial_function_geom(distance_center_faceYY,0,objfun);
-        Kernel_geomXY = radial_function_geom(distance_center_faceXY,0,objfun);
+        Kernel_geomXX = radial_function_geom(distance_center_faceXX,objfun);
+        Kernel_geomYY = radial_function_geom(distance_center_faceYY,objfun);
+        Kernel_geomXY = radial_function_geom(distance_center_faceXY,objfun);
         
 
         % tangent space kernel
-        Kernel_tanXX = radial_function_sphere(scp_unit_normalsXX,0,objfun);
-        Kernel_tanYY =  radial_function_sphere(scp_unit_normalsYY,0,objfun);
-        Kernel_tanXY = radial_function_sphere(scp_unit_normalsXY,0,objfun);
+        Kernel_tanXX = radial_function_sphere(scp_unit_normalsXX,objfun);
+        Kernel_tanYY =  radial_function_sphere(scp_unit_normalsYY,objfun);
+        Kernel_tanXY = radial_function_sphere(scp_unit_normalsXY,objfun);
         
         % Area 
         AreaXX = (norm_normalsX * norm_normalsX');

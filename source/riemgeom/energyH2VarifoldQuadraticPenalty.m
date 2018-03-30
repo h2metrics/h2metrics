@@ -145,7 +145,7 @@ d2 = rho*d2;
 
 
 d1 = dPath(end-N+1:end,:);
-distVar = varifoldDistanceSquared(d1, d2, splineData);
+[distVar, distGradd1, distGradd2] = varifoldDistanceSquared(d1, d2, splineData);
 
 %% Compute the final energy
 E = E + lambda*distVar;
@@ -245,10 +245,11 @@ if nargout > 1
     dE = dE(splineData.N+1:end-splineData.N,:);
     
     % Compute Varifold Gradient
-    [~, distGradd1] = varifoldDistanceSquared(d1, d2, splineData);
-    if optRot || optTra || optScal
-        [~, distGradd2] = varifoldDistanceSquared(d2, d1, splineData);
-    end
+    % distGradd1, distGradd2 has been computed above
+    % [~, distGradd1] = varifoldDistanceSquared(d1, d2, splineData);
+    %if optRot || optTra || optScal
+    %    [~, distGradd2] = varifoldDistanceSquared(d2, d1, splineData);
+    %end
     
     % Compute gradient w.r.t beta and v
     % Observe that F(rho,beta,v) = || d0 - rho R_beta (d1 + v) ||^2 
