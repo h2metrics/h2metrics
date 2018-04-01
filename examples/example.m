@@ -22,18 +22,19 @@ splineData = finishSetup( splineData );
 %% Load some curves
 c0 = importdata('./data/OAS1_0016.txt');
 c1 = importdata('./data/OAS1_0022.txt');
+c2 = importdata('./data/OAS1_0023.txt');
 %Construct spline approximation
 d0= constructSplineApproximation(c0(2:end,:),splineData);
 d1= constructSplineApproximation(c1(2:end,:),splineData);
+d2= constructSplineApproximation(c2(2:end,:),splineData);
 %Rescale curves to length 2pi (not necessary)
 d0 = 2*pi* d0/curveLength(d0,splineData);
 d1 = 2*pi*d1/curveLength(d1,splineData);
-dList = rigidAlignmentVarifold({d0,d1},splineData);%Prealign the data
-d0=dList{1};
-d1=dList{2};
-plotCurve({d0,d1}, splineData) %Plot the data
-
-
+d2= 2*pi*d2/curveLength(d2,splineData);
+dList= {d0,d1,d2};
+%Prealign the data (not necessary)
+dList = rigidAlignmentVarifold({d0,d1,d2},splineData); 
+plotCurve(dList, splineData) %Plot the data
 %% Calculate Geodesic between c0 and c1
 splineData.a=[.1 1 0 0 0]; %Constants for the metric:
 splineData.scaleInv=0; %length weighted metric (set to zero for constant coeff. metrics)
@@ -43,15 +44,25 @@ splineData.options.optRot=1; %Minimize over rotations of the target curve
 splineData.options.optTra=1; %Minimize over translations of the target curve
 splineData.options.useAugmentedLagrangian = false; %Use quadratic penalty term 
 splineData.options.varLambda = 100; %Weight of the similarity measure
-%%
+%% Minimize and plot optimal geodesic
 tic
-[optE, optPath, optGa, ~] = geodesicBvp(d0, d1, ...
+[optE, optPath, optGa, ~] = geodesicBvp(dList{1}, dList{2}, ...
     splineData ,splineData.options);
 toc;
-d2=curveApplyGamma(d1, optGa, splineData);
+dEnd=curveApplyGamma(dList{2}, optGa, splineData);
 disp('Geodesic distance between d0 and d1 is:');
 disp((optE)^(1/2));
-%% Plot of the minimizing geodesic. The target curve is ploted in red.. 
+% Plot of the minimizing geodesic. The target curve is ploted in red.
 clf
-plotPath2(optPath,d2,splineData)
+plotPath2(optPath,dEnd,splineData)
 
+%% Compute Karcher Mean (needs to setup manopt, 
+%therefore run the importmanopt script in the lib/manopt folder)
+karcherOptions.karcherMaxIter = 10;
+dMean = karcherMeanManopt(dList, splineData,'options',karcherOptions);
+%% Plot mean in red and curves
+plotCurve(dMean, splineData,'lineStyle', 'r-')
+plotCurve(dList, splineData)
+%% Tangent space PCA
+[U,Lambda,G, vList] = TangentPCA(dList,d0,splineData);
+VisualizePCA(U,Lambda,G, vList,splineData)
