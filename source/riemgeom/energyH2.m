@@ -1,4 +1,4 @@
-%% energyH2Diff
+%% energyH2
 %
 % Computes the H2 energy of a path. Function is used
 % by geodesicBvpParam
@@ -244,22 +244,17 @@ if nargout > 1
     
     %Translation
     if optTra
-        c1dv = [];
-        for ii = 1:dSpace
-            c1dv = blkdiag(c1dv,ones(N,1));
-        end
-        if optRot
-            c1dv = [ reshape( [ones(N,1),zeros(N,1)]*rotation ,N*dSpace,1),...
+        c1dv = [ reshape( [ones(N,1),zeros(N,1)]*rotation ,N*dSpace,1),...
                 reshape( [zeros(N,1),ones(N,1)]*rotation ,N*dSpace,1)];
-        end
+        c1dv = rho.*c1dv;    
     else
         c1dv = zeros(splineData.N*splineData.dSpace,dSpace);
     end
     
     %Rotation
-    rotation90 = [0, 1; -1, 0]; %Transpose of rotation matrix
     if optRot
-        c1dbeta = d1*rotation90;
+        rotationDer = [ -sin(beta), cos(beta); -cos(beta), -sin(beta) ];
+        c1dbeta = rho.*params.dEnd*rotationDer+rho.*ones([N, 1]) * v'*rotationDer;
         c1dbeta = c1dbeta(:);
     else
         c1dbeta = zeros(splineData.N*splineData.dSpace,1);
@@ -267,8 +262,8 @@ if nargout > 1
     
     %Scaling
     if optScal
-        c1drho = [];
-        c1drho = d1(:); 
+        c1drho = params.dEnd*rotation+ones([N, 1]) * v'*rotation;
+        c1drho = c1drho(:); 
     else
         c1drho = zeros(splineData.N*splineData.dSpace,1);
     end
@@ -283,9 +278,6 @@ if nargout > 1
     dEdgamma = dEdc1*c1dGamma;
      %Collect all dE terms
     dE = [dE(:); dEdgamma'];
-    
-
-    
-
+   
 end
 
