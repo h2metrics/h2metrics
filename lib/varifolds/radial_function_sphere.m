@@ -37,7 +37,7 @@ switch lower(objfun.kernel_grass)
         for l = objfun.kernel_size_grass
             e1 = exp(-2/l^2) * exp(2*x/l^2);
             res = res + e1;
-            dres = res + 2 * e1 / l^2;
+            dres = dres + 2 * e1 / l^2;
             
 %             if derivative_order==0
 %                 res = res + exp(-2/l^2) * exp(2*x/l^2);
