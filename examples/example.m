@@ -1,7 +1,7 @@
 %% This source contains a verty basic example for the functionality of the code
 %% Precaution
 clear all;
-%% Set paths
+%% Set paths. Set current directory to this folder.
 addpath(genpath('../source'));
 addpath('../lib/varifolds');
 addpath('../lib/hanso2_2');
@@ -22,8 +22,9 @@ splineData = finishSetup( splineData );
 c0 = importdata('./data/OAS1_0016.txt');
 c1 = importdata('./data/OAS1_0022.txt');
 c2 = importdata('./data/OAS1_0023.txt');
-%Construct spline approximation
-d0= constructSplineApproximation(c0(2:end,:),splineData);
+%Construct spline approximation (First point is an indicator variable and
+%is ignored)
+d0= constructSplineApproximation(c0(2:end,:),splineData); 
 d1= constructSplineApproximation(c1(2:end,:),splineData);
 d2= constructSplineApproximation(c2(2:end,:),splineData);
 %Rescale curves to length 2pi (not necessary)

@@ -7,7 +7,7 @@ splineData.nS = 3;
 splineData.Nt = 5;
 splineData.nT = 2;
 splineData.quadDegree = [6, 4];
-splineData.a = [1 2 3 4 5];
+splineData.a = [1 2 0.1 1 2];
 splineData.curveClosed = 1;
 splineData = constructKnots(splineData);
 
@@ -18,8 +18,11 @@ N = splineData.N;
 Nt = splineData.Nt;
 dSpace = 2;
 
-d0 = constructSplineApproximation(c0, splineData);
-d1 = constructSplineApproximation(c1, splineData);
+d0 = constructSplineApproximation(c0(2:end,:), splineData);
+d1 = constructSplineApproximation(c1(2:end,:), splineData);
+
+d0 = d0/curveLength(d0,splineData);
+d1 = d1/curveLength(d0,splineData);
 
 dPath = linearPath(d0, d1, splineData);
 rho = 1.1;
@@ -39,7 +42,7 @@ pars.d0 = d0;
 pars.dEnd = d1;
 pars.lambda = 0.1;
 
-tau = 1e-4;
+tau = 1e-6;
 
 [~, dE1] = energyH2(coeffs, pars, splineData);
 
