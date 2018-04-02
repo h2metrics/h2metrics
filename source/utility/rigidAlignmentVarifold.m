@@ -26,9 +26,8 @@ function [dAligned, gaOpt] = rigidAlignmentVarifold( dList, splineData, varargin
 a= [1 0 0];
 optTra = true;
 optRot = true;
-optShift= true;
+optShift= false;
 maxIter = [];
-display = 'off';
 globalRot = false;
 
 options = struct;
@@ -61,15 +60,13 @@ end
 if isfield(options, 'rigidMaxIter')
     maxIter = options.rigidMaxIter;
 end
-if isfield(options, 'rigidDisplay')
-    display = options.rigidDisplay;
-end
+
 if isfield(options, 'rigidGlobalRot')
     globalRot = options.rigidGlobalRot;
 end
 
 dSpace = splineData.dSpace;
-display='iter';
+display='off';
 N = splineData.N;
 
 noCurves = length(dList);
