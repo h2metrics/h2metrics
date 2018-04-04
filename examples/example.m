@@ -36,17 +36,18 @@ dList= {d0,d1,d2};
 dList = rigidAlignmentVarifold({d0,d1,d2},splineData); 
 plotCurve(dList, splineData) %Plot the data
 %% Calculate Geodesic between c0 and c1
-splineData.a=[0 1 0 0 0]; %Constants for the metric:
-splineData.scaleInv=1; %length weighted metric (set to zero for constant coeff. metrics)
+splineData.a=[.1 1 0 .3 0]; %Constants for the metric. These have to be carefully chosen, 
+%depending on the scale of the curve.
+splineData.scaleInv=0; %length weighted metric (set to zero for constant coeff. metrics)
 splineData.options.optDiff=1;  %Minimize over reparamtrizations of the target curve
-splineData.options.optScal=1; %Minimize over scalings of the target curve
+splineData.options.optScal=0; %Minimize over scalings of the target curve
 splineData.options.optRot=1; %Minimize over rotations of the target curve
 splineData.options.optTra=1; %Minimize over translations of the target curve
 splineData.options.useAugmentedLagrangian = false; %Use quadratic penalty term 
 splineData.options.varLambda = 100; %Weight of the similarity measure
 %% Minimize and plot optimal geodesic
 tic
-[optE, optPath, optGa, ~] = geodesicBvp(dList{1}, 1.1*dList{2}, ...
+[optE, optPath, optGa, ~] = geodesicBvp(dList{1}, dList{2}, ...
     splineData ,splineData.options);
 toc;
 dEnd=curveApplyGamma(dList{2}, optGa, splineData);
