@@ -22,7 +22,7 @@ For details we refer to the our papers
       author  = {Martin Bauer, Martins Bruveris, Nicolas Charon, Jakob M{\o}ller-Andersen},
       title   = {A relaxed approach for curve matching with elastic metrics},
       year    = {2018},
-      note    = {Preprint available at arXiv:1804.xxxxx}
+      note    = {Preprint available at arXiv:1803.10893}
     }
 
 Please cite our papers in your work.
