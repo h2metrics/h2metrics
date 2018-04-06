@@ -19,7 +19,7 @@
 %       reference curve to the other curves
 %   G
 %       metric matrix at d0
-function [U,Lambda,G,vList] = TangentPCA(dList,d0,splineData)
+function [U,Lambda,G,vList] = tangentPCA(dList,d0,splineData)
     noCurves = length(dList);
     G = metricMatrixH2(d0, splineData);
     rootG = sqrtm(G);

@@ -11,7 +11,7 @@
 %
 % Output
 % Plot of a 2-d projection of the data.
-function VisualizePCA(U,Lambda,G,vList,splineData)
+function visualizePCA(U,Lambda,G,vList,splineData)
     noCurves = length(vList);
     N=splineData.N;
     V = U(:,1:2);

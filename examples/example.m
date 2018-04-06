@@ -64,5 +64,5 @@ dMean = karcherMeanManopt(dList, splineData,'options',karcherOptions);
 plotCurve(dMean, splineData,'lineStyle', 'r-')
 plotCurve(dList, splineData)
 %% Tangent space PCA
-[U,Lambda,G, vList] = TangentPCA(dList,dMean,splineData);
-VisualizePCA(U,Lambda,G, vList,splineData)
+[U,Lambda,G, vList] = tangentPCA(dList,dMean,splineData);
+visualizePCA(U,Lambda,G, vList,splineData)
