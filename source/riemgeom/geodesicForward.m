@@ -33,7 +33,7 @@ N = splineData.N;
 dSpace = splineData.dSpace;
 
 % Here we save the geodesic
-qAll = zeros(N, dSpace, Nsteps);
+qAll = zeros(N, dSpace, Nsteps+1);
 qAll(:,:,1) = q0;
 qAll(:,:,2) = q1;
 
@@ -45,9 +45,10 @@ options = optimset('TolFun', 1e-6, ...
 %options = optimoptions(options,'MaxIter',400);
 %options = optimoptions(options,'MaxFunEvals',10000);
 
-for ii = 3:Nsteps
-    q0 = qAll(:,:,ii-1);
-    q1 = qAll(:,:,ii-2);
+for ii = 3:Nsteps+1
+    disp(ii);
+    q0 = qAll(:,:,ii-2);
+    q1 = qAll(:,:,ii-1);
     q2_init = q1 + (q1 - q0);
 
     F = @(q) LagrangianLeftDer( q, q1, q0, splineData );

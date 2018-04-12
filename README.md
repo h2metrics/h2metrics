@@ -69,4 +69,4 @@ Contacts
 * Martins Bruveris (martins dot bruveris at brunel dot ac dot uk)
 * Nicolas Charon (charon at cis dot jhu dot edu)
 * Philipp Harms (philipp dot harms at stochastik dot uni-freiburg dot de)
-* Jakob Møller-Andersen (jakmo at dtu dot dk)
+* Jakob Møller-Andersen (jakob dot ma at gmail dot com)

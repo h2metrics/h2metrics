@@ -17,6 +17,6 @@
 function q = geodesicExp(q0, v, splineData)
 
 q = geodesicForward(q0, q0 + v / splineData.stepsT, splineData.stepsT, ...
-                    splineData, 'endpoint');
+                    splineData, 'endpoint',1);
                 
 end
